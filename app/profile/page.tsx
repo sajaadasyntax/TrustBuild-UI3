@@ -4,11 +4,11 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { MapPin, Briefcase, Image as ImageIcon, Star, Clock, FileCheck, User } from "lucide-react"
+import { MapPin, Briefcase, Image as ImageIcon, Star, Clock, FileCheck, User, ArrowLeft } from "lucide-react"
 
 export default function ContractorProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
@@ -37,33 +37,19 @@ export default function ContractorProfile() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-32">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Contractor Profile</h1>
             <p className="text-muted-foreground">Manage your profile and showcase your work</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/profile">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/contractor/current-jobs">
-                <Clock className="mr-2 h-4 w-4" />
-                Current Jobs
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/contractor/job-history">
-                <FileCheck className="mr-2 h-4 w-4" />
-                Job History
-              </Link>
-            </Button>
-          </div>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/contractor">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
         </div>
         
         {/* Profile Picture Section */}
