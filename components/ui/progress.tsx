@@ -8,11 +8,9 @@ import { cn } from '@/lib/utils';
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, value, ...props }, ref) => {
-  // Ensure value is a number between 0 and 100
-  const validValue = typeof value === 'number' 
-    ? Math.min(Math.max(value, 0), 100)
-    : 0;
+>(({ className, value = 0, ...props }, ref) => {
+  // Simple validation to ensure value is between 0 and 100
+  const progress = Math.min(Math.max(Number(value) || 0, 0), 100);
 
   return (
     <ProgressPrimitive.Root
@@ -25,7 +23,7 @@ const Progress = React.forwardRef<
     >
       <ProgressPrimitive.Indicator
         className="h-full w-full flex-1 bg-primary transition-all"
-        style={{ transform: `translateX(-${100 - validValue}%)` }}
+        style={{ transform: `translateX(-${100 - progress}%)` }}
       />
     </ProgressPrimitive.Root>
   );
