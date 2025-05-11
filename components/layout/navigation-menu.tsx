@@ -94,7 +94,7 @@ export function NavigationMenu() {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href={session.user.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}>
+                  <Link href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}>
                     <PanelRight className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
@@ -105,7 +105,7 @@ export function NavigationMenu() {
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                {session.user.role === "ADMIN" && (
+                {session?.user?.role === "ADMIN" && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <Building className="mr-2 h-4 w-4" />
@@ -174,7 +174,7 @@ export function NavigationMenu() {
             {session ? (
               <div className="border-t pt-4">
                 <Link 
-                  href={session.user.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}
+                  href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}
                   className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -189,7 +189,7 @@ export function NavigationMenu() {
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </Link>
-                {session.user.role === "ADMIN" && (
+                {session?.user?.role === "ADMIN" && (
                   <Link 
                     href="/admin"
                     className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
