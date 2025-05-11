@@ -1,0 +1,273 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CONTRACTOR
+  CUSTOMER
+}
+
+enum ContractorTier {
+  STANDARD
+  VERIFIED
+  PREMIUM
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  PENDING
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relationships
+  customer     Customer?
+  contractor   Contractor?
+  accounts     Account[]
+  sessions     Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  phone     String?
+  address   String?
+  city      String?
+  postcode  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs  Job[]
+  reviews Review[]
+}
+
+model Contractor {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  businessName      String
+  description       String         @db.Text
+  businessAddress   String?
+  city              String?
+  postcode          String?
+  phone             String?
+  website           String?
+  yearsInBusiness   Int?
+  profileApproved   Boolean        @default(false)
+  tier              ContractorTier @default(STANDARD)
+  featuredContractor Boolean       @default(false)
+  // Payment and subscription
+  stripeCustomerId  String?
+  goCardlessCustomerId String?
+  // Stats
+  jobsCompleted     Int            @default(0)
+  averageRating     Float          @default(0)
+  reviewCount       Int            @default(0)
+  verifiedReviews   Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relationships
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services     Service[]      @relation("ContractorToService")
+  portfolio    PortfolioItem[]
+  applications JobApplication[]
+  reviews      Review[]       @relation("ContractorReviews")
+  subscription Subscription?
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  contractorId     String             @unique
+  status           SubscriptionStatus
+  subscriptionId   String?           // External subscription ID (GoCardless)
+  mandateId        String?           // Direct Debit mandate ID
+  startDate        DateTime
+  endDate          DateTime?
+  currentPeriodEnd DateTime
+  cancelAtPeriodEnd Boolean          @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Relationships
+  contractor       Contractor        @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model Service {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  
+  // Relationships
+  contractors Contractor[] @relation("ContractorToService")
+  jobs        Job[]       @relation("JobToService")
+}
+
+model PortfolioItem {
+  id            String   @id @default(cuid())
+  contractorId  String
+  title         String
+  description   String?
+  imageUrl      String
+  createdAt     DateTime @default(now())
+
+  // Relationships
+  contractor    Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  customerId  String
+  title       String
+  description String    @db.Text
+  budget      Float?
+  address     String?
+  city        String?
+  postcode    String?
+  status      JobStatus @default(DRAFT)
+  isPlatformMatched Boolean @default(false)
+  viewUnlockPrice Float?     // Price to unlock job details for contractors
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  // Relationships
+  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  services     Service[] @relation("JobToService")
+  applications JobApplication[]
+  reviews      Review[]
+}
+
+model JobApplication {
+  id            String   @id @default(cuid())
+  jobId         String
+  contractorId  String
+  coverLetter   String?  @db.Text
+  price         Float?
+  status        String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  job           Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  contractor    Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  jobId        String?
+  customerId   String?
+  contractorId String
+  rating       Int
+  comment      String?  @db.Text
+  isVerified   Boolean  @default(false)
+  isExternal   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  job          Job?        @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  customer     Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contractor   Contractor  @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
+}
+
+model CmsContent {
+  id           String   @id @default(cuid())
+  section      String   // e.g., "hero", "about", "featured"
+  title        String?
+  subtitle     String?
+  content      String?  @db.Text
+  imageUrl     String?
+  ctaText      String?
+  ctaLink      String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Faq {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String   @db.Text
+  category     String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  message      String
+  isRead       Boolean  @default(false)
+  type         String   // e.g., "job_application", "review", "payment"
+  linkUrl      String?
+  createdAt    DateTime @default(now())
+}

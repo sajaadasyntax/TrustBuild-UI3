@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    /* Updated color scheme for construction theme */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary: Reliable blue */
+    --primary: 215 100% 40%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Secondary: Earth tone */
+    --secondary: 32 50% 50%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted: Soft gray */
+    --muted: 210 10% 96%;
+    --muted-foreground: 215 20% 45%;
+    
+    /* Accent: Construction gold */
+    --accent: 38 97% 65%;
+    --accent-foreground: 222 47% 11%;
+    
+    /* Destructive: Warning red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Success: Approval green */
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Warning: Caution amber */
+    --warning: 45 100% 51%;
+    --warning-foreground: 222 47% 11%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 215 100% 40%;
+    
+    --radius: 0.5rem;
+
+    /* Chart colors for dashboards */
+    --chart-1: 215 100% 40%;
+    --chart-2: 32 50% 50%;
+    --chart-3: 38 97% 65%;
+    --chart-4: 142 72% 29%;
+    --chart-5: 0 84% 60%;
+  }
+  
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Primary: Lighter blue in dark mode */
+    --primary: 215 100% 50%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Secondary: Warmer earth tone */
+    --secondary: 32 50% 60%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted: Darker gray */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    /* Accent: Brighter gold */
+    --accent: 38 97% 70%;
+    --accent-foreground: 222 47% 11%;
+    
+    /* Destructive: Brighter red */
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Success: Brighter green */
+    --success: 142 72% 35%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Warning: Brighter amber */
+    --warning: 45 100% 60%;
+    --warning-foreground: 222 47% 11%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 215 100% 50%;
+
+    /* Chart colors for dashboards */
+    --chart-1: 215 100% 50%;
+    --chart-2: 32 50% 60%;
+    --chart-3: 38 97% 70%;
+    --chart-4: 142 72% 35%;
+    --chart-5: 0 84% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+  h1 {
+    @apply text-4xl leading-tight lg:text-5xl;
+  }
+  h2 {
+    @apply text-3xl leading-tight lg:text-4xl;
+  }
+  h3 {
+    @apply text-2xl leading-tight;
+  }
+  h4 {
+    @apply text-xl leading-tight;
+  }
+
+  /* Animation utilities */
+  .animate-in {
+    animation-duration: 300ms;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+  .animate-out {
+    animation-duration: 300ms;
+    animation-timing-function: ease-in;
+    animation-fill-mode: both;
+  }
+}
+
+/* Project-specific styles */
+.hero-section {
+  @apply relative overflow-hidden;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)), url('/images/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  /* min-height: 100vh; */
+}
+
+.contractor-card {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+.tier-standard {
+  @apply border-secondary/50;
+}
+
+.tier-verified {
+  @apply border-accent border-2;
+}
+
+.tier-premium {
+  @apply border-primary border-2;
+}
+
+.review-card {
+  @apply transition-all duration-300 hover:shadow-md;
+}
+
+/* Dashboard cards hover effect */
+.dashboard-card {
+  @apply transition-all duration-300 hover:shadow-md hover:bg-accent/5;
+}
+
+/* Splash screen animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+}
+
+.animate-progress-bar {
+  animation: progressBar 2s linear;
+  width: 0%;
+  animation-fill-mode: forwards;
+}
+
+@keyframes progressBar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
