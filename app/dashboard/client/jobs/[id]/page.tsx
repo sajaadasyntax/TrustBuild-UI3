@@ -5,7 +5,7 @@ const mockJobs = [
   {
     id: "job1",
     title: "Kitchen Renovation",
-    status: "OPEN",
+    status: "OPEN" as const,
     description: "Complete kitchen renovation including new cabinets, countertops, appliances, and flooring. The space is approximately 200 square feet.",
     budget: "£5,000",
     location: "London, UK",
@@ -41,7 +41,7 @@ const mockJobs = [
   {
     id: "job2",
     title: "Bathroom Remodeling",
-    status: "IN_PROGRESS",
+    status: "IN_PROGRESS" as const,
     description: "Complete bathroom renovation including new fixtures, tiles, and plumbing. The space is approximately 100 square feet.",
     budget: "£3,500",
     location: "London, UK",
