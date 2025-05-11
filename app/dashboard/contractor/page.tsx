@@ -95,7 +95,7 @@ export default function ContractorDashboard() {
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/contractors">
+            <Link href="/jobs">
               <BriefcaseBusiness className="mr-2 h-4 w-4" />
               Find Jobs
             </Link>

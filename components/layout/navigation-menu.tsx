@@ -147,7 +147,7 @@ export function NavigationMenu() {
       
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background border-b animate-in slide-down">
+        <div className="md:hidden fixed inset-x-0 top-[60px] bg-background border-b animate-in slide-down z-50">
           <div className="container py-4 space-y-4">
             <nav className="flex flex-col space-y-2">
               {mainNavItems.map((item) => (
@@ -201,7 +201,7 @@ export function NavigationMenu() {
                 )}
                 <Link 
                   href="/api/auth/signout"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted text-destructive"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
@@ -210,15 +210,16 @@ export function NavigationMenu() {
               </div>
             ) : (
               <div className="border-t pt-4 flex flex-col space-y-2">
-                <Button variant="outline" asChild>
+                <Button variant="outline" asChild className="w-full">
                   <Link 
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
                   >
+                    <LogIn className="mr-2 h-4 w-4" />
                     Log in
                   </Link>
                 </Button>
-                <Button asChild>
+                <Button asChild className="w-full">
                   <Link 
                     href="/register"
                     onClick={() => setMobileMenuOpen(false)}
