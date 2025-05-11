@@ -238,7 +238,7 @@ export default function ContractorDashboard() {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle>{application.jobTitle}</CardTitle>
-                    <Badge variant={application.status === "ACCEPTED" ? "success" : "secondary"}>
+                    <Badge variant={application.status === "ACCEPTED" ? "default" : "secondary"}>
                       {application.status === "ACCEPTED" ? "Accepted" : "Pending"}
                     </Badge>
                   </div>
