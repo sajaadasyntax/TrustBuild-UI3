@@ -55,7 +55,7 @@ export default function Home() {
                 <Link href="/post-job">Post a Job</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="bg-white/20 hover:bg-white/30 border-white">
-                <Link href="/contractors">Find Contractors</Link>
+                <Link href="/contractors">Join as a Contractor</Link>
               </Button>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function Home() {
           <div className="text-center mt-10">
             <Button asChild variant="outline">
               <Link href="/contractors">
-                View All Contractors
+                Join as a Contractor
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

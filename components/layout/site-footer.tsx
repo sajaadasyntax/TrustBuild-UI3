@@ -46,9 +46,7 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/contractors" className="text-muted-foreground hover:text-primary transition-colors">
-                  Find Contractors
-                </Link>
+                <Link href="/contractors">Join as a Contractor</Link>
               </li>
               <li>
                 <Link href="/how-it-works/customers" className="text-muted-foreground hover:text-primary transition-colors">

@@ -13,7 +13,6 @@ interface Job {
   title: string
   status: "OPEN" | "IN_PROGRESS" | "COMPLETED"
   description: string
-  budget: string
   location: string
   postedAt: string
   startedAt?: string
@@ -144,8 +143,8 @@ export function ClientJobDetails({ job }: { job: Job }) {
                       <p className="text-sm text-muted-foreground">{application.message}</p>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button variant="outline" className="w-full">
-                        View Profile
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link href="/contractors">Join as a Contractor</Link>
                       </Button>
                       <Button 
                         variant="default" 
@@ -165,15 +164,6 @@ export function ClientJobDetails({ job }: { job: Job }) {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{job.budget}</p>
-            </CardContent>
-          </Card>
-
           {job.status === "IN_PROGRESS" && job.contractor && (
             <Card>
               <CardHeader>

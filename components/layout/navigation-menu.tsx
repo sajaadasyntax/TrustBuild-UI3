@@ -5,7 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { User, Menu, X, Home, PanelRight, Search, Briefcase, Building, LogIn } from "lucide-react"
+import { User, Menu, X, Home, PanelRight, Search, Briefcase, Building, LogIn, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -41,6 +41,7 @@ export function NavigationMenu() {
   const mainNavItems = [
     { label: "Home", href: "/" },
     { label: "How It Works", href: "/how-it-works" },
+    { label: "Join as Contractor", href: "/contractors" },
   ]
 
   return (
@@ -97,6 +98,12 @@ export function NavigationMenu() {
                   <Link href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}>
                     <PanelRight className="mr-2 h-4 w-4" />
                     Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor/reviews" : "/dashboard/client/reviews"}>
+                    <Star className="mr-2 h-4 w-4" />
+                    Reviews
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -180,6 +187,14 @@ export function NavigationMenu() {
                 >
                   <PanelRight className="mr-2 h-4 w-4" />
                   Dashboard
+                </Link>
+                <Link 
+                  href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor/reviews" : "/dashboard/client/reviews"}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Reviews
                 </Link>
                 <Link 
                   href="/profile"

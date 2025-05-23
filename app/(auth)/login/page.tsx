@@ -46,6 +46,8 @@ export default function LoginPage() {
         router.push("/dashboard/contractor")
       } else if (data.email === "admin@example.com") {
         router.push("/admin")
+      } else if (data.email === "superadmin@example.com") {
+        router.push("/super-admin")
       } else {
         router.push("/dashboard/client")
       }
@@ -147,6 +149,15 @@ export default function LoginPage() {
                 }}
               >
                 Admin Demo
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  form.setValue("email", "superadmin@example.com");
+                  form.setValue("password", "password");
+                }}
+              >
+                Super Admin Demo
               </Button>
             </div>
           </div>
