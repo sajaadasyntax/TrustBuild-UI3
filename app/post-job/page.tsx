@@ -1,79 +1,90 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { ArrowLeft, ArrowRight, CheckCheck, MapPin } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useToast } from "@/hooks/use-toast"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CheckCheck, MapPin, Calendar, PoundSterling } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
 
 const formSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(30, "Description must be at least 30 characters"),
-  budget: z.string().refine(
-    (val) => !isNaN(Number(val)) && Number(val) > 0,
-    { message: "Budget must be a positive number" }
-  ),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  postcode: z.string().min(1, "Postcode is required"),
-  timeline: z.enum(["asap", "within_month", "within_3_months", "flexible"]),
-  notes: z.string().max(500, "Notes must be at most 500 characters"),
-  termsAccepted: z.boolean().refine((val) => val === true, {
-    message: "You must accept the terms and conditions",
-  }),
+  title: z.string().min(10, "Title must be at least 10 characters"),
+  description: z.string().min(50, "Description must be at least 50 characters"),
+  budget: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Budget must be a positive number"),
+  serviceId: z.string().min(1, "Please select a service category"),
+  address: z.string().min(5, "Please enter a valid address"),
+  city: z.string().min(2, "Please enter a valid city"),
+  postcode: z.string().min(5, "Please enter a valid postcode"),
+  urgency: z.enum(["low", "medium", "high"]),
+  timeline: z.enum(["asap", "week", "month", "flexible"]),
+  notes: z.string().optional(),
+  termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms and conditions"),
 })
 
 type JobFormValues = z.infer<typeof formSchema>
 
 export default function PostJobPage() {
   const router = useRouter()
-  const { toast } = useToast()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+  const [services, setServices] = useState<Service[]>([])
+  const [servicesLoading, setServicesLoading] = useState(true)
+
   const form = useForm<JobFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
       budget: "",
+      serviceId: "",
       address: "",
       city: "",
       postcode: "",
-      timeline: "asap",
+      urgency: "medium",
+      timeline: "flexible",
       notes: "",
       termsAccepted: false,
     },
   })
 
-  const services = [
-    { id: "general-construction", label: "General Construction" },
-    { id: "kitchen-remodeling", label: "Kitchen Remodeling" },
-    { id: "bathroom-remodeling", label: "Bathroom Remodeling" },
-    { id: "home-extension", label: "Home Extension" },
-    { id: "roofing", label: "Roofing" },
-    { id: "flooring", label: "Flooring" },
-    { id: "painting", label: "Painting" },
-    { id: "electrical", label: "Electrical" },
-    { id: "plumbing", label: "Plumbing" },
-    { id: "landscaping", label: "Landscaping" },
-  ]
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+  const fetchServices = async () => {
+    try {
+      setServicesLoading(true)
+      const response = await servicesApi.getAll({ isActive: true })
+      setServices(response.data.services || [])
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch services')
+      // Fallback to default services if API fails
+      setServices([
+        { id: 'fallback-1', name: 'General Construction', description: '', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-2', name: 'Kitchen Remodeling', description: '', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-3', name: 'Bathroom Remodeling', description: '', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-4', name: 'Electrical', description: '', category: 'Trade', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-5', name: 'Plumbing', description: '', category: 'Trade', isActive: true, createdAt: '', updatedAt: '' },
+      ])
+    } finally {
+      setServicesLoading(false)
+    }
+  }
 
   const nextStep = async () => {
     if (step === 1) {
-      const isValid = await form.trigger(["title", "description", "budget"])
+      const isValid = await form.trigger(["title", "description", "budget", "serviceId"])
       if (isValid) setStep(2)
     } else if (step === 2) {
       const isValid = await form.trigger(["address", "city", "postcode"])
@@ -89,22 +100,31 @@ export default function PostJobPage() {
     setIsSubmitting(true)
     
     try {
-      // In a real app, you would submit to your API
-      console.log("Form submitted:", data)
+      const jobData = {
+        title: data.title,
+        description: data.description,
+        budget: parseFloat(data.budget),
+        serviceId: data.serviceId,
+        location: `${data.address}, ${data.city}`,
+        postcode: data.postcode,
+        urgency: data.urgency,
+        timeline: data.timeline,
+        isUrgent: data.urgency === 'high',
+        requiresQuote: true,
+        notes: data.notes,
+      }
+
+      const createdJob = await jobsApi.create(jobData)
       
       toast({
         title: "Success!",
         description: "Your job has been posted successfully.",
       })
       
-      // Redirect to dashboard
-      router.push("/dashboard/client")
+      // Redirect to job details or dashboard
+      router.push(`/dashboard/client/jobs/${createdJob.id}`)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was a problem posting your job.",
-        variant: "destructive",
-      })
+      handleApiError(error, "Failed to post job")
     } finally {
       setIsSubmitting(false)
     }
@@ -183,6 +203,31 @@ export default function PostJobPage() {
                   <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceId">
+                  Service Category <span className="text-destructive">*</span>
+                </Label>
+                {servicesLoading ? (
+                  <div className="h-10 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  <Select onValueChange={(value) => form.setValue("serviceId", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a service category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {form.formState.errors.serviceId && (
+                  <p className="text-sm text-destructive">{form.formState.errors.serviceId.message}</p>
+                )}
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="budget">
@@ -258,57 +303,108 @@ export default function PostJobPage() {
           {/* Step 3: Preferences */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <Label>Project Timeline</Label>
-                <Select
-                  value={form.getValues("timeline")}
-                  onValueChange={(value) => form.setValue("timeline", value as "asap" | "within_month" | "within_3_months" | "flexible")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your preferred timeline" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asap">As soon as possible</SelectItem>
-                    <SelectItem value="within_month">Within a month</SelectItem>
-                    <SelectItem value="within_3_months">Within 3 months</SelectItem>
-                    <SelectItem value="flexible">Flexible</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center space-x-2 text-muted-foreground mb-4">
+                <Calendar className="h-5 w-5" />
+                <span>Project Preferences</span>
               </div>
               
-              <Separator />
+              <div className="space-y-2">
+                <Label>Urgency</Label>
+                <RadioGroup 
+                  defaultValue="medium" 
+                  onValueChange={(value) => form.setValue("urgency", value as "low" | "medium" | "high")}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="low" id="low" />
+                    <Label htmlFor="low">Low - No rush</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="medium" id="medium" />
+                    <Label htmlFor="medium">Medium - Within a month</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="high" id="high" />
+                    <Label htmlFor="high">High - ASAP</Label>
+                  </div>
+                </RadioGroup>
+              </div>
               
               <div className="space-y-2">
-                <Label>Additional Notes</Label>
-                <Textarea
-                  placeholder="Any additional information about your project..."
-                  value={form.getValues("notes")}
-                  onChange={(e) => form.setValue("notes", e.target.value)}
-                  className="min-h-[100px]"
+                <Label>Timeline Preference</Label>
+                <RadioGroup 
+                  defaultValue="flexible" 
+                  onValueChange={(value) => form.setValue("timeline", value as "asap" | "week" | "month" | "flexible")}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="asap" id="asap" />
+                    <Label htmlFor="asap">Start immediately</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="week" id="week" />
+                    <Label htmlFor="week">Within a week</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="month" id="month" />
+                    <Label htmlFor="month">Within a month</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="flexible" id="flexible" />
+                    <Label htmlFor="flexible">I'm flexible</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                <Textarea 
+                  id="notes" 
+                  rows={4}
+                  placeholder="Any additional information, requirements, or questions for contractors..."
+                  {...form.register("notes")}
                 />
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="terms" 
+                  onCheckedChange={(checked) => form.setValue("termsAccepted", checked as boolean)}
+                />
+                <Label htmlFor="terms" className="text-sm">
+                  I accept the{" "}
+                  <a href="/terms" className="text-primary hover:underline">
+                    terms and conditions
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy" className="text-primary hover:underline">
+                    privacy policy
+                  </a>
+                </Label>
+              </div>
+              {form.formState.errors.termsAccepted && (
+                <p className="text-sm text-destructive">{form.formState.errors.termsAccepted.message}</p>
+              )}
             </div>
           )}
           
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
-            {step > 1 ? (
-              <Button type="button" variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-            ) : (
-              <div></div>
-            )}
+          <div className="flex justify-between pt-6 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={prevStep} 
+              disabled={step === 1}
+            >
+              Previous
+            </Button>
             
             {step < 3 ? (
               <Button type="button" onClick={nextStep}>
                 Next
-                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Submitting..." : "Post Job"}
+                {isSubmitting ? "Posting..." : "Post Job"}
+                <PoundSterling className="ml-2 h-4 w-4" />
               </Button>
             )}
           </div>

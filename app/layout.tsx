@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/components/providers/auth-provider';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { SplashProvider } from '@/components/providers/splash-provider';
-import { NavigationMenu } from '@/components/layout/navigation-menu';
+import { ConditionalNavigation } from '@/components/layout/conditional-navigation';
 import { SiteFooter } from '@/components/layout/site-footer';
 import dynamic from 'next/dynamic';
 
@@ -34,7 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="light">
             <SplashProvider>
-              <NavigationMenu />
+              <ConditionalNavigation />
               <main className="flex-1">
                 {children}
               </main>

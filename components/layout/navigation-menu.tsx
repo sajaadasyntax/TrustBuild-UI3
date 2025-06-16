@@ -4,23 +4,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { User, Menu, X, Home, PanelRight, Search, Briefcase, Building, LogIn, Star } from "lucide-react"
+import { User, Menu, X, Home, Search, Building, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 
 export function NavigationMenu() {
   const pathname = usePathname()
-  const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -84,58 +74,15 @@ export function NavigationMenu() {
         <div className="hidden md:flex items-center space-x-2">
           <ModeToggle />
           
-          {session ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}>
-                    <PanelRight className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor/reviews" : "/dashboard/client/reviews"}>
-                    <Star className="mr-2 h-4 w-4" />
-                    Reviews
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                {session?.user?.role === "ADMIN" && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin">
-                      <Building className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/api/auth/signout">Sign out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" asChild>
-                <Link href="/login">Log in</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/register">Sign up</Link>
-              </Button>
-            </div>
-          )}
+          {/* Auth buttons for non-authenticated users */}
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" asChild>
+              <Link href="/login">Log in</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/register">Sign up</Link>
+            </Button>
+          </div>
         </div>
         
         {/* Mobile Menu Button */}
@@ -171,79 +118,32 @@ export function NavigationMenu() {
                 >
                   {item.href === "/" && <Home className="mr-2 h-4 w-4" />}
                   {item.href === "/contractors" && <Search className="mr-2 h-4 w-4" />}
-                  {item.href === "/post-job" && <Briefcase className="mr-2 h-4 w-4" />}
                   {item.href === "/how-it-works" && <Building className="mr-2 h-4 w-4" />}
                   {item.label}
                 </Link>
               ))}
             </nav>
             
-            {session ? (
-              <div className="border-t pt-4">
+            {/* Mobile auth buttons */}
+            <div className="border-t pt-4 flex flex-col space-y-2">
+              <Button variant="outline" asChild className="w-full">
                 <Link 
-                  href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client"}
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <PanelRight className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Link>
-                <Link 
-                  href={session?.user?.role === "CONTRACTOR" ? "/dashboard/contractor/reviews" : "/dashboard/client/reviews"}
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Star className="mr-2 h-4 w-4" />
-                  Reviews
-                </Link>
-                <Link 
-                  href="/profile"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-                {session?.user?.role === "ADMIN" && (
-                  <Link 
-                    href="/admin"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Building className="mr-2 h-4 w-4" />
-                    Admin Panel
-                  </Link>
-                )}
-                <Link 
-                  href="/api/auth/signout"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md hover:bg-muted text-destructive"
+                  href="/login"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
-                  Sign out
+                  Log in
                 </Link>
-              </div>
-            ) : (
-              <div className="border-t pt-4 flex flex-col space-y-2">
-                <Button variant="outline" asChild className="w-full">
-                  <Link 
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Log in
-                  </Link>
-                </Button>
-                <Button asChild className="w-full">
-                  <Link 
-                    href="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign up
-                  </Link>
-                </Button>
-              </div>
-            )}
+              </Button>
+              <Button asChild className="w-full">
+                <Link 
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       )}

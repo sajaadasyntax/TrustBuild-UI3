@@ -1,45 +1,50 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { contractorsApi, handleApiError, Contractor } from "@/lib/api"
+import { DashboardRedirect } from "@/components/auth-redirect"
 
 export default function Home() {
-  // Mock data - in a real app would come from CMS or DB
-  const featuredContractors = [
-    {
-      id: 1,
-      name: "Premier Construction Co.",
-      image: "https://images.pexels.com/photos/585419/pexels-photo-585419.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-      rating: 4.9,
-      reviews: 48,
-      tier: "PREMIUM",
-      specialty: "Kitchen Remodeling",
-    },
-    {
-      id: 2,
-      name: "Smith & Sons Builders",
-      image: "https://images.pexels.com/photos/2760243/pexels-photo-2760243.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-      rating: 4.8,
-      reviews: 36,
-      tier: "VERIFIED",
-      specialty: "Home Extensions",
-    },
-    {
-      id: 3,
-      name: "Modern Interiors Ltd",
-      image: "https://images.pexels.com/photos/8961031/pexels-photo-8961031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-      rating: 4.7,
-      reviews: 27,
-      tier: "VERIFIED",
-      specialty: "Complete Renovations",
-    },
-  ]
+  const [featuredContractors, setFeaturedContractors] = useState<Contractor[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchFeaturedContractors()
+  }, [])
+
+  const fetchFeaturedContractors = async () => {
+    try {
+      setLoading(true)
+      const response = await contractorsApi.getAll({
+        featured: true,
+        limit: 3,
+        page: 1
+      })
+      setFeaturedContractors(response.data.contractors || [])
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch featured contractors')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getTierBadgeInfo = (tier: string) => {
+    switch (tier?.toUpperCase()) {
+      case 'PREMIUM':
+        return { icon: Award, text: 'Premium', className: 'bg-primary text-white' }
+      case 'VERIFIED':
+        return { icon: CheckCircle, text: 'Verified', className: 'bg-accent text-accent-foreground' }
+      default:
+        return null
+    }
+  }
 
   return (
-    <>
+    <DashboardRedirect>
       {/* Hero Section */}
       <section className="hero-section pt-32 pb-16 md:pt-40 md:pb-24 text-white">
         <div className="container mx-auto px-4 md:px-6">
@@ -79,7 +84,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl mb-2">1. Post Your Project</h3>
               <p className="text-muted-foreground">
-                Describe your project, budget, and timeline, and we'll match you with the right professionals.
+                Describe your project, budget, and timeline, and we&apos;ll match you with the right professionals.
               </p>
             </div>
             
@@ -125,63 +130,86 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredContractors.map((contractor) => (
-              <div 
-                key={contractor.id} 
-                className={`bg-card rounded-lg overflow-hidden shadow contractor-card ${
-                  contractor.tier === "PREMIUM" 
-                    ? "tier-premium" 
-                    : contractor.tier === "VERIFIED" 
-                      ? "tier-verified" 
-                      : "tier-standard"
-                }`}
-              >
-                <div className="relative h-48">
-                  <Image
-                    src={contractor.image}
-                    alt={contractor.name}
-                    fill
-                    className="object-cover"
-                  />
-                  {contractor.tier === "PREMIUM" && (
-                    <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full flex items-center">
-                      <Award className="h-3 w-3 mr-1" />
-                      Premium
-                    </div>
-                  )}
-                  {contractor.tier === "VERIFIED" && (
-                    <div className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs px-2 py-1 rounded-full flex items-center">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
-                    </div>
-                  )}
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold mb-1">{contractor.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{contractor.specialty}</p>
-                  
-                  <div className="flex items-center mb-4">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-accent stroke-accent" />
-                      <span className="ml-1 text-sm font-medium">{contractor.rating}</span>
-                    </div>
-                    <span className="mx-2 text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground">{contractor.reviews} reviews</span>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-lg overflow-hidden shadow animate-pulse">
+                  <div className="h-48 bg-gray-300"></div>
+                  <div className="p-5">
+                    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded w-1/2 mb-3"></div>
+                    <div className="h-3 bg-gray-300 rounded w-2/3 mb-4"></div>
+                    <div className="h-8 bg-gray-300 rounded"></div>
                   </div>
-                  
-                  <Button asChild className="w-full">
-                    <Link href={`/contractors/${contractor.id}`}>View Profile</Link>
-                  </Button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredContractors.map((contractor) => {
+                const badgeInfo = getTierBadgeInfo(contractor.tier)
+                const defaultImage = "https://images.pexels.com/photos/585419/pexels-photo-585419.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+                
+                return (
+                  <div 
+                    key={contractor.id} 
+                    className={`bg-card rounded-lg overflow-hidden shadow contractor-card ${
+                      contractor.tier?.toLowerCase() === "premium" 
+                        ? "tier-premium" 
+                        : contractor.tier?.toLowerCase() === "verified" 
+                          ? "tier-verified" 
+                          : "tier-standard"
+                    }`}
+                  >
+                    <div className="relative h-48">
+                      <Image
+                        src={contractor.portfolio?.[0]?.imageUrl || defaultImage}
+                        alt={contractor.businessName || contractor.user?.name || 'Contractor'}
+                        fill
+                        className="object-cover"
+                      />
+                      {badgeInfo && (
+                        <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full flex items-center ${badgeInfo.className}`}>
+                          <badgeInfo.icon className="h-3 w-3 mr-1" />
+                          {badgeInfo.text}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <h3 className="font-semibold mb-1">
+                        {contractor.businessName || contractor.user?.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {contractor.servicesProvided || 'Professional Contractor'}
+                      </p>
+                      
+                      <div className="flex items-center mb-4">
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 fill-accent stroke-accent" />
+                          <span className="ml-1 text-sm font-medium">
+                            {contractor.averageRating?.toFixed(1) || '5.0'}
+                          </span>
+                        </div>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground">
+                          {contractor.reviewCount || 0} reviews
+                        </span>
+                      </div>
+                      
+                      <Button asChild className="w-full">
+                        <Link href={`/contractors/${contractor.id}`}>View Profile</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
           
           <div className="text-center mt-10">
             <Button asChild variant="outline">
               <Link href="/contractors">
-                Join as a Contractor
+                View All Contractors
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -196,7 +224,7 @@ export default function Home() {
             <div>
               <h2 className="mb-4">Why Choose TrustBuild?</h2>
               <p className="text-lg text-muted-foreground mb-6">
-                We've built a platform that ensures quality, trust, and reliability for all your construction needs.
+                We&apos;ve built a platform that ensures quality, trust, and reliability for all your construction needs.
               </p>
               
               <ul className="space-y-4">
@@ -267,7 +295,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="italic text-muted-foreground mb-4">
-                "TrustBuild made finding a reliable contractor so easy. I was able to compare multiple quotes and choose the best fit for my kitchen renovation."
+                &quot;TrustBuild made finding a reliable contractor so easy. I was able to compare multiple quotes and choose the best fit for my kitchen renovation.&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -289,7 +317,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="italic text-muted-foreground mb-4">
-                "As a contractor, TrustBuild has helped grow my business significantly. The platform connects me with serious clients looking for quality work."
+                &quot;As a contractor, TrustBuild has helped grow my business significantly. The platform connects me with serious clients looking for quality work.&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -312,7 +340,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="italic text-muted-foreground mb-4">
-                "I was skeptical at first, but TrustBuild delivered beyond my expectations. The bathroom remodel was completed on time and within budget."
+                &quot;I was skeptical at first, but TrustBuild delivered beyond my expectations. The bathroom remodel was completed on time and within budget.&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -371,6 +399,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </>
+    </DashboardRedirect>
   )
 }

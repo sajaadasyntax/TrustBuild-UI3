@@ -1,0 +1,209 @@
+"use client"
+
+import Link from "next/link"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
+import { 
+  User, 
+  Menu, 
+  X, 
+  Home, 
+  PanelRight, 
+  Star, 
+  LogOut, 
+  Briefcase, 
+  Settings,
+  Bell,
+  Calendar,
+  FileText,
+  Users,
+  BarChart3
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { ModeToggle } from "@/components/ui/mode-toggle"
+import { useAuth } from "@/contexts/AuthContext"
+
+export function DashboardNavigation() {
+  const pathname = usePathname()
+  const { user, logout } = useAuth()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Navigation items based on user role
+  const getNavItems = () => {
+    const baseItems = [
+      { label: "Dashboard", href: user?.role === "CONTRACTOR" ? "/dashboard/contractor" : "/dashboard/client", icon: PanelRight },
+    ]
+
+    if (user?.role === "CONTRACTOR") {
+      return [
+        ...baseItems,
+        { label: "Jobs", href: "/jobs", icon: Briefcase },
+        { label: "Applications", href: "/dashboard/contractor/applications", icon: FileText },
+        { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
+        { label: "Calendar", href: "/dashboard/contractor/calendar", icon: Calendar },
+      ]
+    } else if (user?.role === "CUSTOMER") {
+      return [
+        ...baseItems,
+        { label: "Post Job", href: "/post-job", icon: Briefcase },
+        { label: "My Jobs", href: "/dashboard/client/current-jobs", icon: FileText },
+        { label: "Contractors", href: "/contractors", icon: Users },
+        { label: "Reviews", href: "/dashboard/client/reviews", icon: Star },
+      ]
+    } else if (user?.role === "ADMIN") {
+      return [
+        { label: "Admin Dashboard", href: "/admin", icon: PanelRight },
+        { label: "Users", href: "/admin/users", icon: Users },
+        { label: "Contractors", href: "/admin/contractors", icon: Users },
+        { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+        { label: "Settings", href: "/admin/settings", icon: Settings },
+      ]
+    }
+
+    return baseItems
+  }
+
+  const navItems = getNavItems()
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link href={user?.role === "CONTRACTOR" ? "/dashboard/contractor" : user?.role === "ADMIN" ? "/admin" : "/dashboard/client"} className="mr-6 flex items-center space-x-2">
+            <Image 
+              src="/images/Logo.svg" 
+              alt="TrustBuild Logo" 
+              width={24} 
+              height={24} 
+              className="h-6 w-6"
+            />
+            <span className="hidden font-bold sm:inline-block">TrustBuild</span>
+          </Link>
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === item.href ? "text-foreground" : "text-foreground/60"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        
+        {/* Mobile Navigation */}
+        <Button
+          variant="ghost"
+          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          <Menu className="h-6 w-6" />
+          <span className="sr-only">Toggle Menu</span>
+        </Button>
+        
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <Link href={user?.role === "CONTRACTOR" ? "/dashboard/contractor" : user?.role === "ADMIN" ? "/admin" : "/dashboard/client"} className="flex items-center space-x-2 md:hidden">
+              <Image 
+                src="/images/Logo.svg" 
+                alt="TrustBuild Logo" 
+                width={24} 
+                height={24} 
+                className="h-6 w-6"
+              />
+              <span className="font-bold">TrustBuild</span>
+            </Link>
+          </div>
+          
+          <nav className="flex items-center space-x-2">
+            {/* Notifications */}
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Bell className="h-4 w-4" />
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+                3
+              </Badge>
+            </Button>
+            
+            <ModeToggle />
+            
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+        </div>
+      </div>
+      
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 top-14 z-50 grid h-[calc(100vh-3.5rem)] w-full grid-flow-row auto-rows-max overflow-auto p-6 pb-32 shadow-md animate-in slide-in-from-bottom-80 md:hidden">
+          <div className="relative z-20 grid gap-6 rounded-md bg-popover p-4 text-popover-foreground shadow-md">
+            <nav className="grid grid-flow-row auto-rows-max text-sm">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline",
+                    pathname === item.href ? "text-foreground" : "text-foreground/60"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+    </header>
+  )
+} 

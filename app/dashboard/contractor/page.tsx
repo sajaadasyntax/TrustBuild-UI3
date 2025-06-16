@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from "next/link"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
@@ -10,68 +11,116 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { 
   AlertCircle, ArrowRight, Bell, BriefcaseBusiness, Clock, CreditCard, FileCheck, 
-  FileClock, FileText, Star, TrendingUp, Wallet 
+  FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
 } from "lucide-react"
+import { contractorsApi, jobsApi, reviewsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
 
 export default function ContractorDashboard() {
-  // Mock data - in a real app would come from API/database
-  const applications = [
-    {
-      id: "app1",
-      jobId: "job1",
-      jobTitle: "Kitchen Renovation in Kensington",
-      status: "PENDING",
-      appliedAt: "2 days ago",
-      budget: "£5,000",
-      customer: "Jane Smith",
-    },
-    {
-      id: "app2",
-      jobId: "job3",
-      jobTitle: "Bathroom Remodeling in Chelsea",
-      status: "ACCEPTED",
-      appliedAt: "1 week ago",
-      budget: "£3,500",
-      customer: "John Doe",
-      startDate: "Next Monday",
-    },
-  ]
+  const [contractor, setContractor] = useState<Contractor | null>(null)
+  const [applications, setApplications] = useState<JobApplication[]>([])
+  const [activeJobs, setActiveJobs] = useState<Job[]>([])
+  const [completedJobs, setCompletedJobs] = useState<Job[]>([])
+  const [recentReviews, setRecentReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalApplications: 0,
+    activeJobs: 0,
+    completedJobs: 0,
+    totalEarnings: 0,
+    averageRating: 0,
+    totalReviews: 0
+  })
 
-  const activeJobs = [
-    {
-      id: "job2",
-      title: "Living Room Redesign",
-      customer: "Mark Wilson",
-      budget: "£2,500",
-      startedAt: "2 weeks ago",
-      progress: 65,
-    },
-  ]
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
-  const completedJobs = [
-    {
-      id: "job4",
-      title: "Garden Landscaping",
-      customer: "Sarah Johnson",
-      budget: "£1,800",
-      completedAt: "1 month ago",
-      rating: 5,
-    },
-    {
-      id: "job5",
-      title: "Roofing Repair",
-      customer: "Tom Parker",
-      budget: "£950",
-      completedAt: "2 months ago",
-      rating: 4.5,
-    },
-  ]
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch contractor profile
+      const contractorData = await contractorsApi.getMyProfile()
+      setContractor(contractorData)
 
-  const subscription = {
-    status: "ACTIVE",
-    nextBillingDate: "April 15, 2025",
-    amount: "£30",
-    freeApplicationsLeft: 2,
+      // Fetch job applications
+      const applicationsData = await jobsApi.getMyApplications()
+      setApplications(applicationsData)
+
+      // Fetch jobs (active and completed)
+      const postedJobs = await jobsApi.getMyPostedJobs()
+      const activeJobsData = postedJobs.filter(job => job.status === 'IN_PROGRESS')
+      const completedJobsData = postedJobs.filter(job => job.status === 'COMPLETED')
+      
+      setActiveJobs(activeJobsData)
+      setCompletedJobs(completedJobsData)
+
+      // Fetch recent reviews
+      const reviewsData = await reviewsApi.getMyReceived()
+      setRecentReviews(reviewsData.slice(0, 5)) // Get latest 5 reviews
+
+      // Calculate stats
+      setStats({
+        totalApplications: applicationsData.length,
+        activeJobs: activeJobsData.length,
+        completedJobs: completedJobsData.length,
+        totalEarnings: completedJobsData.reduce((sum, job) => sum + job.budget, 0),
+        averageRating: contractorData.averageRating || 0,
+        totalReviews: contractorData.reviewCount || 0
+      })
+
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'ACCEPTED':
+        return 'bg-green-100 text-green-800'
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800'
+      case 'IN_PROGRESS':
+        return 'bg-blue-100 text-blue-800'
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-300 rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-gray-300 rounded w-full"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -109,7 +158,7 @@ export default function ContractorDashboard() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Subscription Active</AlertTitle>
             <AlertDescription>
-              Your monthly subscription is active. Next billing date: {subscription.nextBillingDate}
+              Your monthly subscription is active. Next billing date: {contractor?.subscription?.nextBillingDate}
             </AlertDescription>
           </Alert>
           
@@ -122,7 +171,7 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">£4,250</div>
+                <div className="text-3xl font-bold text-primary">{formatCurrency(stats.totalEarnings)}</div>
                 <p className="text-sm text-muted-foreground">Last 30 days</p>
                 <div className="flex items-center mt-2 text-xs text-success">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -139,7 +188,7 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{subscription.freeApplicationsLeft}</div>
+                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft}</div>
                 <p className="text-sm text-muted-foreground">Remaining this week</p>
                 <div className="flex items-center mt-2 text-xs">
                   <Bell className="h-3 w-3 mr-1" />
@@ -172,7 +221,7 @@ export default function ContractorDashboard() {
             <CardHeader>
               <CardTitle>Contractor Profile</CardTitle>
               <CardDescription>
-                Premier Construction Co.
+                {contractor?.businessName}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -214,146 +263,351 @@ export default function ContractorDashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="applications" className="space-y-6">
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="applications">Applications ({applications.length})</TabsTrigger>
-          <TabsTrigger value="active">Active Jobs ({activeJobs.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedJobs.length})</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="applications" className="space-y-4">
-          {applications.length === 0 ? (
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Applications */}
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileClock className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">You haven't applied to any jobs yet</p>
-                <Button asChild>
-                  <Link href="/jobs">Find Jobs</Link>
-                </Button>
+              <CardHeader>
+                <CardTitle>Recent Applications</CardTitle>
+                <CardDescription>
+                  Your latest job applications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {applications.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No applications yet</p>
+                    <Button asChild className="mt-4">
+                      <Link href="/jobs">Browse Jobs</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {applications.slice(0, 3).map((application) => (
+                      <div key={application.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{application.job.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatCurrency(application.proposedRate)}
+                          </p>
+                        </div>
+                        <Badge className={getStatusColor(application.status)}>
+                          {application.status.toLowerCase()}
+                        </Badge>
+                      </div>
+                    ))}
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/dashboard/contractor/applications">View All</Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ) : (
-            applications.map((application) => (
-              <Card key={application.id} className="dashboard-card">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle>{application.jobTitle}</CardTitle>
-                    <Badge variant={application.status === "ACCEPTED" ? "default" : "secondary"}>
-                      {application.status === "ACCEPTED" ? "Accepted" : "Pending"}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    Budget: {application.budget} • Customer: {application.customer}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>Applied {application.appliedAt}</span>
-                    {application.status === "ACCEPTED" && (
-                      <>
-                        <span className="mx-2">•</span>
-                        <span>Start date: {application.startDate}</span>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="outline" asChild className="w-full">
-                    <Link href={`/jobs/${application.jobId}`}>
-                      {application.status === "ACCEPTED" ? "View Job Details" : "View Application"}
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-        
-        <TabsContent value="active" className="space-y-4">
-          {activeJobs.length === 0 ? (
+
+            {/* Active Jobs */}
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileClock className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">You don't have any active jobs</p>
+              <CardHeader>
+                <CardTitle>Active Jobs</CardTitle>
+                <CardDescription>
+                  Jobs you're currently working on
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {activeJobs.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No active jobs</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {activeJobs.slice(0, 3).map((job) => (
+                      <div key={job.id} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{job.title}</h4>
+                          <Badge className={getStatusColor(job.status)}>
+                            {job.status.toLowerCase().replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {job.location} • {formatCurrency(job.budget)}
+                        </p>
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/dashboard/contractor/jobs/${job.id}`}>
+                            View Details
+                          </Link>
+                        </Button>
+                      </div>
+                    ))}
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/dashboard/contractor/current-jobs">View All</Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ) : (
-            activeJobs.map((job) => (
-              <Card key={job.id} className="dashboard-card">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle>{job.title}</CardTitle>
-                    <Badge variant="outline">In Progress</Badge>
-                  </div>
-                  <CardDescription>
-                    Budget: {job.budget} • Customer: {job.customer}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground mb-2">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>Started {job.startedAt}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Progress</span>
-                      <span>{job.progress}%</span>
+          </div>
+
+          {/* Recent Reviews */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Reviews</CardTitle>
+              <CardDescription>
+                Latest feedback from your clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentReviews.length === 0 ? (
+                <div className="text-center py-6">
+                  <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No reviews yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentReviews.map((review) => (
+                    <div key={review.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < review.rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium">
+                            {review.customer.user.name}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground">
+                          "{review.comment}"
+                        </p>
+                      )}
                     </div>
-                    <Progress value={job.progress} className="h-2" />
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="outline" asChild className="w-full">
-                    <Link href={`/jobs/${job.id}`}>
-                      Update Progress
-                    </Link>
+                  ))}
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/dashboard/contractor/reviews">View All Reviews</Link>
                   </Button>
-                </CardFooter>
-              </Card>
-            ))
-          )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
-        
-        <TabsContent value="completed" className="space-y-4">
-          {completedJobs.length === 0 ? (
+
+        <TabsContent value="applications">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Applications</CardTitle>
+              <CardDescription>
+                Track the status of all your job applications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {applications.length === 0 ? (
+                <div className="text-center py-12">
+                  <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No applications yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start applying to jobs to grow your business
+                  </p>
+                  <Button asChild>
+                    <Link href="/jobs">Browse Available Jobs</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {applications.map((application) => (
+                    <div key={application.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold">{application.job.title}</h4>
+                        <Badge className={getStatusColor(application.status)}>
+                          {application.status.toLowerCase()}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {application.job.location}
+                        </div>
+                        <div className="flex items-center">
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          Proposed: {formatCurrency(application.proposedRate)}
+                        </div>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          Applied: {new Date(application.appliedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+
+                      {application.coverLetter && (
+                        <p className="text-sm mb-3 text-muted-foreground">
+                          "{application.coverLetter.substring(0, 150)}..."
+                        </p>
+                      )}
+
+                      <div className="flex space-x-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/jobs/${application.job.id}`}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Job
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="jobs">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Active Jobs */}
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileCheck className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">You don't have any completed jobs yet</p>
+              <CardHeader>
+                <CardTitle>Active Jobs</CardTitle>
+                <CardDescription>
+                  Jobs currently in progress
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {activeJobs.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Clock className="mx-auto h-8 w-8 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No active jobs</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeJobs.map((job) => (
+                      <div key={job.id} className="p-3 border rounded-lg">
+                        <h4 className="font-medium mb-1">{job.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {job.location} • {formatCurrency(job.budget)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ) : (
-            completedJobs.map((job) => (
-              <Card key={job.id} className="dashboard-card">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle>{job.title}</CardTitle>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-accent stroke-accent mr-1" />
-                      <span>{job.rating}</span>
+
+            {/* Completed Jobs */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Jobs</CardTitle>
+                <CardDescription>
+                  Successfully finished projects
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completedJobs.length === 0 ? (
+                  <div className="text-center py-6">
+                    <CheckCircle className="mx-auto h-8 w-8 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No completed jobs yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {completedJobs.slice(0, 5).map((job) => (
+                      <div key={job.id} className="p-3 border rounded-lg">
+                        <h4 className="font-medium mb-1">{job.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {job.location} • {formatCurrency(job.budget)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Reviews</CardTitle>
+              <CardDescription>
+                Feedback from your clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentReviews.length === 0 ? (
+                <div className="text-center py-12">
+                  <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No reviews yet</h3>
+                  <p className="text-muted-foreground">
+                    Complete jobs to start receiving reviews from customers
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentReviews.map((review) => (
+                    <div key={review.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < review.rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="font-medium">
+                            {review.customer.user.name}
+                          </span>
+                          {review.isVerified && (
+                            <Badge variant="secondary" className="text-xs">
+                              Verified
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <h4 className="font-medium mb-2">{review.job.title}</h4>
+                      
+                      {review.comment && (
+                        <p className="text-muted-foreground">
+                          "{review.comment}"
+                        </p>
+                      )}
                     </div>
-                  </div>
-                  <CardDescription>
-                    Budget: {job.budget} • Customer: {job.customer}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>Completed {job.completedAt}</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="outline" asChild className="w-full">
-                    <Link href={`/jobs/${job.id}`}>
-                      View Details
-                    </Link>
+                  ))}
+                  
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/dashboard/contractor/reviews">View All Reviews</Link>
                   </Button>
-                </CardFooter>
-              </Card>
-            ))
-          )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       
@@ -439,19 +693,19 @@ export default function ContractorDashboard() {
                 <h3 className="font-medium">Professional Plan</h3>
                 <p className="text-sm text-muted-foreground">Monthly subscription</p>
               </div>
-              <Badge variant={subscription.status === "ACTIVE" ? "outline" : "destructive"}>
-                {subscription.status}
+              <Badge variant={contractor?.subscription?.status === "ACTIVE" ? "outline" : "destructive"}>
+                {contractor?.subscription?.status}
               </Badge>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Amount</p>
-                <p className="font-medium">{subscription.amount}/month</p>
+                <p className="font-medium">{formatCurrency(contractor?.subscription?.amount)}/month</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Next billing date</p>
-                <p className="font-medium">{subscription.nextBillingDate}</p>
+                <p className="font-medium">{contractor?.subscription?.nextBillingDate}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Payment method</p>
