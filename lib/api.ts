@@ -1206,6 +1206,14 @@ export const adminApi = {
     return response.data.stats;
   },
 
+  updateJobStatus: async (jobId: string, status: string, reason?: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job }; message: string }>(`/admin/jobs/${jobId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, reason }),
+    });
+    return response.data.job;
+  },
+
   // Content Moderation
   getFlaggedContent: async (params: {
     page?: number;
