@@ -1214,6 +1214,13 @@ export const adminApi = {
     return response.data.job;
   },
 
+  toggleJobFlag: async (jobId: string, flagged: boolean, reason?: string): Promise<void> => {
+    await apiRequest<{ status: string; message: string }>(`/admin/jobs/${jobId}/flag`, {
+      method: 'PATCH',
+      body: JSON.stringify({ flagged, reason }),
+    });
+  },
+
   // Content Moderation
   getFlaggedContent: async (params: {
     page?: number;
