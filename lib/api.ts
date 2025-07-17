@@ -257,6 +257,19 @@ export interface ContractorsPaginatedResponse {
   };
 }
 
+export interface JobsPaginatedResponse {
+  status: 'success';
+  data: {
+    jobs: Job[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+}
+
 export interface ApiResponse<T> {
   status: 'success' | 'error';
   data?: T;
@@ -1157,6 +1170,25 @@ export const adminApi = {
       body: JSON.stringify({ approved, reason }),
     });
     return response.data.contractor;
+  },
+
+  // Job Management
+  getAllJobs: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    category?: string;
+    flagged?: boolean;
+  } = {}): Promise<JobsPaginatedResponse> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    
+    return apiRequest(`/admin/jobs?${searchParams.toString()}`);
   },
 
   // Content Moderation
