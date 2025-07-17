@@ -1191,6 +1191,21 @@ export const adminApi = {
     return apiRequest(`/admin/jobs?${searchParams.toString()}`);
   },
 
+  getJobStats: async (): Promise<{
+    totalJobs: number;
+    postedJobs: number;
+    inProgressJobs: number;
+    completedJobs: number;
+    cancelledJobs: number;
+    totalValue: number;
+    completedValue: number;
+    successRate: number;
+    recentJobs: any[];
+  }> => {
+    const response = await apiRequest<{ data: { stats: any } }>('/admin/jobs/stats');
+    return response.data.stats;
+  },
+
   // Content Moderation
   getFlaggedContent: async (params: {
     page?: number;
