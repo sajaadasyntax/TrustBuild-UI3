@@ -98,6 +98,18 @@ export interface PortfolioItem {
   updatedAt: string;
 }
 
+export interface Milestone {
+  id: string;
+  jobId: string;
+  title: string;
+  description?: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  dueDate?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Job {
   id: string;
   customerId: string;
@@ -123,6 +135,7 @@ export interface Job {
   applications?: JobApplication[];
   reviews?: Review[];
   jobAccess?: JobAccess[];
+  milestones?: Milestone[];
   hasAccess?: boolean; // Computed field
   currentLeadPrice?: number; // Computed field
 }
@@ -1750,6 +1763,45 @@ export const uploadApi = {
 
     const data = await response.json();
     return data.data;
+  },
+};
+
+// Milestones API
+export const milestonesApi = {
+  getJobMilestones: async (jobId: string): Promise<Milestone[]> => {
+    const response = await apiRequest<{ data: Milestone[] }>(`/jobs/${jobId}/milestones`);
+    return response.data;
+  },
+
+  createJobMilestone: async (jobId: string, milestone: {
+    title: string;
+    description?: string;
+    dueDate?: string;
+  }): Promise<Milestone> => {
+    const response = await apiRequest<{ data: Milestone }>(`/jobs/${jobId}/milestones`, {
+      method: 'POST',
+      body: JSON.stringify(milestone),
+    });
+    return response.data;
+  },
+
+  updateJobMilestone: async (jobId: string, milestoneId: string, updates: {
+    title?: string;
+    description?: string;
+    status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+    dueDate?: string;
+  }): Promise<Milestone> => {
+    const response = await apiRequest<{ data: Milestone }>(`/jobs/${jobId}/milestones/${milestoneId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return response.data;
+  },
+
+  deleteJobMilestone: async (jobId: string, milestoneId: string): Promise<void> => {
+    await apiRequest(`/jobs/${jobId}/milestones/${milestoneId}`, {
+      method: 'DELETE',
+    });
   },
 };
 

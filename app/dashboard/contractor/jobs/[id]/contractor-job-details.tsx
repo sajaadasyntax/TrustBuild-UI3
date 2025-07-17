@@ -132,7 +132,7 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {job.milestones.map((milestone) => (
+                {(job.milestones || []).map((milestone) => (
                   <div key={milestone.id} className="flex items-start gap-4">
                     <div className="mt-1">
                       {milestone.status === "COMPLETED" ? (
