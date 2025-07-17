@@ -74,7 +74,7 @@ export default function AdminPricingPage() {
         adminApi.getAllContractors({ limit: 100 })
       ])
       
-      setServices(servicesData.data.services || [])
+      setServices(servicesData.data || [])
       setContractors(contractorsData.data.contractors || [])
     } catch (error) {
       handleApiError(error, 'Failed to fetch data')
