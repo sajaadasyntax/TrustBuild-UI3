@@ -461,7 +461,7 @@ export const contractorsApi = {
     search?: string;
     tier?: string;
     featured?: boolean;
-  } = {}): Promise<PaginatedResponse<Contractor>> => {
+  } = {}): Promise<ContractorsPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -1000,7 +1000,7 @@ export const servicesApi = {
     location?: string;
     rating?: number;
     tier?: string;
-  } = {}): Promise<PaginatedResponse<Contractor>> => {
+  } = {}): Promise<ContractorsPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -1104,7 +1104,7 @@ export const adminApi = {
   getPendingContractors: async (params: {
     page?: number;
     limit?: number;
-  } = {}): Promise<PaginatedResponse<Contractor>> => {
+  } = {}): Promise<ContractorsPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
