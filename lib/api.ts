@@ -234,8 +234,21 @@ export interface Review {
 
 export interface PaginatedResponse<T> {
   status: 'success';
+  data: T[] & {
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+}
+
+export interface ContractorsPaginatedResponse {
+  status: 'success';
   data: {
-    [key: string]: T[] | {
+    contractors: Contractor[];
+    pagination: {
       page: number;
       limit: number;
       total: number;
@@ -1077,7 +1090,7 @@ export const adminApi = {
     status?: string;
     approved?: string;
     search?: string;
-  } = {}): Promise<PaginatedResponse<Contractor>> => {
+  } = {}): Promise<ContractorsPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
