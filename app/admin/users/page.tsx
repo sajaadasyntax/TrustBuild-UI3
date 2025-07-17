@@ -67,7 +67,7 @@ export default function AdminUsersPage() {
         ...filters
       })
       
-      setUsers(response.data.users)
+      setUsers(response.data)
       setTotalUsers(response.data.pagination.total)
     } catch (error) {
       handleApiError(error, 'Failed to fetch users')
