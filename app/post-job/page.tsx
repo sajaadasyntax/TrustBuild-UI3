@@ -21,7 +21,7 @@ import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
-  budget: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Budget must be a positive number"),
+  budget: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Budget must be a positive number if provided"),
   serviceId: z.string().min(1, "Please select a service category"),
   address: z.string().min(5, "Please enter a valid address"),
   city: z.string().min(2, "Please enter a valid city"),
@@ -66,16 +66,35 @@ export default function PostJobPage() {
     try {
       setServicesLoading(true)
       const response = await servicesApi.getAll({ isActive: true })
-      setServices(response.data.services || [])
+      const fetchedServices = response.data.services || []
+      
+      if (fetchedServices.length === 0) {
+        // Use fallback services if no services in database
+        setServices([
+          { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        ])
+      } else {
+        setServices(fetchedServices)
+      }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch services')
+      console.warn('Services API failed, using fallback services')
       // Fallback to default services if API fails
       setServices([
-        { id: 'fallback-1', name: 'General Construction', description: '', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-2', name: 'Kitchen Remodeling', description: '', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-3', name: 'Bathroom Remodeling', description: '', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-4', name: 'Electrical', description: '', category: 'Trade', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-5', name: 'Plumbing', description: '', category: 'Trade', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
       ])
     } finally {
       setServicesLoading(false)
@@ -84,7 +103,7 @@ export default function PostJobPage() {
 
   const nextStep = async () => {
     if (step === 1) {
-      const isValid = await form.trigger(["title", "description", "budget", "serviceId"])
+      const isValid = await form.trigger(["title", "description", "serviceId"])
       if (isValid) setStep(2)
     } else if (step === 2) {
       const isValid = await form.trigger(["address", "city", "postcode"])
@@ -100,18 +119,21 @@ export default function PostJobPage() {
     setIsSubmitting(true)
     
     try {
+      // Find the selected service to get its name for category
+      const selectedService = services.find(service => service.id === data.serviceId)
+      
       const jobData = {
         title: data.title,
         description: data.description,
-        budget: parseFloat(data.budget),
+        budget: data.budget ? parseFloat(data.budget) : undefined,
         serviceId: data.serviceId,
+        category: selectedService?.name || 'General',
         location: `${data.address}, ${data.city}`,
         postcode: data.postcode,
-        urgency: data.urgency,
+        urgency: data.timeline, // Use timeline for urgency field in backend
+        urgent: data.urgency === 'high', // Keep for backward compatibility
         timeline: data.timeline,
-        isUrgent: data.urgency === 'high',
-        requiresQuote: true,
-        notes: data.notes,
+        requirements: data.notes,
       }
 
       const createdJob = await jobsApi.create(jobData)
@@ -211,18 +233,35 @@ export default function PostJobPage() {
                 {servicesLoading ? (
                   <div className="h-10 bg-gray-200 animate-pulse rounded"></div>
                 ) : (
-                  <Select onValueChange={(value) => form.setValue("serviceId", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a service category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                                      <Select 
+                      value={form.watch("serviceId")} 
+                      onValueChange={(value) => {
+                        form.setValue("serviceId", value)
+                        form.clearErrors("serviceId")
+                      }}
+                    >
+                      <SelectTrigger className={form.watch("serviceId") ? "border-green-500" : ""}>
+                        <SelectValue placeholder="Select a service category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.length > 0 ? (
+                          services.map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{service.name}</span>
+                                {service.description && (
+                                  <span className="text-xs text-muted-foreground">{service.description}</span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-services" disabled>
+                            No services available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                 )}
                 {form.formState.errors.serviceId && (
                   <p className="text-sm text-destructive">{form.formState.errors.serviceId.message}</p>
@@ -231,17 +270,20 @@ export default function PostJobPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="budget">
-                  Budget (£) <span className="text-destructive">*</span>
+                  Budget (£) <span className="text-muted-foreground">(Optional)</span>
                 </Label>
                 <Input 
                   id="budget" 
                   type="number"
-                  placeholder="e.g., 5000"
+                  placeholder="e.g., 5000 - Leave blank if you prefer quotes"
                   {...form.register("budget")}
                 />
                 {form.formState.errors.budget && (
                   <p className="text-sm text-destructive">{form.formState.errors.budget.message}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Leave blank if you&apos;d prefer contractors to provide quotes instead of a fixed budget.
+                </p>
               </div>
             </div>
           )}

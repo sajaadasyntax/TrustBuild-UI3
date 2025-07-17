@@ -1,7 +1,76 @@
-import { ContractorJobDetails } from "./contractor-job-details"
+"use client"
 
-// Mock data - in a real app would come from API/database
-const mockJobs = [
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { ContractorJobDetails } from "./contractor-job-details"
+import { jobsApi, handleApiError, Job } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+
+export default function Page() {
+  const params = useParams()
+  const router = useRouter()
+  const { user } = useAuth()
+  const [job, setJob] = useState<Job | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (params.id) {
+      fetchJob(params.id as string)
+    }
+  }, [params.id])
+
+  const fetchJob = async (jobId: string) => {
+    try {
+      setLoading(true)
+      const jobData = await jobsApi.getById(jobId)
+      
+      // Check if contractor is assigned to this job
+      const isAssigned = jobData.applications?.some(app => 
+        app.contractor?.userId === user?.id && app.status === 'ACCEPTED'
+      )
+      
+      if (!isAssigned) {
+        router.push('/dashboard/contractor')
+        return
+      }
+      
+      setJob(jobData)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch job details')
+      router.push('/dashboard/contractor')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container py-32">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+            <div className="h-64 bg-gray-300 rounded mb-6"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!job) {
+    return (
+      <div className="container py-32">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Job not found or not assigned</h1>
+        </div>
+      </div>
+    )
+  }
+
+  return <ContractorJobDetails job={job} onJobUpdate={fetchJob} />
+}
+
+// Legacy mock data for reference
+const legacyMockJobs = [
   {
     id: "job1",
     title: "Living Room Redesign",
@@ -90,18 +159,9 @@ const mockJobs = [
   },
 ]
 
-export function generateStaticParams() {
-  return mockJobs.map((job) => ({
-    id: job.id,
-  }))
-}
-
-export default function Page({ params }: { params: { id: string } }) {
-  const job = mockJobs.find((j) => j.id === params.id)
-
-  if (!job) {
-    return null
-  }
-
-  return <ContractorJobDetails job={job} />
-} 
+// No longer needed with dynamic API data
+// export function generateStaticParams() {
+//   return mockJobs.map((job) => ({
+//     id: job.id,
+//   }))
+// } 

@@ -6,8 +6,6 @@ import Image from "next/image"
 import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { contractorsApi, handleApiError, Contractor } from "@/lib/api"
-import { DashboardRedirect } from "@/components/auth-redirect"
-
 export default function Home() {
   const [featuredContractors, setFeaturedContractors] = useState<Contractor[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,7 +42,7 @@ export default function Home() {
   }
 
   return (
-    <DashboardRedirect>
+    <>
       {/* Hero Section */}
       <section className="hero-section pt-32 pb-16 md:pt-40 md:pb-24 text-white">
         <div className="container mx-auto px-4 md:px-6">
@@ -399,6 +397,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </DashboardRedirect>
+    </>
   )
 }

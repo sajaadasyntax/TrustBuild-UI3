@@ -6,8 +6,23 @@ import { Shield, Users, Building2, FileText, Settings, BarChart3, AlertTriangle 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { LogoutButton } from "@/components/layout/logout-button"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function SuperAdminPage() {
+  const { user, logout } = useAuth()
+  
+  // Debug function to test logout
+  const handleDebugLogout = async () => {
+    console.log("🔴 Super Admin Debug Logout - Starting...")
+    console.log("🔴 Current user:", user)
+    try {
+      await logout()
+      console.log("🔴 Logout successful")
+    } catch (error) {
+      console.error("🔴 Logout error:", error)
+    }
+  }
   const [stats] = useState({
     totalUsers: 15420,
     totalContractors: 3250,
@@ -22,13 +37,32 @@ export default function SuperAdminPage() {
   return (
     <div className="container py-32">
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Shield className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Super Admin Panel</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">Super Admin Panel</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Manage the entire TrustBuild platform with advanced administrative controls
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleDebugLogout}
+              className="bg-orange-50 text-orange-600 hover:bg-orange-100"
+            >
+              🔍 Debug Logout
+            </Button>
+            <LogoutButton 
+              variant="destructive" 
+              showConfirmDialog={true}
+            >
+              Logout
+            </LogoutButton>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Manage the entire TrustBuild platform with advanced administrative controls
-        </p>
       </div>
 
       {/* Quick Stats */}

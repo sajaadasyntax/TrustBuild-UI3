@@ -14,8 +14,11 @@ import {
   FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
 } from "lucide-react"
 import { contractorsApi, jobsApi, reviewsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
+import { LogoutButton } from '@/components/layout/logout-button'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function ContractorDashboard() {
+  const { logout } = useAuth()
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [applications, setApplications] = useState<JobApplication[]>([])
   const [activeJobs, setActiveJobs] = useState<Job[]>([])
@@ -47,10 +50,11 @@ export default function ContractorDashboard() {
       const applicationsData = await jobsApi.getMyApplications()
       setApplications(applicationsData)
 
-      // Fetch jobs (active and completed)
-      const postedJobs = await jobsApi.getMyPostedJobs()
-      const activeJobsData = postedJobs.filter(job => job.status === 'IN_PROGRESS')
-      const completedJobsData = postedJobs.filter(job => job.status === 'COMPLETED')
+      // Fetch jobs (active and completed) from accepted applications
+      const acceptedApplications = applicationsData.filter(app => app.status === 'ACCEPTED')
+      const jobsFromApplications = acceptedApplications.map(app => app.job)
+      const activeJobsData = jobsFromApplications.filter(job => job.status === 'IN_PROGRESS')
+      const completedJobsData = jobsFromApplications.filter(job => job.status === 'COMPLETED')
       
       setActiveJobs(activeJobsData)
       setCompletedJobs(completedJobsData)
@@ -64,7 +68,7 @@ export default function ContractorDashboard() {
         totalApplications: applicationsData.length,
         activeJobs: activeJobsData.length,
         completedJobs: completedJobsData.length,
-        totalEarnings: completedJobsData.reduce((sum, job) => sum + job.budget, 0),
+        totalEarnings: completedJobsData.reduce((sum, job) => sum + (job.budget || 0), 0),
         averageRating: contractorData.averageRating || 0,
         totalReviews: contractorData.reviewCount || 0
       })
@@ -149,6 +153,13 @@ export default function ContractorDashboard() {
               Find Jobs
             </Link>
           </Button>
+          <LogoutButton 
+            variant="destructive" 
+            showConfirmDialog={true}
+            className="ml-2"
+          >
+            Logout
+          </LogoutButton>
         </div>
       </div>
 
@@ -307,7 +318,7 @@ export default function ContractorDashboard() {
                     ))}
                     <Button asChild variant="outline" className="w-full">
                       <Link href="/dashboard/contractor/applications">View All</Link>
-                    </Button>
+                </Button>
                   </div>
                 )}
               </CardContent>
@@ -317,11 +328,11 @@ export default function ContractorDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Active Jobs</CardTitle>
-                <CardDescription>
+                  <CardDescription>
                   Jobs you're currently working on
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                 {activeJobs.length === 0 ? (
                   <div className="text-center py-6">
                     <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -343,8 +354,8 @@ export default function ContractorDashboard() {
                         <Button asChild size="sm" variant="outline">
                           <Link href={`/dashboard/contractor/jobs/${job.id}`}>
                             View Details
-                          </Link>
-                        </Button>
+                    </Link>
+                  </Button>
                       </div>
                     ))}
                     <Button asChild variant="outline" className="w-full">
@@ -354,17 +365,17 @@ export default function ContractorDashboard() {
                 )}
               </CardContent>
             </Card>
-          </div>
+                  </div>
 
           {/* Recent Reviews */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Reviews</CardTitle>
-              <CardDescription>
+                  <CardDescription>
                 Latest feedback from your clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
               {recentReviews.length === 0 ? (
                 <div className="text-center py-6">
                   <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -395,7 +406,7 @@ export default function ContractorDashboard() {
                         <span className="text-xs text-muted-foreground">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
-                      </div>
+                  </div>
                       {review.comment && (
                         <p className="text-sm text-muted-foreground">
                           "{review.comment}"
@@ -406,9 +417,9 @@ export default function ContractorDashboard() {
                   <Button asChild variant="outline" className="w-full">
                     <Link href="/dashboard/contractor/reviews">View All Reviews</Link>
                   </Button>
-                </div>
+                  </div>
               )}
-            </CardContent>
+                </CardContent>
           </Card>
         </TabsContent>
 
@@ -477,9 +488,9 @@ export default function ContractorDashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              </Card>
         </TabsContent>
-
+        
         <TabsContent value="jobs">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Active Jobs */}
@@ -533,7 +544,7 @@ export default function ContractorDashboard() {
                         <p className="text-sm text-muted-foreground">
                           {job.location} • {formatCurrency(job.budget)}
                         </p>
-                      </div>
+                    </div>
                     ))}
                   </div>
                 )}
@@ -546,11 +557,11 @@ export default function ContractorDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Customer Reviews</CardTitle>
-              <CardDescription>
+                  <CardDescription>
                 Feedback from your clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
               {recentReviews.length === 0 ? (
                 <div className="text-center py-12">
                   <Star className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -598,7 +609,7 @@ export default function ContractorDashboard() {
                           "{review.comment}"
                         </p>
                       )}
-                    </div>
+                  </div>
                   ))}
                   
                   <Button asChild variant="outline" className="w-full">
@@ -607,80 +618,10 @@ export default function ContractorDashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              </Card>
         </TabsContent>
       </Tabs>
-      
-      <div className="mt-12 space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Recommended Jobs</h2>
-          <Button variant="outline" asChild>
-            <Link href="/jobs">
-              View All
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle>Kitchen Extension in Camden</CardTitle>
-              <CardDescription>Posted 1 day ago</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Badge>Kitchen Remodeling</Badge>
-              <p className="text-sm text-muted-foreground">
-                Looking for a professional contractor for a kitchen extension project. Need to expand existing kitchen by 100 sq ft...
-              </p>
-              <div className="font-medium">Budget: £7,500</div>
-            </CardContent>
-            <CardFooter>
-              <Button asChild className="w-full">
-                <Link href="/jobs/recommended-1">Apply Now</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle>Master Bathroom Remodel</CardTitle>
-              <CardDescription>Posted 3 days ago</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Badge>Bathroom Remodeling</Badge>
-              <p className="text-sm text-muted-foreground">
-                Complete bathroom renovation including new fixtures, tiling, and moving plumbing. Approximately 80 sq ft...
-              </p>
-              <div className="font-medium">Budget: £4,200</div>
-            </CardContent>
-            <CardFooter>
-              <Button asChild className="w-full">
-                <Link href="/jobs/recommended-2">Apply Now</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle>Home Office Conversion</CardTitle>
-              <CardDescription>Posted 5 days ago</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Badge>General Construction</Badge>
-              <p className="text-sm text-muted-foreground">
-                Convert garage space into a home office. Includes insulation, electrical work, flooring, and built-in shelving...
-              </p>
-              <div className="font-medium">Budget: £3,800</div>
-            </CardContent>
-            <CardFooter>
-              <Button asChild className="w-full">
-                <Link href="/jobs/recommended-3">Apply Now</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+
       
       <div className="mt-12">
         <Card>

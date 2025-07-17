@@ -9,24 +9,34 @@ export function ConditionalNavigation() {
   const { user, loading } = useAuth()
   const pathname = usePathname()
 
-  // Don't render navigation while auth is loading
+  // Auth pages that should always show home navigation
+  const authRoutes = ['/login', '/register', '/forgot-password']
+  const isAuthRoute = authRoutes.includes(pathname)
+
+  // console.log("🧭 ConditionalNavigation:", { 
+  //   user: user?.role, 
+  //   loading, 
+  //   pathname, 
+  //   isAuthRoute,
+  //   shouldShowDashboard: !!(user && !isAuthRoute)
+  // })
+
+  // Show loading state while checking auth
   if (loading) {
-    return null
+    return (
+      <div className="h-14 w-full bg-background border-b">
+        <div className="container flex h-14 items-center">
+          <div className="animate-pulse h-8 w-32 bg-muted rounded"></div>
+        </div>
+      </div>
+    )
   }
 
-  // Define routes that should show the home navigation even if user is logged in
-  const publicRoutes = ['/login', '/register', '/how-it-works', '/forgot-password']
-  const isPublicRoute = publicRoutes.includes(pathname)
-
-  // Define routes that should show dashboard navigation
-  const dashboardRoutes = ['/dashboard', '/admin', '/profile', '/settings', '/post-job', '/jobs', '/contractors']
-  const isDashboardRoute = dashboardRoutes.some(route => pathname.startsWith(route))
-
-  // If user is authenticated and not on a public route, show dashboard navigation
-  if (user && !isPublicRoute) {
+  // Authenticated users see dashboard navigation (except on auth pages)
+  if (user && !isAuthRoute) {
     return <DashboardNavigation />
   }
 
-  // For unauthenticated users or public routes, show home navigation
+  // Everyone else sees home navigation
   return <NavigationMenu />
 } 

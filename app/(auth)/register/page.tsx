@@ -32,6 +32,9 @@ const customerSchema = baseSchema.extend({
   address: z.string().optional(),
   city: z.string().optional(),
   postcode: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 })
 
 const contractorSchema = baseSchema.extend({
@@ -56,7 +59,7 @@ export default function RegisterPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [role, setRole] = useState<"CUSTOMER" | "CONTRACTOR">("CUSTOMER")
-
+  
   const customerForm = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
@@ -72,7 +75,7 @@ export default function RegisterPage() {
       postcode: "",
     },
   })
-
+  
   const contractorForm = useForm<ContractorFormData>({
     resolver: zodResolver(contractorSchema),
     defaultValues: {
@@ -101,7 +104,12 @@ export default function RegisterPage() {
         name: data.name,
         email: data.email,
         password: data.password,
+        confirmPassword: data.confirmPassword,
         role: "CUSTOMER",
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        postcode: data.postcode,
       })
 
       // The authApi.register already handles token storage
@@ -138,7 +146,16 @@ export default function RegisterPage() {
         name: data.name,
         email: data.email,
         password: data.password,
+        confirmPassword: data.confirmPassword,
         role: "CONTRACTOR",
+        businessName: data.businessName,
+        phone: data.phone,
+        businessAddress: data.businessAddress,
+        city: data.city,
+        postcode: data.postcode,
+        servicesProvided: data.servicesProvided,
+        yearsExperience: data.yearsExperience,
+        description: data.description,
       })
 
       // The authApi.register already handles token storage
@@ -196,59 +213,59 @@ export default function RegisterPage() {
           {role === "CUSTOMER" && (
             <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customer-name">Full Name</Label>
-                  <Input
-                    id="customer-name"
-                    placeholder="John Doe"
+                  <div className="space-y-2">
+                    <Label htmlFor="customer-name">Full Name</Label>
+                    <Input 
+                      id="customer-name" 
+                      placeholder="John Doe"
                     disabled={isLoading}
-                    {...customerForm.register("name")}
-                  />
-                  {customerForm.formState.errors.name && (
+                      {...customerForm.register("name")}
+                    />
+                    {customerForm.formState.errors.name && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="customer-email">Email</Label>
-                  <Input
-                    id="customer-email"
-                    type="email"
-                    placeholder="john@example.com"
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="customer-email">Email</Label>
+                    <Input 
+                      id="customer-email" 
+                      type="email" 
+                      placeholder="john@example.com"
                     disabled={isLoading}
-                    {...customerForm.register("email")}
-                  />
-                  {customerForm.formState.errors.email && (
+                      {...customerForm.register("email")}
+                    />
+                    {customerForm.formState.errors.email && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.email.message}</p>
-                  )}
+                    )}
                 </div>
-              </div>
-
+                  </div>
+                  
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customer-password">Password</Label>
-                  <Input
-                    id="customer-password"
-                    type="password"
+                  <div className="space-y-2">
+                    <Label htmlFor="customer-password">Password</Label>
+                    <Input 
+                      id="customer-password" 
+                      type="password"
                     disabled={isLoading}
-                    {...customerForm.register("password")}
-                  />
-                  {customerForm.formState.errors.password && (
+                      {...customerForm.register("password")}
+                    />
+                    {customerForm.formState.errors.password && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.password.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="customer-confirm-password">Confirm Password</Label>
-                  <Input
-                    id="customer-confirm-password"
-                    type="password"
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="customer-confirm-password">Confirm Password</Label>
+                    <Input 
+                      id="customer-confirm-password" 
+                      type="password"
                     disabled={isLoading}
-                    {...customerForm.register("confirmPassword")}
-                  />
-                  {customerForm.formState.errors.confirmPassword && (
+                      {...customerForm.register("confirmPassword")}
+                    />
+                    {customerForm.formState.errors.confirmPassword && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.confirmPassword.message}</p>
-                  )}
+                    )}
                 </div>
               </div>
 
@@ -276,55 +293,55 @@ export default function RegisterPage() {
                 {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
                 Create Customer Account
               </Button>
-            </form>
+              </form>
           )}
 
           {/* Contractor Registration Form */}
           {role === "CONTRACTOR" && (
             <form onSubmit={contractorForm.handleSubmit(onContractorSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                  <div className="space-y-2">
                   <Label htmlFor="contractor-name">Your Name</Label>
-                  <Input
-                    id="contractor-name"
+                    <Input 
+                      id="contractor-name" 
                     placeholder="John Smith"
                     disabled={isLoading}
-                    {...contractorForm.register("name")}
-                  />
-                  {contractorForm.formState.errors.name && (
+                      {...contractorForm.register("name")}
+                    />
+                    {contractorForm.formState.errors.name && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
                   <Label htmlFor="contractor-business">Business Name</Label>
-                  <Input
+                    <Input 
                     id="contractor-business"
                     placeholder="Smith Construction Ltd"
                     disabled={isLoading}
-                    {...contractorForm.register("businessName")}
-                  />
-                  {contractorForm.formState.errors.businessName && (
+                      {...contractorForm.register("businessName")}
+                    />
+                    {contractorForm.formState.errors.businessName && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.businessName.message}</p>
-                  )}
+                    )}
                 </div>
-              </div>
-
+                  </div>
+                  
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contractor-email">Email</Label>
-                  <Input
-                    id="contractor-email"
-                    type="email"
+                  <div className="space-y-2">
+                    <Label htmlFor="contractor-email">Email</Label>
+                    <Input 
+                      id="contractor-email" 
+                      type="email" 
                     placeholder="john@smithconstruction.com"
                     disabled={isLoading}
-                    {...contractorForm.register("email")}
-                  />
-                  {contractorForm.formState.errors.email && (
+                      {...contractorForm.register("email")}
+                    />
+                    {contractorForm.formState.errors.email && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.email.message}</p>
-                  )}
-                </div>
-
+                    )}
+                  </div>
+                  
                 <div className="space-y-2">
                   <Label htmlFor="contractor-phone">Phone</Label>
                   <Input
@@ -341,28 +358,28 @@ export default function RegisterPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contractor-password">Password</Label>
-                  <Input
-                    id="contractor-password"
-                    type="password"
+                  <div className="space-y-2">
+                    <Label htmlFor="contractor-password">Password</Label>
+                    <Input 
+                      id="contractor-password" 
+                      type="password"
                     disabled={isLoading}
-                    {...contractorForm.register("password")}
-                  />
-                  {contractorForm.formState.errors.password && (
+                      {...contractorForm.register("password")}
+                    />
+                    {contractorForm.formState.errors.password && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.password.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contractor-confirm-password">Confirm Password</Label>
-                  <Input
-                    id="contractor-confirm-password"
-                    type="password"
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="contractor-confirm-password">Confirm Password</Label>
+                    <Input 
+                      id="contractor-confirm-password" 
+                      type="password"
                     disabled={isLoading}
-                    {...contractorForm.register("confirmPassword")}
-                  />
-                  {contractorForm.formState.errors.confirmPassword && (
+                      {...contractorForm.register("confirmPassword")}
+                    />
+                    {contractorForm.formState.errors.confirmPassword && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.confirmPassword.message}</p>
                   )}
                 </div>
@@ -392,9 +409,9 @@ export default function RegisterPage() {
                   />
                   {contractorForm.formState.errors.city && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.city.message}</p>
-                  )}
-                </div>
-
+                    )}
+                  </div>
+                  
                 <div className="space-y-2">
                   <Label htmlFor="contractor-postcode">Postcode</Label>
                   <Input
@@ -443,14 +460,14 @@ export default function RegisterPage() {
                 <Label htmlFor="contractor-terms" className="text-sm">
                   I agree to the{" "}
                   <Link href="/terms" className="text-primary hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
+              Terms of Service
+            </Link>{" "}
+            and{" "}
                   <Link href="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
+              Privacy Policy
+            </Link>
                 </Label>
-              </div>
+          </div>
               {contractorForm.formState.errors.terms && (
                 <p className="text-xs text-red-600">{contractorForm.formState.errors.terms.message}</p>
               )}
@@ -465,10 +482,10 @@ export default function RegisterPage() {
       </Card>
 
       <p className="px-8 text-center text-sm text-muted-foreground mt-4">
-        Already have an account?{" "}
+            Already have an account?{" "}
         <Link href="/login" className="hover:text-brand underline underline-offset-4">
-          Sign in
-        </Link>
+              Sign in
+            </Link>
       </p>
     </div>
   )

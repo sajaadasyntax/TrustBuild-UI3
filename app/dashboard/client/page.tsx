@@ -9,8 +9,11 @@ import { Progress } from "@/components/ui/progress"
 import { Clock, Star, Building2, MessageSquare, AlertCircle, Calendar, CheckCircle, DollarSign, MapPin, Plus, TrendingUp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { customersApi, jobsApi, reviewsApi, handleApiError, Customer, Job, Review } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { LogoutButton } from '@/components/layout/logout-button'
 
 export default function ClientDashboard() {
+  const { user, loading: authLoading } = useAuth()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [activeJobs, setActiveJobs] = useState<Job[]>([])
   const [completedJobs, setCompletedJobs] = useState<Job[]>([])
@@ -26,8 +29,14 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    // Only fetch data if user is authenticated and not loading
+    if (!authLoading && user) {
+      fetchDashboardData()
+    } else if (!authLoading && !user) {
+      // If not authenticated, stop loading
+      setLoading(false)
+    }
+  }, [user, authLoading])
 
   const fetchDashboardData = async () => {
     try {
@@ -38,13 +47,25 @@ export default function ClientDashboard() {
       
       setCustomer(dashboardData.customer || null)
       setActiveJobs(dashboardData.activeJobs || [])
-      setStats(dashboardData.stats || {})
+      setStats(dashboardData.stats || {
+        totalJobs: 0,
+        activeJobs: 0,
+        completedJobs: 0,
+        totalSpent: 0,
+        averageJobBudget: 0,
+        totalReviews: 0
+      })
       setRecentReviews(dashboardData.recentReviews || [])
 
-      // Fetch posted jobs
-      const postedJobs = await jobsApi.getMyPostedJobs()
-      const completedJobsData = postedJobs.filter(job => job.status === 'COMPLETED')
-      setCompletedJobs(completedJobsData)
+      // Fetch posted jobs - with error handling
+      try {
+        const postedJobs = await jobsApi.getMyPostedJobs()
+        const completedJobsData = postedJobs.filter(job => job.status === 'COMPLETED')
+        setCompletedJobs(completedJobsData)
+      } catch (error) {
+        console.log('Posted jobs API not available yet, using empty array')
+        setCompletedJobs([])
+      }
 
     } catch (error) {
       handleApiError(error, 'Failed to fetch dashboard data')
@@ -53,7 +74,8 @@ export default function ClientDashboard() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (!amount) return 'Quote on request'
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
@@ -64,7 +86,7 @@ export default function ClientDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PUBLISHED':
+      case 'POSTED':
         return 'bg-blue-100 text-blue-800'
       case 'IN_PROGRESS':
         return 'bg-yellow-100 text-yellow-800'
@@ -80,12 +102,12 @@ export default function ClientDashboard() {
   const getJobProgress = (job: Job) => {
     if (job.status === 'COMPLETED') return 100
     if (job.status === 'IN_PROGRESS') return 65 // Could be calculated based on milestones
-    if (job.status === 'PUBLISHED') return 0
+    if (job.status === 'POSTED') return 0
     return 0
   }
 
   if (loading) {
-    return (
+  return (
       <div className="container mx-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -107,13 +129,30 @@ export default function ClientDashboard() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Welcome back, {customer?.user?.name}!
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your projects and find trusted contractors
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Welcome back, {customer?.user?.name}!
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your projects and find trusted contractors
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button asChild>
+            <Link href="/post-job">
+              <Plus className="mr-2 h-4 w-4" />
+              Post New Job
+            </Link>
+          </Button>
+          <LogoutButton 
+            variant="destructive" 
+            showConfirmDialog={true}
+            className="ml-2"
+          >
+            Logout
+          </LogoutButton>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -387,10 +426,10 @@ export default function ClientDashboard() {
               <CardDescription>
                 Monitor progress of your ongoing projects
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activeJobs.length === 0 ? (
-                <div className="text-center py-12">
+          </CardHeader>
+          <CardContent>
+            {activeJobs.length === 0 ? (
+              <div className="text-center py-12">
                   <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No active projects</h3>
                   <p className="text-muted-foreground mb-4">
@@ -399,10 +438,10 @@ export default function ClientDashboard() {
                   <Button asChild>
                     <Link href="/post-job">Post a Job</Link>
                   </Button>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="space-y-4">
-                  {activeJobs.map((job) => (
+                {activeJobs.map((job) => (
                     <div key={job.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold">{job.title}</h4>
@@ -420,11 +459,11 @@ export default function ClientDashboard() {
                           <DollarSign className="h-4 w-4 mr-1" />
                           Budget: {formatCurrency(job.budget)}
                         </div>
-                        <div className="flex items-center">
+                            <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
                           Posted: {new Date(job.createdAt).toLocaleDateString()}
                         </div>
-                      </div>
+                            </div>
 
                       {job.status === 'IN_PROGRESS' && (
                         <div className="mb-3">
@@ -438,10 +477,10 @@ export default function ClientDashboard() {
 
                       <div className="flex space-x-2">
                         <Button asChild size="sm" variant="outline">
-                          <Link href={`/dashboard/client/jobs/${job.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
+                        <Link href={`/dashboard/client/jobs/${job.id}`}>
+                          View Details
+                        </Link>
+                      </Button>
                         {job.applications && job.applications.length > 0 && (
                           <Button asChild size="sm" variant="outline">
                             <Link href={`/dashboard/client/jobs/${job.id}/applications`}>
@@ -451,33 +490,33 @@ export default function ClientDashboard() {
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         </TabsContent>
 
         <TabsContent value="completed">
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
               <CardTitle>Completed Projects</CardTitle>
               <CardDescription>
                 Your successfully finished projects
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {completedJobs.length === 0 ? (
-                <div className="text-center py-12">
+          </CardHeader>
+          <CardContent>
+            {completedJobs.length === 0 ? (
+              <div className="text-center py-12">
                   <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No completed projects yet</h3>
                   <p className="text-muted-foreground">
                     Completed projects will appear here
                   </p>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="space-y-4">
-                  {completedJobs.map((job) => (
+                {completedJobs.map((job) => (
                     <div key={job.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold">{job.title}</h4>
@@ -503,10 +542,10 @@ export default function ClientDashboard() {
 
                       <div className="flex space-x-2">
                         <Button asChild size="sm" variant="outline">
-                          <Link href={`/dashboard/client/jobs/${job.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
+                        <Link href={`/dashboard/client/jobs/${job.id}`}>
+                          View Details
+                        </Link>
+                      </Button>
                         {job.reviews && job.reviews.length === 0 && (
                           <Button asChild size="sm">
                             <Link href={`/dashboard/client/jobs/${job.id}/review`}>
@@ -520,7 +559,7 @@ export default function ClientDashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+                  </Card>
         </TabsContent>
 
         <TabsContent value="reviews">
@@ -580,11 +619,11 @@ export default function ClientDashboard() {
                         </p>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         </TabsContent>
       </Tabs>
     </div>

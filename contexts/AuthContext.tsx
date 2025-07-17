@@ -23,10 +23,13 @@ const getStoredToken = (): string | null => {
   return localStorage.getItem('auth_token');
 };
 
-const removeStoredToken = (): void => {
+const clearAllTokens = (): void => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('auth_token');
   localStorage.removeItem('refresh_token');
+  // Also clear any other auth-related items
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -50,11 +53,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const userData = await usersApi.getMe();
         setUser(userData);
       } catch (error) {
-        // If token is invalid, remove it
-        if (error instanceof ApiError && error.status === 401) {
-          removeStoredToken();
-        }
         console.error('Auth initialization error:', error);
+        
+        // Clear all tokens on ANY auth error (malformed JWT, 401, 500, etc.)
+        clearAllTokens();
+        setUser(null);
+        
+        // Force reload the page to clear any cached state
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
       } finally {
         setLoading(false);
       }
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.login({ email, password });
       
       // The authApi.login already handles token storage
+      // console.log("🔐 Login successful, setting user:", response.user);
       setUser(response.user);
     } catch (error) {
       throw error; // Re-throw to let components handle the error
@@ -78,10 +87,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await authApi.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout API error:', error);
       // Continue with logout even if API call fails
     } finally {
-      // The authApi.logout already handles token removal
+      // Clear all tokens and user state
+      clearAllTokens();
       setUser(null);
     }
   };

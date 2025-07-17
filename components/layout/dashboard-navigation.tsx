@@ -18,7 +18,8 @@ import {
   Calendar,
   FileText,
   Users,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -49,25 +50,24 @@ export function DashboardNavigation() {
       return [
         ...baseItems,
         { label: "Jobs", href: "/jobs", icon: Briefcase },
-        { label: "Applications", href: "/dashboard/contractor/applications", icon: FileText },
         { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
-        { label: "Calendar", href: "/dashboard/contractor/calendar", icon: Calendar },
+        { label: "Payments", href: "/dashboard/contractor/payments", icon: CreditCard },
       ]
     } else if (user?.role === "CUSTOMER") {
       return [
         ...baseItems,
         { label: "Post Job", href: "/post-job", icon: Briefcase },
         { label: "My Jobs", href: "/dashboard/client/current-jobs", icon: FileText },
-        { label: "Contractors", href: "/contractors", icon: Users },
         { label: "Reviews", href: "/dashboard/client/reviews", icon: Star },
+        { label: "Payments", href: "/dashboard/client/payments", icon: CreditCard },
       ]
     } else if (user?.role === "ADMIN") {
       return [
         { label: "Admin Dashboard", href: "/admin", icon: PanelRight },
         { label: "Users", href: "/admin/users", icon: Users },
         { label: "Contractors", href: "/admin/contractors", icon: Users },
-        { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-        { label: "Settings", href: "/admin/settings", icon: Settings },
+        { label: "Jobs", href: "/admin/jobs", icon: BarChart3 },
+        { label: "Payments", href: "/admin/payments", icon: CreditCard },
       ]
     }
 
@@ -75,6 +75,15 @@ export function DashboardNavigation() {
   }
 
   const navItems = getNavItems()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      setMobileMenuOpen(false)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -132,7 +141,7 @@ export function DashboardNavigation() {
           
           <nav className="flex items-center space-x-2">
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 relative">
               <Bell className="h-4 w-4" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
                 3
@@ -171,7 +180,7 @@ export function DashboardNavigation() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
@@ -185,6 +194,18 @@ export function DashboardNavigation() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 top-14 z-50 grid h-[calc(100vh-3.5rem)] w-full grid-flow-row auto-rows-max overflow-auto p-6 pb-32 shadow-md animate-in slide-in-from-bottom-80 md:hidden">
           <div className="relative z-20 grid gap-6 rounded-md bg-popover p-4 text-popover-foreground shadow-md">
+            {/* User Info */}
+            <div className="flex items-center space-x-2 pb-2 border-b">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-sm font-medium">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+            
+            {/* Navigation Links */}
             <nav className="grid grid-flow-row auto-rows-max text-sm">
               {navItems.map((item) => (
                 <Link
@@ -200,6 +221,34 @@ export function DashboardNavigation() {
                   {item.label}
                 </Link>
               ))}
+              
+              {/* Profile and Settings */}
+              <Link
+                href="/profile"
+                className="flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline text-foreground/60"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
+              
+              <Link
+                href="/settings"
+                className="flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline text-foreground/60"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline text-red-600 mt-2 pt-4 border-t"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </button>
             </nav>
           </div>
         </div>

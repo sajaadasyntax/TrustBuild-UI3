@@ -1,106 +1,173 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { adminApi, Job, handleApiError } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock data
-const mockJobs = [
-  {
-    id: "job1",
-    title: "Kitchen Renovation",
-    customer: "John Doe",
-    contractor: "Smith & Sons Builders",
-    status: "completed",
-    amount: "5000",
-    startDate: "2024-03-01",
-    endDate: "2024-03-15",
-    location: "London, UK",
-    category: "Kitchen Remodeling",
-    hasDispute: false,
-    rating: 4.8,
-    flagged: false,
-  },
-  {
-    id: "job2",
-    title: "Bathroom Remodeling",
-    customer: "Jane Smith",
-    contractor: "Modern Interiors Ltd",
-    status: "in_progress",
-    amount: "3500",
-    startDate: "2024-03-10",
-    endDate: null,
-    location: "Manchester, UK",
-    category: "Bathroom Remodeling",
-    hasDispute: false,
-    rating: null,
-    flagged: false,
-  },
-  {
-    id: "job3",
-    title: "Home Extension Dispute",
-    customer: "Mike Johnson",
-    contractor: "Elite Home Solutions",
-    status: "disputed",
-    amount: "8500",
-    startDate: "2024-02-15",
-    endDate: null,
-    location: "Birmingham, UK",
-    category: "Home Extensions",
-    hasDispute: true,
-    rating: null,
-    flagged: true,
-  },
-  {
-    id: "job4",
-    title: "Electrical Wiring",
-    customer: "Sarah Wilson",
-    contractor: "Power Solutions Ltd",
-    status: "open",
-    amount: "2200",
-    startDate: null,
-    endDate: null,
-    location: "Leeds, UK",
-    category: "Electrical Work",
-    hasDispute: false,
-    rating: null,
-    flagged: false,
-  },
-]
+interface JobStats {
+  totalJobs: number;
+  postedJobs: number;
+  inProgressJobs: number;
+  completedJobs: number;
+  cancelledJobs: number;
+  totalValue: number;
+  completedValue: number;
+  successRate: number;
+  recentJobs: Job[];
+}
 
 export default function JobOversightPage() {
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [stats, setStats] = useState<JobStats | null>(null)
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  
-  const filteredJobs = mockJobs.filter((job) => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.contractor.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter
-    const matchesCategory = categoryFilter === "all" || job.category === categoryFilter
-    return matchesSearch && matchesStatus && matchesCategory
-  })
+  const [flaggedFilter, setFlaggedFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const { toast } = useToast()
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true)
+      const params: any = {
+        page: currentPage,
+        limit: 10,
+      }
+
+      if (statusFilter !== "all") params.status = statusFilter
+      if (categoryFilter !== "all") params.category = categoryFilter
+      if (flaggedFilter !== "all") params.flagged = flaggedFilter === "true"
+      if (searchQuery.trim()) params.search = searchQuery.trim()
+
+      const response = await adminApi.getAllJobs(params)
+      
+      // The API returns data in the format { status: 'success', data: { jobs: Job[], pagination: {...} } }
+      const jobsData = response.data.jobs as Job[]
+      const pagination = response.data.pagination as any
+      
+      setJobs(jobsData || [])
+      setTotalPages(pagination?.pages || 1)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch jobs')
+      setJobs([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      const statsData = await adminApi.getJobStats()
+      setStats(statsData)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch job statistics')
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs()
+  }, [currentPage, statusFilter, categoryFilter, flaggedFilter, searchQuery])
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const handleStatusUpdate = async (jobId: string, newStatus: string) => {
+    try {
+      await adminApi.updateJobStatus(jobId, newStatus)
+      toast({
+        title: "Success",
+        description: "Job status updated successfully",
+      })
+      fetchJobs() // Refresh the list
+    } catch (error) {
+      handleApiError(error, 'Failed to update job status')
+    }
+  }
+
+  const handleFlagToggle = async (jobId: string, flagged: boolean) => {
+    try {
+      await adminApi.toggleJobFlag(jobId, flagged)
+      toast({
+        title: "Success",
+        description: flagged ? "Job flagged successfully" : "Job flag removed successfully",
+      })
+      fetchJobs() // Refresh the list
+    } catch (error) {
+      handleApiError(error, 'Failed to toggle job flag')
+    }
+  }
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
+    switch (status?.toUpperCase()) {
+      case "COMPLETED":
         return <Badge variant="default" className="bg-green-500">Completed</Badge>
-      case "in_progress":
+      case "IN_PROGRESS":
         return <Badge variant="default" className="bg-blue-500">In Progress</Badge>
-      case "open":
-        return <Badge variant="secondary">Open</Badge>
-      case "disputed":
-        return <Badge variant="destructive">Disputed</Badge>
-      case "cancelled":
-        return <Badge variant="outline">Cancelled</Badge>
+      case "POSTED":
+        return <Badge variant="secondary">Posted</Badge>
+      case "DRAFT":
+        return <Badge variant="outline">Draft</Badge>
+      case "CANCELLED":
+        return <Badge variant="destructive">Cancelled</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
+  }
+
+  const formatCurrency = (amount?: number) => {
+    if (!amount) return 'Quote on request'
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const exportToCSV = () => {
+    const headers = ['ID', 'Title', 'Customer', 'Status', 'Budget', 'Location', 'Service', 'Created Date']
+    const csvData = jobs.map(job => [
+      job.id,
+      job.title,
+      job.customer?.user?.name || 'N/A',
+      job.status,
+      job.budget,
+      job.location,
+      job.service?.name || 'N/A',
+      new Date(job.createdAt).toLocaleDateString()
+    ])
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `jobs-export-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  if (loading && !jobs.length) {
+    return (
+      <div className="container py-32">
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading jobs...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -134,78 +201,81 @@ export default function JobOversightPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="disputed">Disputed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="DRAFT">Draft</SelectItem>
+            <SelectItem value="POSTED">Posted</SelectItem>
+            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={flaggedFilter} onValueChange={setFlaggedFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by category" />
+            <SelectValue placeholder="Filter by flags" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="Kitchen Remodeling">Kitchen Remodeling</SelectItem>
-            <SelectItem value="Bathroom Remodeling">Bathroom Remodeling</SelectItem>
-            <SelectItem value="Home Extensions">Home Extensions</SelectItem>
-            <SelectItem value="Electrical Work">Electrical Work</SelectItem>
-            <SelectItem value="General Construction">General Construction</SelectItem>
+            <SelectItem value="all">All Jobs</SelectItem>
+            <SelectItem value="true">Flagged Only</SelectItem>
+            <SelectItem value="false">Not Flagged</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={exportToCSV} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-600">
-              {mockJobs.filter(j => j.status === "in_progress").length}
-            </div>
-            <p className="text-sm text-muted-foreground">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {mockJobs.filter(j => j.status === "completed").length}
-            </div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">
-              {mockJobs.filter(j => j.hasDispute).length}
-            </div>
-            <p className="text-sm text-muted-foreground">Disputed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {mockJobs.filter(j => j.flagged).length}
-            </div>
-            <p className="text-sm text-muted-foreground">Flagged</p>
-          </CardContent>
-        </Card>
-      </div>
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.inProgressJobs}
+              </div>
+              <p className="text-sm text-muted-foreground">In Progress</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-green-600">
+                {stats.completedJobs}
+              </div>
+              <p className="text-sm text-muted-foreground">Completed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-orange-600">
+                {stats.postedJobs}
+              </div>
+              <p className="text-sm text-muted-foreground">Posted</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-purple-600">
+                {formatCurrency(stats.totalValue)}
+              </div>
+              <p className="text-sm text-muted-foreground">Total Value</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Jobs List */}
       <div className="space-y-4">
-        {filteredJobs.map((job) => (
-          <Card key={job.id} className={job.flagged ? "border-red-200" : ""}>
+        {jobs.map((job) => (
+          <Card key={job.id}>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {job.title}
                     {getStatusBadge(job.status)}
-                    {job.flagged && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                    {job.isUrgent && <AlertTriangle className="h-4 w-4 text-orange-500" />}
                   </CardTitle>
                   <CardDescription>
-                    {job.category} • {job.location}
+                    {job.service?.name} • {job.location}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -213,12 +283,25 @@ export default function JobOversightPage() {
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
-                  {job.hasDispute && (
-                    <Button variant="destructive" size="sm">
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      Resolve Dispute
-                    </Button>
-                  )}
+                  <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Change Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="POSTED">Posted</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleFlagToggle(job.id, true)}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-1" />
+                    Flag
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -226,40 +309,41 @@ export default function JobOversightPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm font-medium">Customer</p>
-                  <p className="text-sm text-muted-foreground">{job.customer}</p>
+                  <p className="text-sm text-muted-foreground">{job.customer?.user?.name || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Contractor</p>
-                  <p className="text-sm text-muted-foreground">{job.contractor}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Amount</p>
-                  <p className="text-sm text-muted-foreground">£{job.amount}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Timeline</p>
                   <p className="text-sm text-muted-foreground">
-                    {job.startDate ? `Started: ${job.startDate}` : "Not started"}
-                    {job.endDate && ` • Ended: ${job.endDate}`}
+                    {job.applications?.find(app => app.status === 'ACCEPTED')?.contractor?.businessName || 'Not assigned'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Budget</p>
+                  <p className="text-sm text-muted-foreground">{formatCurrency(job.budget)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Created</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(job.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               
-              {job.rating && (
+              {job.description && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium">Customer Rating</p>
-                  <p className="text-sm text-muted-foreground">⭐ {job.rating}</p>
+                  <p className="text-sm font-medium">Description</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{job.description}</p>
                 </div>
               )}
 
-              {job.hasDispute && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-700">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="font-medium">Dispute Active</span>
+              {job.isUrgent && (
+                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-orange-700">
+                    <Clock className="h-4 w-4" />
+                    <span className="font-medium">Urgent Job</span>
                   </div>
-                  <p className="text-sm text-red-600 mt-1">
-                    Customer has reported issues with work quality. Investigation required.
+                  <p className="text-sm text-orange-600 mt-1">
+                    This job has been marked as urgent by the customer.
                   </p>
                 </div>
               )}
@@ -268,7 +352,30 @@ export default function JobOversightPage() {
         ))}
       </div>
 
-      {filteredJobs.length === 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button 
+            variant="outline" 
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button 
+            variant="outline" 
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+
+      {jobs.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No jobs found matching your criteria.</p>
         </div>

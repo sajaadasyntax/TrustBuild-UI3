@@ -8,47 +8,35 @@ import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { MapPin, Calendar, Clock, User, Star, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react"
 import { useState } from "react"
+import { Job, jobsApi, handleApiError } from '@/lib/api'
+import { toast } from '@/hooks/use-toast'
 
-interface Milestone {
-  id: string
-  title: string
-  status: "COMPLETED" | "IN_PROGRESS" | "PENDING"
-  completedAt?: string
-  dueDate?: string
-}
+export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpdate: (jobId: string) => void }) {
+  const [updating, setUpdating] = useState(false)
 
-interface Job {
-  id: string
-  title: string
-  status: "IN_PROGRESS"
-  description: string
-  budget: string
-  location: string
-  startedAt: string
-  customer: {
-    name: string
-    rating: number
-    completedJobs: number
-    joinedAt: string
-  }
-  progress: number
-  timeline: string
-  milestones: Milestone[]
-}
-
-export function ContractorJobDetails({ job }: { job: Job }) {
-  const [progress, setProgress] = useState(job.progress)
-  const [updateMessage, setUpdateMessage] = useState("")
-
-  const handleProgressUpdate = (newProgress: number) => {
-    setProgress(newProgress)
-    // In a real app, this would make an API call to update the progress
+  const formatBudget = (amount: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
   }
 
-  const handleUpdateSubmit = () => {
-    // In a real app, this would make an API call to save the update
-    console.log("Progress update submitted:", { progress, message: updateMessage })
-    setUpdateMessage("")
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      setUpdating(true)
+      await jobsApi.updateStatus(job.id, newStatus)
+      toast({
+        title: "Status updated!",
+        description: `Job status has been updated to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+      })
+      onJobUpdate(job.id)
+    } catch (error) {
+      handleApiError(error, 'Failed to update job status')
+    } finally {
+      setUpdating(false)
+    }
   }
 
   return (
@@ -82,60 +70,58 @@ export function ContractorJobDetails({ job }: { job: Job }) {
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="mr-2 h-4 w-4" />
-                <span>Started on {job.startedAt}</span>
+                <span>Created on {new Date(job.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="mr-2 h-4 w-4" />
-                <span>Timeline: {job.timeline}</span>
+                <span>Timeline: {job.urgency || 'Flexible'}</span>
               </div>
               <p className="text-sm">{job.description}</p>
             </CardContent>
           </Card>
 
-          {/* Progress Update Section */}
+          {/* Job Status Management */}
           <Card>
             <CardHeader>
-              <CardTitle>Progress Update</CardTitle>
-              <CardDescription>Update the project progress and add a message</CardDescription>
+              <CardTitle>Job Status Management</CardTitle>
+              <CardDescription>Update the status of this job</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Overall Progress</span>
-                  <span className="font-medium">{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleProgressUpdate(Math.max(0, progress - 10))}
-                  >
-                    -10%
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleProgressUpdate(Math.min(100, progress + 10))}
-                  >
-                    +10%
-                  </Button>
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Current Status</label>
+                <p className="text-lg font-medium">
+                  <Badge variant={job.status === 'IN_PROGRESS' ? 'default' : 'secondary'}>
+                    {job.status.toLowerCase().replace('_', ' ')}
+                  </Badge>
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Update Message</label>
-                <Textarea
-                  placeholder="Add details about the progress update..."
-                  value={updateMessage}
-                  onChange={(e) => setUpdateMessage(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
+              {job.status === 'POSTED' && (
+                <Button 
+                  onClick={() => handleStatusUpdate('IN_PROGRESS')}
+                  className="w-full"
+                  disabled={updating}
+                >
+                  {updating ? 'Updating...' : 'Start Working'}
+                </Button>
+              )}
 
-              <Button onClick={handleUpdateSubmit} className="w-full">
-                Submit Update
-              </Button>
+              {job.status === 'IN_PROGRESS' && (
+                <Button 
+                  onClick={() => handleStatusUpdate('COMPLETED')}
+                  className="w-full"
+                  disabled={updating}
+                >
+                  {updating ? 'Updating...' : 'Mark as Completed'}
+                </Button>
+              )}
+
+              {job.status === 'COMPLETED' && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                  This job has been completed
+                </div>
+              )}
             </CardContent>
           </Card>
 

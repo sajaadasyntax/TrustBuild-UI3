@@ -5,8 +5,20 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2 } from "lucide-react"
+import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2, PenTool, User } from "lucide-react"
 import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { reviewsApi, handleApiError } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 interface Job {
   id: string
@@ -18,11 +30,14 @@ interface Job {
   startedAt?: string
   completedAt?: string
   contractor?: {
+    id: string
     name: string
+    businessName?: string
     rating: number
     completedJobs: number
     joinedAt: string
   }
+  assignedContractorId?: string
   progress?: number
   timeline: string
   applications?: Array<{
@@ -38,6 +53,11 @@ interface Job {
 export function ClientJobDetails({ job }: { job: Job }) {
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState("")
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const { toast } = useToast()
 
   const handleConfirmJob = (contractorId: string) => {
     setSelectedContractor(contractorId)
@@ -49,6 +69,82 @@ export function ClientJobDetails({ job }: { job: Job }) {
     console.log("Job confirmed with contractor:", selectedContractor)
     // Redirect to current jobs page after confirmation
     window.location.href = "/dashboard/client/current-jobs"
+  }
+
+  const handleStarClick = (rating: number) => {
+    setReviewRating(rating)
+  }
+
+  const handleSubmitReview = async () => {
+    if (!job.contractor?.id) {
+      toast({
+        title: "Error",
+        description: "No contractor found for this job",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (reviewRating === 0) {
+      toast({
+        title: "Rating Required",
+        description: "Please select a rating for your review",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (reviewComment.trim().length < 10) {
+      toast({
+        title: "Review Too Short",
+        description: "Please write at least 10 characters for your review",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setSubmittingReview(true)
+      
+      await reviewsApi.create({
+        jobId: job.id,
+        contractorId: job.contractor.id,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      })
+
+      toast({
+        title: "Review Submitted!",
+        description: "Thank you for your feedback. Your review has been posted.",
+      })
+
+      setShowReviewDialog(false)
+      setReviewRating(0)
+      setReviewComment("")
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      handleApiError(error, 'Failed to submit review')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const renderStars = (rating: number, interactive = false, onClick?: (rating: number) => void) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-5 w-5 ${
+              star <= rating 
+                ? 'text-yellow-400 fill-yellow-400' 
+                : 'text-gray-300'
+            } ${interactive ? 'cursor-pointer hover:text-yellow-300' : ''}`}
+            onClick={() => interactive && onClick && onClick(star)}
+          />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -98,7 +194,10 @@ export function ClientJobDetails({ job }: { job: Job }) {
                 <Clock className="mr-2 h-4 w-4" />
                 <span>Timeline: {job.timeline}</span>
               </div>
-              <p className="text-sm">{job.description}</p>
+              <div>
+                <h3 className="font-semibold mb-2">Description:</h3>
+                <p className="text-sm">{job.description || 'No description provided'}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -114,6 +213,105 @@ export function ClientJobDetails({ job }: { job: Job }) {
                     <span>{job.progress}%</span>
                   </div>
                   <Progress value={job.progress} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Contractor Information for Completed Jobs */}
+          {job.status === "COMPLETED" && job.contractor && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Completed By</CardTitle>
+                <CardDescription>This job was successfully completed by the following contractor</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <User className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{job.contractor.businessName || job.contractor.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {job.contractor.completedJobs} jobs completed
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    {renderStars(job.contractor.rating)}
+                    <span className="ml-2 text-sm font-medium">{job.contractor.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Message Contractor
+                  </Button>
+                  
+                  <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="flex-1">
+                        <PenTool className="mr-2 h-4 w-4" />
+                        Write Review
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                      <DialogHeader>
+                        <DialogTitle>Write a Review</DialogTitle>
+                        <DialogDescription>
+                          Share your experience working with {job.contractor.businessName || job.contractor.name}
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Rating</Label>
+                          <div className="flex items-center space-x-2">
+                            {renderStars(reviewRating, true, handleStarClick)}
+                            <span className="text-sm text-muted-foreground ml-2">
+                              {reviewRating > 0 ? `${reviewRating} star${reviewRating > 1 ? 's' : ''}` : 'Select a rating'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="review-comment">Review</Label>
+                          <Textarea
+                            id="review-comment"
+                            placeholder="Tell others about your experience with this contractor..."
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            className="min-h-[100px]"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {reviewComment.length}/500 characters
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowReviewDialog(false)
+                            setReviewRating(0)
+                            setReviewComment("")
+                          }}
+                          disabled={submittingReview}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSubmitReview}
+                          disabled={submittingReview || reviewRating === 0}
+                        >
+                          {submittingReview ? "Submitting..." : "Submit Review"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>
@@ -144,7 +342,7 @@ export function ClientJobDetails({ job }: { job: Job }) {
                     </CardContent>
                     <CardFooter className="flex gap-2">
                       <Button variant="outline" className="w-full" asChild>
-                        <Link href="/contractors">Join as a Contractor</Link>
+                        <Link href="/contractors">View Profile</Link>
                       </Button>
                       <Button 
                         variant="default" 
@@ -164,16 +362,18 @@ export function ClientJobDetails({ job }: { job: Job }) {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {job.status === "IN_PROGRESS" && job.contractor && (
+          {(job.status === "IN_PROGRESS" || job.status === "COMPLETED") && job.contractor && (
             <Card>
               <CardHeader>
-                <CardTitle>Contractor</CardTitle>
+                <CardTitle>
+                  {job.status === "COMPLETED" ? "Completed By" : "Working On This"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{job.contractor.name}</span>
+                    <span className="font-medium">{job.contractor.businessName || job.contractor.name}</span>
                   </div>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 fill-accent stroke-accent mr-1" />
@@ -186,10 +386,46 @@ export function ClientJobDetails({ job }: { job: Job }) {
                 <p className="text-sm text-muted-foreground">
                   Member since {job.contractor.joinedAt}
                 </p>
-                <Button variant="outline" className="w-full">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Message Contractor
-                </Button>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Message Contractor
+                  </Button>
+                  {job.status === "COMPLETED" && (
+                    <Button 
+                      variant="default" 
+                      className="w-full"
+                      onClick={() => setShowReviewDialog(true)}
+                    >
+                      <PenTool className="mr-2 h-4 w-4" />
+                      Write Review
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {job.status === "COMPLETED" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant="default">Completed</Badge>
+                </div>
+                {job.completedAt && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Completed:</span>
+                    <span>{job.completedAt}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Timeline:</span>
+                  <span>{job.timeline}</span>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -198,7 +434,7 @@ export function ClientJobDetails({ job }: { job: Job }) {
 
       {/* Confirmation Dialog */}
       {isConfirming && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>Confirm Job Assignment</CardTitle>

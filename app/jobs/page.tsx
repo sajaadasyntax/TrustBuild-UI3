@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Pound, Search, Briefcase, TrendingUp } from 'lucide-react'
+import { Clock, MapPin, DollarSign, Search, Briefcase, TrendingUp } from 'lucide-react'
 import { jobsApi, servicesApi, handleApiError, Job } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 
@@ -87,7 +87,8 @@ export default function JobsPage() {
     fetchJobs()
   }
 
-  const formatBudget = (amount: number) => {
+  const formatBudget = (amount?: number) => {
+    if (!amount) return 'Quote on request'
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
@@ -238,7 +239,7 @@ export default function JobsPage() {
                         {job.location}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Pound className="h-3 w-3" />
+                        <DollarSign className="h-3 w-3" />
                         {formatBudget(job.budget)}
                       </span>
                     </CardDescription>
@@ -262,7 +263,7 @@ export default function JobsPage() {
                       <span className="text-xs text-muted-foreground">
                         {job.applications?.length || 0} applications
                       </span>
-                      <Badge variant={job.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+                      <Badge variant={job.status === 'POSTED' ? 'default' : 'secondary'}>
                         {job.status.toLowerCase().replace('_', ' ')}
                       </Badge>
                     </div>
