@@ -169,7 +169,7 @@ export default function ContractorDashboard() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Subscription Active</AlertTitle>
             <AlertDescription>
-              Your monthly subscription is active. Next billing date: {contractor?.subscription?.nextBillingDate}
+              Your monthly subscription is active. Next billing date: {contractor?.subscription?.nextBillingDate || 'Not available'}
             </AlertDescription>
           </Alert>
           
@@ -199,7 +199,7 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft}</div>
+                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft || 0}</div>
                 <p className="text-sm text-muted-foreground">Remaining this week</p>
                 <div className="flex items-center mt-2 text-xs">
                   <Bell className="h-3 w-3 mr-1" />
@@ -349,7 +349,7 @@ export default function ContractorDashboard() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {job.budget ? formatCurrency(job.budget) : 'Quote on request'}
                         </p>
                         <Button asChild size="sm" variant="outline">
                           <Link href={`/dashboard/contractor/jobs/${job.id}`}>

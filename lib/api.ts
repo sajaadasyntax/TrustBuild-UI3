@@ -71,6 +71,12 @@ export interface Contractor {
   payments?: Payment[];
   jobAccess?: JobAccess[];
   creditTransactions?: CreditTransaction[];
+  subscription?: {
+    status?: string;
+    nextBillingDate?: string;
+    freeApplicationsLeft?: number;
+    amount?: number;
+  };
 }
 
 export interface Service {

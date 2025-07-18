@@ -193,18 +193,18 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{job.customer.name}</span>
+                  <span>{job.customer.user.name}</span>
                 </div>
                 <div className="flex items-center">
                   <Star className="h-4 w-4 fill-accent stroke-accent mr-1" />
-                  <span>{job.customer.rating}</span>
+                  <span>Customer</span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                {job.customer.completedJobs} jobs completed
+                Customer
               </p>
               <p className="text-sm text-muted-foreground">
-                Member since {job.customer.joinedAt}
+                Member since {new Date(job.customer.createdAt).toLocaleDateString()}
               </p>
               <Button variant="outline" className="w-full">
                 <MessageSquare className="mr-2 h-4 w-4" />
