@@ -306,7 +306,7 @@ export default function SuperAdminUserManagement() {
       console.log('✅ API Response received:', response)
       
       // Transform the API response to match our interface
-      const transformedUsers: User[] = response.data.users.map((user: any) => ({
+      const transformedUsers: User[] = response.data.map((user: any) => ({
         ...user,
         type: user.role as 'CUSTOMER' | 'CONTRACTOR' | 'ADMIN' | 'SUPER_ADMIN',
         status: user.isActive ? 'active' : 'suspended',
