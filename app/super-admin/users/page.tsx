@@ -412,7 +412,7 @@ export default function SuperAdminUserManagement() {
         search: searchTerm || undefined,
       })
       
-      const allUsers = response.data.users.map((user: any) => ({
+      const allUsers = response.data.map((user: any) => ({
         ...user,
         type: user.role as 'CUSTOMER' | 'CONTRACTOR' | 'ADMIN' | 'SUPER_ADMIN',
         status: user.isActive ? 'active' : 'suspended',
