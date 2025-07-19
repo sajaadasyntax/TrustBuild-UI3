@@ -66,19 +66,19 @@ export default function PostJobPage() {
     try {
       setServicesLoading(true)
       const response = await servicesApi.getAll({ isActive: true })
-      const fetchedServices = response.data.services || []
+      const fetchedServices = response.data || []
       
       if (fetchedServices.length === 0) {
         // Use fallback services if no services in database
         setServices([
-          { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
-          { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+          { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+          { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
         ])
       } else {
         setServices(fetchedServices)
@@ -87,14 +87,14 @@ export default function PostJobPage() {
       console.warn('Services API failed, using fallback services')
       // Fallback to default services if API fails
       setServices([
-        { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '' },
-        { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '' },
+        { id: 'fallback-1', name: 'General Construction', description: 'General construction and building work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-2', name: 'Kitchen Renovation', description: 'Kitchen remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-3', name: 'Bathroom Renovation', description: 'Bathroom remodeling and renovation', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-4', name: 'Electrical Work', description: 'Electrical installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-5', name: 'Plumbing', description: 'Plumbing installation and repair', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-6', name: 'Painting & Decorating', description: 'Interior and exterior painting', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-7', name: 'Roofing', description: 'Roof repair and installation', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
+        { id: 'fallback-8', name: 'Flooring', description: 'Floor installation and repair', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
       ])
     } finally {
       setServicesLoading(false)

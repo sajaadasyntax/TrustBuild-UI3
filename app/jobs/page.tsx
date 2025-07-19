@@ -63,7 +63,7 @@ export default function JobsPage() {
       if (selectedBudget !== 'all') params.budget = selectedBudget
 
       const response = await jobsApi.getAll(params)
-      setJobs(response.data.jobs || [])
+      setJobs(response.data || [])
       setTotalPages(response.data.pagination?.pages || 1)
     } catch (error) {
       handleApiError(error, 'Failed to fetch jobs')

@@ -135,7 +135,8 @@ export default function SuperAdminContentModeration() {
   const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected', contentType: string, title: string) => {
     try {
       console.log(`🔄 ${newStatus === 'approved' ? 'Approving' : 'Rejecting'} ${contentType} ${title} (${id})`)
-      await adminApi.moderateContent(contentType, id, newStatus, `Admin ${newStatus} content`)
+      const action = newStatus === 'approved' ? 'approve' : 'reject'
+      await adminApi.moderateContent(contentType, id, action, `Admin ${newStatus} content`)
       
       toast({
         title: "Content Moderated",

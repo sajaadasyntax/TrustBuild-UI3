@@ -513,7 +513,7 @@ export default function ContractorDashboard() {
                       <div key={job.id} className="p-3 border rounded-lg">
                         <h4 className="font-medium mb-1">{job.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {job.budget ? formatCurrency(job.budget) : 'Quote on request'}
                         </p>
                       </div>
                     ))}
@@ -542,7 +542,7 @@ export default function ContractorDashboard() {
                       <div key={job.id} className="p-3 border rounded-lg">
                         <h4 className="font-medium mb-1">{job.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {job.budget ? formatCurrency(job.budget) : 'Quote on request'}
                         </p>
                     </div>
                     ))}
@@ -642,7 +642,7 @@ export default function ContractorDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Amount</p>
-                <p className="font-medium">{formatCurrency(contractor?.subscription?.amount)}/month</p>
+                <p className="font-medium">{contractor?.subscription?.amount ? formatCurrency(contractor.subscription.amount) : 'N/A'}/month</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Next billing date</p>
