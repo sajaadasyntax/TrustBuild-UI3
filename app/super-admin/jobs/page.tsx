@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Extended Job interface to match the backend data structure
-interface Job extends Omit<ApiJob, 'customer' | 'service'> {
+interface SuperAdminJob extends Omit<ApiJob, 'customer' | 'service' | 'applications'> {
   customer: {
     id: string
     user: {
@@ -40,7 +40,7 @@ interface Job extends Omit<ApiJob, 'customer' | 'service'> {
 
 export default function SuperAdminJobManagement() {
   const { user: currentUser, isAuthenticated } = useAuth()
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobs, setJobs] = useState<SuperAdminJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalJobs, setTotalJobs] = useState(0)
@@ -115,7 +115,7 @@ export default function SuperAdminJobManagement() {
       console.log('✅ Stats API Response received:', statsResponse)
       
       // Transform the API response to match our interface
-      const transformedJobs: Job[] = jobsResponse.data.jobs.map((job: any) => ({
+      const transformedJobs: SuperAdminJob[] = jobsResponse.data.jobs.map((job: any) => ({
         ...job,
         flagged: false, // Default since we don't have this field in DB yet
         disputeReason: job.status === 'CANCELLED' ? 'Job was cancelled' : undefined,
@@ -237,7 +237,7 @@ export default function SuperAdminJobManagement() {
       
       const csvContent = [
         headers.join(','),
-        ...allJobs.map((job: Job) => [
+        ...allJobs.map((job: SuperAdminJob) => [
           job.id,
           `"${job.title}"`,
           `"${job.description.substring(0, 100).replace(/"/g, '""')}"`,
@@ -568,7 +568,7 @@ export default function SuperAdminJobManagement() {
                           {formatStatus(job.status)}
                         </span>
                         <div className="text-sm font-medium text-gray-900 mt-2">
-                          ${job.budget.toLocaleString()}
+                          {job.budget ? `$${job.budget.toLocaleString()}` : 'Quote on request'}
                         </div>
                       </div>
                     </td>
