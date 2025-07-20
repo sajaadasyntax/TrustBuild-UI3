@@ -136,12 +136,16 @@ export default function PostJobPage() {
       // Find the selected service to get its name for category
       const selectedService = services.find(service => service.id === data.serviceId)
       
+      // Handle fallback services - if the serviceId starts with 'fallback-', don't include it
+      const isFallbackService = data.serviceId.startsWith('fallback-')
+      
       const jobData = {
         title: data.title,
         description: data.description,
         budget: data.budget ? parseFloat(data.budget) : undefined,
-        serviceId: data.serviceId,
-        category: selectedService?.name || 'General',
+        // Only include serviceId if it's not a fallback service
+        ...(isFallbackService ? {} : { serviceId: data.serviceId }),
+        category: selectedService?.name || 'General Construction',
         location: `${data.address}, ${data.city}`,
         postcode: data.postcode,
         urgency: data.timeline, // Use timeline for urgency field in backend
@@ -150,6 +154,7 @@ export default function PostJobPage() {
         requirements: data.notes,
       }
 
+      console.log('Submitting job data:', jobData)
       const createdJob = await jobsApi.create(jobData)
       
       toast({
