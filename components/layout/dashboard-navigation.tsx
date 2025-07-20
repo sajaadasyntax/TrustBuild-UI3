@@ -176,12 +176,6 @@ export function DashboardNavigation() {
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -235,14 +229,7 @@ export function DashboardNavigation() {
                 Profile
               </Link>
               
-              <Link
-                href="/settings"
-                className="flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline text-foreground/60"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
+
               
               {/* Logout Button */}
               <button

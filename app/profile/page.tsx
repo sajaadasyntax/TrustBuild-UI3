@@ -1,39 +1,231 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { MapPin, Briefcase, Image as ImageIcon, Star, Clock, FileCheck, User, ArrowLeft } from "lucide-react"
+import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2 } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { usersApi, contractorsApi, customersApi, handleApiError } from "@/lib/api"
+import { toast } from "@/hooks/use-toast"
 
-export default function ContractorProfile() {
-  const [profileImage, setProfileImage] = useState<string | null>(null)
-  const [portfolioImages, setPortfolioImages] = useState<string[]>([])
+interface ProfileData {
+  // User fields
+  name: string
+  email: string
+  
+  // Customer fields
+  phone?: string
+  address?: string
+  city?: string
+  postcode?: string
+  
+  // Contractor fields
+  businessName?: string
+  description?: string
+  businessAddress?: string
+  website?: string
+  instagramHandle?: string
+  operatingArea?: string
+  servicesProvided?: string
+  yearsExperience?: string
+}
 
-  // Mock data - in a real app, this would come from your backend
-  const contractorData = {
-    name: "John Smith",
-    businessName: "Smith Construction Co.",
-    rating: 4.9,
-    reviews: 48,
-    bio: "Professional contractor with over 10 years of experience in residential and commercial construction. Specializing in kitchen and bathroom renovations.",
-    services: [
-      "Kitchen Remodeling",
-      "Bathroom Renovation",
-      "Home Additions",
-      "General Contracting",
-      "Interior Design"
-    ],
-    areasCovered: [
-      "New York City",
-      "Brooklyn",
-      "Queens",
-      "Long Island"
-    ]
+export default function ProfilePage() {
+  const { user } = useAuth()
+  const [profileData, setProfileData] = useState<ProfileData>({
+    name: "",
+    email: ""
+  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return
+
+      try {
+        setLoading(true)
+
+        // Always fetch basic user data
+        const userData = await usersApi.getMe()
+        
+        let roleSpecificData = {}
+
+        if (user.role === 'CONTRACTOR') {
+          try {
+            const contractorData = await contractorsApi.getMyProfile()
+            roleSpecificData = {
+              businessName: contractorData.businessName || "",
+              description: contractorData.description || "",
+              businessAddress: contractorData.businessAddress || "",
+              phone: contractorData.phone || "",
+              website: contractorData.website || "",
+              instagramHandle: contractorData.instagramHandle || "",
+              operatingArea: contractorData.operatingArea || "",
+              servicesProvided: contractorData.servicesProvided || "",
+              yearsExperience: contractorData.yearsExperience || "",
+              city: contractorData.city || "",
+              postcode: contractorData.postcode || ""
+            }
+          } catch (error) {
+            console.log("No contractor profile found, using empty data")
+          }
+        } else if (user.role === 'CUSTOMER') {
+          try {
+            const customerData = await customersApi.getMyProfile()
+            roleSpecificData = {
+              phone: customerData.phone || "",
+              address: customerData.address || "",
+              city: customerData.city || "",
+              postcode: customerData.postcode || ""
+            }
+          } catch (error) {
+            console.log("No customer profile found, using empty data")
+          }
+        }
+
+        setProfileData({
+          name: userData.name || "",
+          email: userData.email || "",
+          ...roleSpecificData
+        })
+
+      } catch (error) {
+        console.error('Error fetching profile data:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load profile data. Please try again.",
+          variant: "destructive"
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfileData()
+  }, [user])
+
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleSave = async () => {
+    if (!user) return
+
+    try {
+      setSaving(true)
+
+      // Update basic user information
+      await usersApi.updateMe({
+        name: profileData.name,
+        email: profileData.email
+      })
+
+      // Update role-specific data
+      if (user.role === 'CONTRACTOR') {
+        const contractorUpdateData = {
+          businessName: profileData.businessName,
+          description: profileData.description,
+          businessAddress: profileData.businessAddress,
+          phone: profileData.phone,
+          website: profileData.website,
+          instagramHandle: profileData.instagramHandle,
+          operatingArea: profileData.operatingArea,
+          servicesProvided: profileData.servicesProvided,
+          yearsExperience: profileData.yearsExperience,
+          city: profileData.city,
+          postcode: profileData.postcode
+        }
+        
+        try {
+          await contractorsApi.updateProfile(contractorUpdateData)
+        } catch (error) {
+          // If update fails, try to create profile
+          if (error instanceof Error && error.message.includes('not found')) {
+            await contractorsApi.createProfile(contractorUpdateData)
+          } else {
+            throw error
+          }
+        }
+      } else if (user.role === 'CUSTOMER') {
+        const customerUpdateData = {
+          phone: profileData.phone,
+          address: profileData.address,
+          city: profileData.city,
+          postcode: profileData.postcode
+        }
+        
+        try {
+          await customersApi.updateProfile(customerUpdateData)
+        } catch (error) {
+          // If update fails, try to create profile
+          if (error instanceof Error && error.message.includes('not found')) {
+            await customersApi.createProfile(customerUpdateData)
+          } else {
+            throw error
+          }
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      })
+      setIsEditing(false)
+
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      const errorMessage = await handleApiError(error)
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const getDashboardRoute = () => {
+    if (!user) return "/"
+    switch (user.role) {
+      case 'CONTRACTOR': return "/dashboard/contractor"
+      case 'ADMIN': return "/admin"
+      case 'SUPER_ADMIN': return "/super-admin"
+      default: return "/dashboard/client"
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container py-32">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="container py-32">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-2xl font-bold text-muted-foreground">Please log in to view your profile</h1>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -41,191 +233,297 @@ export default function ContractorProfile() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Contractor Profile</h1>
-            <p className="text-muted-foreground">Manage your profile and showcase your work</p>
+            <h1 className="text-3xl font-bold">My Profile</h1>
+            <p className="text-muted-foreground">
+              Manage your {user.role.toLowerCase()} profile information
+            </p>
           </div>
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/contractor">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href={getDashboardRoute()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </Button>
+            {!isEditing && (
+              <Button onClick={() => setIsEditing(true)}>
+                Edit Profile
+              </Button>
+            )}
+          </div>
         </div>
         
-        {/* Profile Picture Section */}
+        {/* Basic Information */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Profile Picture</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Basic Information
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-6">
-              <div className="relative w-32 h-32">
-                {profileImage ? (
-                  <Image
-                    src={profileImage}
-                    alt="Profile"
-                    fill
-                    className="rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                )}
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={profileData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  disabled={!isEditing}
+                />
               </div>
               <div>
-                <Button variant="outline" onClick={() => document.getElementById('profile-upload')?.click()}>
-                  Upload Photo
-                </Button>
-                <input
-                  id="profile-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        setProfileImage(reader.result as string)
-                      }
-                      reader.readAsDataURL(file)
-                    }
-                  }}
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={!isEditing}
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Bio Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Bio/Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              defaultValue={contractorData.bio}
-              className="min-h-[150px]"
-              placeholder="Tell potential clients about yourself and your business..."
-            />
-          </CardContent>
-        </Card>
-
-        {/* Services Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5" />
-              Services Offered
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {contractorData.services.map((service, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input defaultValue={service} />
-                  <Button variant="ghost" size="icon">
-                    ×
-                  </Button>
+        {/* Contractor-specific fields */}
+        {user.role === 'CONTRACTOR' && (
+          <>
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="w-5 h-5" />
+                  Business Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="businessName">Business Name</Label>
+                    <Input
+                      id="businessName"
+                      value={profileData.businessName || ""}
+                      onChange={(e) => handleInputChange('businessName', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="Your business name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="yearsExperience">Years of Experience</Label>
+                    <Input
+                      id="yearsExperience"
+                      value={profileData.yearsExperience || ""}
+                      onChange={(e) => handleInputChange('yearsExperience', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="e.g., 10 years"
+                    />
+                  </div>
                 </div>
-              ))}
-              <Button variant="outline" className="w-full">
-                Add Service
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Areas Covered Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Areas Covered
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {contractorData.areasCovered.map((area, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input defaultValue={area} />
-                  <Button variant="ghost" size="icon">
-                    ×
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full">
-                Add Area
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Portfolio Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Portfolio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {portfolioImages.map((image, index) => (
-                <div key={index} className="relative aspect-square">
-                  <Image
-                    src={image}
-                    alt={`Portfolio ${index + 1}`}
-                    fill
-                    className="object-cover rounded-lg"
+                
+                <div>
+                  <Label htmlFor="description">Business Description</Label>
+                  <Textarea
+                    id="description"
+                    value={profileData.description || ""}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    disabled={!isEditing}
+                    className="min-h-[120px]"
+                    placeholder="Tell potential clients about your business and expertise..."
                   />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setPortfolioImages(images => images.filter((_, i) => i !== index))
-                    }}
-                  >
-                    ×
-                  </Button>
                 </div>
-              ))}
-              <div className="aspect-square border-2 border-dashed rounded-lg flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  onClick={() => document.getElementById('portfolio-upload')?.click()}
-                >
-                  Add Image
-                </Button>
-                <input
-                  id="portfolio-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        setPortfolioImages(images => [...images, reader.result as string])
-                      }
-                      reader.readAsDataURL(file)
-                    }
-                  }}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="servicesProvided">Services Provided</Label>
+                    <Textarea
+                      id="servicesProvided"
+                      value={profileData.servicesProvided || ""}
+                      onChange={(e) => handleInputChange('servicesProvided', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="List your main services..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="operatingArea">Operating Areas</Label>
+                    <Textarea
+                      id="operatingArea"
+                      value={profileData.operatingArea || ""}
+                      onChange={(e) => handleInputChange('operatingArea', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="Areas you serve..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  Contact & Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={profileData.phone || ""}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="Your contact number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={profileData.website || ""}
+                      onChange={(e) => handleInputChange('website', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="businessAddress">Business Address</Label>
+                  <Input
+                    id="businessAddress"
+                    value={profileData.businessAddress || ""}
+                    onChange={(e) => handleInputChange('businessAddress', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Your business address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={profileData.city || ""}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode</Label>
+                    <Input
+                      id="postcode"
+                      value={profileData.postcode || ""}
+                      onChange={(e) => handleInputChange('postcode', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="Postcode"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="instagramHandle">Instagram Handle</Label>
+                    <Input
+                      id="instagramHandle"
+                      value={profileData.instagramHandle || ""}
+                      onChange={(e) => handleInputChange('instagramHandle', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="@yourhandle"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Customer-specific fields */}
+        {user.role === 'CUSTOMER' && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Contact Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={profileData.phone || ""}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Your contact number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={profileData.city || ""}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Your city"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={profileData.address || ""}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Your address"
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button size="lg">
-            Save Changes
-          </Button>
-        </div>
+              <div>
+                <Label htmlFor="postcode">Postcode</Label>
+                <Input
+                  id="postcode"
+                  value={profileData.postcode || ""}
+                  onChange={(e) => handleInputChange('postcode', e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Your postcode"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Save/Cancel buttons */}
+        {isEditing && (
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditing(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
