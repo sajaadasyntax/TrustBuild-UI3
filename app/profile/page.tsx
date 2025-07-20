@@ -185,10 +185,9 @@ export default function ProfilePage() {
 
     } catch (error) {
       console.error('Error saving profile:', error)
-      const errorMessage = await handleApiError(error)
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Failed to save profile. Please try again.",
         variant: "destructive"
       })
     } finally {
