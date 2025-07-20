@@ -65,10 +65,21 @@ export default function PostJobPage() {
   const fetchServices = async () => {
     try {
       setServicesLoading(true)
+      console.log('Attempting to fetch services from API...')
       const response = await servicesApi.getAll({ isActive: true })
-      const fetchedServices = response.data || []
+      console.log('API Response:', response)
+      
+      // Handle the correct API response structure for services
+      let fetchedServices: Service[] = []
+      if (response?.status === 'success' && response?.data) {
+        // The response.data is an array with pagination info
+        fetchedServices = Array.isArray(response.data) ? response.data.filter((item: any) => item.id) : []
+      }
+      
+      console.log('Processed services:', fetchedServices)
       
       if (fetchedServices.length === 0) {
+        console.log('No services from API, using fallback services')
         // Use fallback services if no services in database
         setServices([
           { id: 'fallback-1', name: 'Bathroom Fitting', description: 'Complete bathroom installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
@@ -82,10 +93,11 @@ export default function PostJobPage() {
           { id: 'fallback-9', name: 'Kitchen Fitting', description: 'Complete kitchen installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
         ])
       } else {
+        console.log('Using services from API:', fetchedServices.length, 'services')
         setServices(fetchedServices)
       }
     } catch (error) {
-      console.warn('Services API failed, using fallback services')
+      console.warn('Services API failed, using fallback services. Error:', error)
       // Fallback to default services if API fails
       setServices([
         { id: 'fallback-1', name: 'Bathroom Fitting', description: 'Complete bathroom installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
