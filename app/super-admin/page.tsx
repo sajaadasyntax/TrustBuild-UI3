@@ -6,7 +6,7 @@ import { Shield, Users, Building2, FileText, Settings, BarChart3, AlertTriangle 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { LogoutButton } from "@/components/layout/logout-button"
+
 import { useAuth } from "@/contexts/AuthContext"
 
 export default function SuperAdminPage() {
@@ -47,21 +47,13 @@ export default function SuperAdminPage() {
               Manage the entire TrustBuild platform with advanced administrative controls
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleDebugLogout}
-              className="bg-orange-50 text-orange-600 hover:bg-orange-100"
-            >
-              🔍 Debug Logout
-            </Button>
-            <LogoutButton 
-              variant="destructive" 
-              showConfirmDialog={true}
-            >
-              Logout
-            </LogoutButton>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleDebugLogout}
+            className="bg-orange-50 text-orange-600 hover:bg-orange-100"
+          >
+            🔍 Debug Logout
+          </Button>
         </div>
       </div>
 

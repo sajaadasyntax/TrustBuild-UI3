@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { LogoutButton } from "@/components/layout/logout-button"
+
 import { useAuth } from "@/contexts/AuthContext"
 import { adminApi, handleApiError } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
@@ -82,21 +82,13 @@ export default function AdminPage() {
               Manage contractors, jobs, and reviews on the TrustBuild platform
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleDebugLogout}
-              className="bg-orange-50 text-orange-600 hover:bg-orange-100"
-            >
-              🔍 Debug Logout
-            </Button>
-            <LogoutButton 
-              variant="destructive" 
-              showConfirmDialog={true}
-            >
-              Logout
-            </LogoutButton>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleDebugLogout}
+            className="bg-orange-50 text-orange-600 hover:bg-orange-100"
+          >
+            🔍 Debug Logout
+          </Button>
         </div>
       </div>
 

@@ -153,8 +153,11 @@ export function DashboardNavigation() {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <User className="h-5 w-5" />
+                <Button 
+                  variant="ghost" 
+                  className="relative h-8 w-8 rounded-full border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/10 transition-all duration-200"
+                >
+                  <User className="h-5 w-5 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>

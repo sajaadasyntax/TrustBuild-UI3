@@ -14,7 +14,7 @@ import {
   FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
 } from "lucide-react"
 import { contractorsApi, jobsApi, reviewsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
-import { LogoutButton } from '@/components/layout/logout-button'
+
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function ContractorDashboard() {
@@ -153,13 +153,7 @@ export default function ContractorDashboard() {
               Find Jobs
             </Link>
           </Button>
-          <LogoutButton 
-            variant="destructive" 
-            showConfirmDialog={true}
-            className="ml-2"
-          >
-            Logout
-          </LogoutButton>
+
         </div>
       </div>
 

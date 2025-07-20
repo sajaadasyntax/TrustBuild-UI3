@@ -10,7 +10,7 @@ import { Clock, Star, Building2, MessageSquare, AlertCircle, Calendar, CheckCirc
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { customersApi, jobsApi, reviewsApi, handleApiError, Customer, Job, Review } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
-import { LogoutButton } from '@/components/layout/logout-button'
+
 
 export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -145,13 +145,7 @@ export default function ClientDashboard() {
               Post New Job
             </Link>
           </Button>
-          <LogoutButton 
-            variant="destructive" 
-            showConfirmDialog={true}
-            className="ml-2"
-          >
-            Logout
-          </LogoutButton>
+
         </div>
       </div>
 
