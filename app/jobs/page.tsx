@@ -63,8 +63,18 @@ export default function JobsPage() {
       if (selectedBudget !== 'all') params.budget = selectedBudget
 
       const response = await jobsApi.getAll(params)
-      setJobs(response.data || [])
-      setTotalPages(response.data.pagination?.pages || 1)
+      // Defensive: support both { data: [...] } and { data: { jobs: [...] } }
+      let jobsArray: Job[] = [];
+      let totalPagesValue = 1;
+      if (response.data && typeof response.data === 'object' && 'jobs' in response.data && Array.isArray((response.data as any).jobs)) {
+        jobsArray = (response.data as any).jobs;
+        totalPagesValue = (response.data as any).pagination?.pages || 1;
+      } else if (Array.isArray(response.data)) {
+        jobsArray = response.data;
+        totalPagesValue = (response.data as any)?.pagination?.pages || 1;
+      }
+      setJobs(jobsArray);
+      setTotalPages(totalPagesValue);
     } catch (error) {
       handleApiError(error, 'Failed to fetch jobs')
     } finally {
