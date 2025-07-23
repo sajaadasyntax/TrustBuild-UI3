@@ -330,15 +330,33 @@ export default function JobDetailsPage() {
                         <span className="font-medium">Access Required</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-3">
-                        Pay the access fee to view the full job description and customer details.
+                        Pay the access fee to view the full job description and customer contact details.
                       </p>
                       <Button onClick={() => setShowAccessDialog(true)} size="sm">
                         View Access Options
                       </Button>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {job.description.substring(0, 150)}...
+                      <strong>Description:</strong> {job.description.substring(0, 300)}...
                     </div>
+                    <div className="text-sm text-muted-foreground">
+                      <strong>Location:</strong> {job.location}
+                    </div>
+                    {job.postcode && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Postcode:</strong> {job.postcode}
+                      </div>
+                    )}
+                    {job.customer && job.customer.user && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Customer Name:</strong> {job.customer.user.name}
+                      </div>
+                    )}
+                    {job.customer && job.customer.city && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Customer City:</strong> {job.customer.city}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-muted-foreground whitespace-pre-wrap">
@@ -724,6 +742,16 @@ export default function JobDetailsPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       Pay the access fee to view customer information and contact details.
                     </p>
+                    {job.customer && job.customer.user && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Name:</strong> {job.customer.user.name}
+                      </div>
+                    )}
+                    {job.customer && job.customer.city && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>City:</strong> {job.customer.city}
+                      </div>
+                    )}
                     <Button 
                       onClick={() => setShowAccessDialog(true)}
                       size="sm"
