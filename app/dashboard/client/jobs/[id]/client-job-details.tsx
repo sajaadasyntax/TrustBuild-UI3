@@ -341,9 +341,9 @@ export function ClientJobDetails({ job }: { job: Job }) {
                       <p className="text-sm text-muted-foreground">{application.message}</p>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button variant="outline" className="w-full" asChild>
+                      {/* <Button variant="outline" className="w-full" asChild>
                         <Link href="/contractors">View Profile</Link>
-                      </Button>
+                      </Button> */}
                       <Button 
                         variant="default" 
                         className="w-full"
