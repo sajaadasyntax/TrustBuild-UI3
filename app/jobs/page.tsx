@@ -219,7 +219,7 @@ export default function JobsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {jobs.map((job) => (
+            {(Array.isArray(jobs) ? jobs : []).map((job) => (
               <Card key={job.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
                 <Link href={`/jobs/${job.id}`}>
                   <CardHeader>
