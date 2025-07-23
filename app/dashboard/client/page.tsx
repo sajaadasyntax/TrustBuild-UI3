@@ -46,7 +46,7 @@ export default function ClientDashboard() {
       const dashboardData = await customersApi.getDashboard()
       
       setCustomer(dashboardData.customer || null)
-      setActiveJobs(dashboardData.activeJobs || [])
+      setActiveJobs(Array.isArray(dashboardData.activeJobs) ? dashboardData.activeJobs : [])
       setStats(dashboardData.stats || {
         totalJobs: 0,
         activeJobs: 0,
@@ -55,13 +55,13 @@ export default function ClientDashboard() {
         averageJobBudget: 0,
         totalReviews: 0
       })
-      setRecentReviews(dashboardData.recentReviews || [])
+      setRecentReviews(Array.isArray(dashboardData.recentReviews) ? dashboardData.recentReviews : [])
 
       // Fetch posted jobs - with error handling
       try {
         const postedJobs = await jobsApi.getMyPostedJobs()
-        const completedJobsData = postedJobs.filter(job => job.status === 'COMPLETED')
-        setCompletedJobs(completedJobsData)
+        const completedJobsData = Array.isArray(postedJobs) ? postedJobs.filter(job => job.status === 'COMPLETED') : []
+        setCompletedJobs(Array.isArray(completedJobsData) ? completedJobsData : [])
       } catch (error) {
         console.log('Posted jobs API not available yet, using empty array')
         setCompletedJobs([])
@@ -221,12 +221,6 @@ export default function ClientDashboard() {
                 <Link href="/post-job">
                   <Plus className="h-6 w-6 mb-2" />
                   Post New Job
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col">
-                <Link href="/contractors">
-                  <TrendingUp className="h-6 w-6 mb-2" />
-                  Browse Contractors
                 </Link>
               </Button>
               <Button asChild variant="outline" className="h-20 flex-col">
