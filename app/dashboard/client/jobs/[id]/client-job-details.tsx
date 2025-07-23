@@ -317,7 +317,7 @@ export function ClientJobDetails({ job }: { job: Job }) {
             </Card>
           )}
 
-          {job.status === "OPEN" && job.applications && (
+          {job.status === "OPEN" && Array.isArray(job.applications) && job.applications.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Applications ({job.applications.length})</CardTitle>
