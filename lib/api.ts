@@ -501,21 +501,21 @@ export const contractorsApi = {
       }
     });
     
-    return apiRequest(`/contractors?${searchParams.toString()}`);
+    return apiRequest(`/api/contractors?${searchParams.toString()}`);
   },
 
   getById: async (id: string): Promise<Contractor> => {
-    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/contractors/${id}`);
+    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/api/contractors/${id}`);
     return response.data.contractor;
   },
 
   getMyProfile: async (): Promise<Contractor> => {
-    const response = await apiRequest<{ data: { contractor: Contractor } }>('/contractors/me');
+    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/api/contractors/me`);
     return response.data.contractor;
   },
 
   createProfile: async (profileData: Partial<Contractor>): Promise<Contractor> => {
-    const response = await apiRequest<{ data: { contractor: Contractor } }>('/contractors', {
+    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/api/contractors`, {
       method: 'POST',
       body: JSON.stringify(profileData),
     });
@@ -523,7 +523,7 @@ export const contractorsApi = {
   },
 
   updateProfile: async (profileData: Partial<Contractor>): Promise<Contractor> => {
-    const response = await apiRequest<{ data: { contractor: Contractor } }>('/contractors/me', {
+    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/api/contractors/me`, {
       method: 'PATCH',
       body: JSON.stringify(profileData),
     });
@@ -531,7 +531,7 @@ export const contractorsApi = {
   },
 
   deleteProfile: async (): Promise<void> => {
-    await apiRequest('/contractors/me', { method: 'DELETE' });
+    await apiRequest(`/api/contractors/me`, { method: 'DELETE' });
   },
 
   addPortfolioItem: async (itemData: {
@@ -541,7 +541,7 @@ export const contractorsApi = {
     projectType?: string;
     completedAt?: string;
   }): Promise<PortfolioItem> => {
-    const response = await apiRequest<{ data: { portfolioItem: PortfolioItem } }>('/contractors/me/portfolio', {
+    const response = await apiRequest<{ data: { portfolioItem: PortfolioItem } }>(`/api/contractors/me/portfolio`, {
       method: 'POST',
       body: JSON.stringify(itemData),
     });
@@ -549,7 +549,7 @@ export const contractorsApi = {
   },
 
   updatePortfolioItem: async (itemId: string, itemData: Partial<PortfolioItem>): Promise<PortfolioItem> => {
-    const response = await apiRequest<{ data: { portfolioItem: PortfolioItem } }>(`/contractors/me/portfolio/${itemId}`, {
+    const response = await apiRequest<{ data: { portfolioItem: PortfolioItem } }>(`/api/contractors/me/portfolio/${itemId}`, {
       method: 'PATCH',
       body: JSON.stringify(itemData),
     });
@@ -557,7 +557,7 @@ export const contractorsApi = {
   },
 
   deletePortfolioItem: async (itemId: string): Promise<void> => {
-    await apiRequest(`/contractors/me/portfolio/${itemId}`, { method: 'DELETE' });
+    await apiRequest(`/api/contractors/me/portfolio/${itemId}`, { method: 'DELETE' });
   },
 
   // Credit system
