@@ -34,8 +34,10 @@ export default function ReviewManagementPage() {
       if (statusFilter !== 'all') params.status = statusFilter
       if (ratingFilter !== 'all') params.rating = ratingFilter
       const response = await adminApi.getAllReviews(params)
-      setReviews(response.data as Review[])
-      setTotalPages(response.data.pagination?.pages || 1)
+      const reviews = (response.data as any).reviews || []
+      const pagination = (response.data as any).pagination
+      setReviews(reviews)
+      setTotalPages(pagination?.pages || 1)
     } catch (error) {
       handleApiError(error, 'Failed to fetch reviews')
       setReviews([])
