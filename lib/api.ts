@@ -1438,6 +1438,23 @@ export const adminApi = {
   
   searchContractors: (query: string, page = 1, limit = 10) => 
     apiRequest<any>(`/admin/contractors-search?query=${query}&page=${page}&limit=${limit}`),
+
+  // Review Management
+  getAllReviews: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    rating?: string;
+    search?: string;
+  } = {}): Promise<PaginatedResponse<Review>> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    return apiRequest(`/admin/reviews?${searchParams.toString()}`);
+  },
 };
 
 // Payment API

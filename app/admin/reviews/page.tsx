@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Star, Eye, AlertTriangle, CheckCircle, X, Flag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,70 +8,51 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
-// Mock data
-const mockReviews = [
-  {
-    id: "review1",
-    customerName: "John Doe",
-    contractorName: "Smith & Sons Builders",
-    rating: 5,
-    comment: "Excellent work on our kitchen renovation. Very professional team and great attention to detail.",
-    jobTitle: "Kitchen Renovation",
-    date: "2024-03-15",
-    status: "approved",
-    flagged: false,
-    reportReason: null,
-  },
-  {
-    id: "review2",
-    customerName: "Jane Smith",
-    contractorName: "Modern Interiors Ltd",
-    rating: 2,
-    comment: "Work was delayed and quality was poor. Would not recommend this contractor to anyone.",
-    jobTitle: "Bathroom Remodeling",
-    date: "2024-03-14",
-    status: "pending",
-    flagged: true,
-    reportReason: "Potentially false review",
-  },
-  {
-    id: "review3",
-    customerName: "Mike Johnson",
-    contractorName: "Elite Home Solutions",
-    rating: 1,
-    comment: "Terrible service! They damaged my property and refused to fix it. Absolute scam artists!",
-    jobTitle: "Home Extension",
-    date: "2024-03-13",
-    status: "pending",
-    flagged: true,
-    reportReason: "Inappropriate language",
-  },
-  {
-    id: "review4",
-    customerName: "Sarah Wilson",
-    contractorName: "Quick Fix Repairs",
-    rating: 4,
-    comment: "Good service overall, minor delays but quality work completed on time.",
-    jobTitle: "Electrical Wiring",
-    date: "2024-03-12",
-    status: "approved",
-    flagged: false,
-    reportReason: null,
-  },
-]
+import { adminApi, handleApiError, Review } from '@/lib/api'
 
 export default function ReviewManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
-  const [reviews, setReviews] = useState(mockReviews)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  useEffect(() => {
+    fetchReviews()
+  }, [searchQuery, statusFilter, ratingFilter, page])
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true)
+      const params: any = {
+        page,
+        limit: 20,
+      }
+      if (searchQuery) params.search = searchQuery
+      if (statusFilter !== 'all') params.status = statusFilter
+      if (ratingFilter !== 'all') params.rating = ratingFilter
+      const response = await adminApi.getAllReviews(params)
+      setReviews(response.data as Review[])
+      setTotalPages(response.data.pagination?.pages || 1)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch reviews')
+      setReviews([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredReviews = reviews.filter((review) => {
-    const matchesSearch = review.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.contractorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.comment.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || review.status === statusFilter
+    const customerName = review.customer?.user?.name || ''
+    const contractorName = review.contractor?.user?.name || ''
+    const comment = review.comment || ''
+    const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contractorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      comment.toLowerCase().includes(searchQuery.toLowerCase())
+    const status = review.isVerified ? 'approved' : 'pending'
+    const matchesStatus = statusFilter === "all" || status === statusFilter
     const matchesRating = ratingFilter === "all" || review.rating.toString() === ratingFilter
     return matchesSearch && matchesStatus && matchesRating
   })
@@ -80,7 +61,7 @@ export default function ReviewManagementPage() {
     setReviews(prev => 
       prev.map(review => 
         review.id === reviewId 
-          ? { ...review, status: "approved", flagged: false }
+          ? { ...review, isVerified: true, flagReason: null }
           : review
       )
     )
@@ -90,20 +71,19 @@ export default function ReviewManagementPage() {
     setReviews(prev => 
       prev.map(review => 
         review.id === reviewId 
-          ? { ...review, status: "rejected" }
+          ? { ...review, isVerified: false, flagReason: null }
           : review
       )
     )
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (review: Review) => {
+    const status = review.isVerified ? 'approved' : 'pending'
     switch (status) {
       case "approved":
         return <Badge variant="default" className="bg-green-500">Approved</Badge>
       case "pending":
         return <Badge variant="secondary">Pending</Badge>
-      case "rejected":
-        return <Badge variant="destructive">Rejected</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -174,7 +154,7 @@ export default function ReviewManagementPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-yellow-600">
-              {reviews.filter(r => r.status === "pending").length}
+              {reviews.filter(r => !r.isVerified).length}
             </div>
             <p className="text-sm text-muted-foreground">Pending Review</p>
           </CardContent>
@@ -182,7 +162,7 @@ export default function ReviewManagementPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">
-              {reviews.filter(r => r.status === "approved").length}
+              {reviews.filter(r => r.isVerified).length}
             </div>
             <p className="text-sm text-muted-foreground">Approved</p>
           </CardContent>
@@ -190,7 +170,8 @@ export default function ReviewManagementPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">
-              {reviews.filter(r => r.flagged).length}
+              {/* No flag reason in Review type; placeholder for future flagged logic */}
+              0
             </div>
             <p className="text-sm text-muted-foreground">Flagged</p>
           </CardContent>
@@ -198,7 +179,8 @@ export default function ReviewManagementPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-gray-600">
-              {reviews.filter(r => r.status === "rejected").length}
+              {/* No rejected status in Review model, so show 0 or future logic */}
+              0
             </div>
             <p className="text-sm text-muted-foreground">Rejected</p>
           </CardContent>
@@ -207,76 +189,70 @@ export default function ReviewManagementPage() {
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {filteredReviews.map((review) => (
-          <Card key={review.id} className={review.flagged ? "border-red-200" : ""}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://avatar.vercel.sh/${review.customerName}`} />
-                    <AvatarFallback>{review.customerName.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {review.customerName}
-                      {getStatusBadge(review.status)}
-                      {review.flagged && <Flag className="h-4 w-4 text-red-500" />}
-                    </CardTitle>
-                    <CardDescription>
-                      Review for {review.contractorName} • {review.jobTitle}
-                    </CardDescription>
+        {filteredReviews.map((review) => {
+          const customerName = review.customer?.user?.name || 'Unknown Customer'
+          const contractorName = review.contractor?.user?.name || 'Unknown Contractor'
+          const jobTitle = review.job?.title || 'Unknown Job'
+          const date = review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''
+          return (
+            <Card key={review.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={`https://avatar.vercel.sh/${customerName}`} />
+                      <AvatarFallback>{customerName.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        {customerName}
+                        {getStatusBadge(review)}
+                        {/* No flag icon, as Review type has no flagReason */}
+                      </CardTitle>
+                      <CardDescription>
+                        Review for {contractorName} • {jobTitle}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{renderStars(review.rating)}</div>
+                    <span className="text-sm text-muted-foreground">{date}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex">{renderStars(review.rating)}</div>
-                  <span className="text-sm text-muted-foreground">{review.date}</span>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-4">{review.comment}</p>
+                {/* No flagged reason block, as Review type has no flagReason */}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Job Details
+                  </Button>
+                  {!review.isVerified && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleApprove(review.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleReject(review.id)}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-4">{review.comment}</p>
-              
-              {review.flagged && review.reportReason && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-700">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="font-medium">Flagged for Review</span>
-                  </div>
-                  <p className="text-sm text-red-600 mt-1">
-                    Reason: {review.reportReason}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Job Details
-                </Button>
-                {review.status === "pending" && (
-                  <>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleApprove(review.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleReject(review.id)}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {filteredReviews.length === 0 && (
