@@ -1455,6 +1455,13 @@ export const adminApi = {
     });
     return apiRequest(`/admin/reviews?${searchParams.toString()}`);
   },
+
+  assignContractorToJob: async (jobId: string, contractorId: string): Promise<void> => {
+    await apiRequest(`/admin/jobs/${jobId}/assign-contractor`, {
+      method: 'PATCH',
+      body: JSON.stringify({ contractorId }),
+    });
+  },
 };
 
 // Payment API

@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { adminApi, Job, handleApiError } from "@/lib/api"
+import { adminApi, Job, handleApiError, contractorsApi } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 interface JobStats {
   totalJobs: number;
@@ -33,6 +34,11 @@ export default function JobOversightPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const { toast } = useToast()
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [showDetails, setShowDetails] = useState(false)
+  const [contractors, setContractors] = useState<any[]>([])
+  const [assigning, setAssigning] = useState(false)
+  const [selectedContractorId, setSelectedContractorId] = useState<string>('')
 
   const fetchJobs = async () => {
     try {
@@ -103,6 +109,29 @@ export default function JobOversightPage() {
       fetchJobs() // Refresh the list
     } catch (error) {
       handleApiError(error, 'Failed to toggle job flag')
+    }
+  }
+
+  const openDetails = async (job: Job) => {
+    setSelectedJob(job)
+    setShowDetails(true)
+    // Fetch contractors for assignment dropdown
+    const res = await contractorsApi.getAll({ limit: 100 })
+    setContractors(res.data.contractors)
+  }
+
+  const handleAssignContractor = async () => {
+    if (!selectedJob || !selectedContractorId) return
+    setAssigning(true)
+    try {
+      await adminApi.assignContractorToJob(selectedJob.id, selectedContractorId)
+      toast({ title: 'Success', description: 'Contractor assigned successfully' })
+      setShowDetails(false)
+      fetchJobs()
+    } catch (error) {
+      handleApiError(error, 'Failed to assign contractor')
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -279,7 +308,7 @@ export default function JobOversightPage() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => openDetails(job)}>
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
@@ -380,6 +409,66 @@ export default function JobOversightPage() {
           <p className="text-muted-foreground">No jobs found matching your criteria.</p>
         </div>
       )}
+
+      {/* Job Details Modal */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Project Details</DialogTitle>
+            <DialogDescription>
+              {selectedJob?.title} ({getStatusBadge(selectedJob?.status || '')})
+            </DialogDescription>
+          </DialogHeader>
+          {selectedJob && (
+            <div className="space-y-4">
+              <div>
+                <strong>Customer:</strong> {selectedJob.customer?.user?.name}
+              </div>
+              <div>
+                <strong>Service:</strong> {selectedJob.service?.name}
+              </div>
+              <div>
+                <strong>Location:</strong> {selectedJob.location}
+              </div>
+              <div>
+                <strong>Budget:</strong> {formatCurrency(selectedJob.budget)}
+              </div>
+              <div>
+                <strong>Description:</strong>
+                <div className="text-muted-foreground whitespace-pre-line mt-1">{selectedJob.description}</div>
+              </div>
+              <div>
+                <strong>Applications:</strong>
+                <ul className="list-disc ml-6">
+                  {selectedJob.applications?.map(app => (
+                    <li key={app.id}>
+                      {app.contractor?.businessName || app.contractor?.user?.name} - {app.status}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <strong>Assign Contractor:</strong>
+                <Select value={selectedContractorId} onValueChange={setSelectedContractorId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select contractor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contractors.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.businessName || c.user?.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button className="mt-2" onClick={handleAssignContractor} disabled={assigning || !selectedContractorId}>
+                  {assigning ? 'Assigning...' : 'Assign Contractor'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
