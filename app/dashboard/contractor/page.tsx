@@ -193,7 +193,7 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft || 0}</div>
+                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft ?? 0}</div>
                 <p className="text-sm text-muted-foreground">Remaining this week</p>
                 <div className="flex items-center mt-2 text-xs">
                   <Bell className="h-3 w-3 mr-1" />
@@ -210,12 +210,16 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">98%</div>
-                <p className="text-sm text-muted-foreground">From 14 total projects</p>
-                <div className="flex items-center mt-2 text-xs text-success">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  <span>3% from last month</span>
-                </div>
+                {(() => {
+                  const total = activeJobs.length + completedJobs.length;
+                  const rate = total > 0 ? Math.round((completedJobs.length / total) * 100) : 0;
+                  return (
+                    <>
+                      <div className="text-3xl font-bold text-primary">{rate}%</div>
+                      <p className="text-sm text-muted-foreground">From {total} total projects</p>
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
@@ -226,38 +230,67 @@ export default function ContractorDashboard() {
             <CardHeader>
               <CardTitle>Contractor Profile</CardTitle>
               <CardDescription>
-                {contractor?.businessName}
+                {contractor?.businessName || contractor?.user?.name}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center">
                 <div className="relative w-16 h-16 mr-4">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
-                    <span className="text-xl font-bold text-primary">PC</span>
+                    <span className="text-xl font-bold text-primary">{contractor?.businessName?.slice(0,2).toUpperCase() || contractor?.user?.name?.slice(0,2).toUpperCase() || 'PC'}</span>
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-primary text-white text-xs px-1.5 py-0.5 rounded-full">
-                    Premium
+                    {contractor?.tier || 'Standard'}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 fill-accent stroke-accent" />
-                    <span className="ml-1 font-medium">4.9</span>
+                    <span className="ml-1 font-medium">{contractor?.averageRating?.toFixed(1) || 'N/A'}</span>
                     <span className="mx-1 text-muted-foreground">•</span>
-                    <span className="text-sm text-muted-foreground">48 reviews</span>
+                    <span className="text-sm text-muted-foreground">{contractor?.reviewCount || 0} reviews</span>
                   </div>
-                  <p className="text-sm mt-1">Kitchen Remodeling Specialist</p>
+                  <p className="text-sm mt-1">{contractor?.servicesProvided || 'Specialty not set'}</p>
                 </div>
               </div>
-              
               <div className="pt-2">
                 <div className="flex justify-between text-sm mb-1">
                   <span>Profile completion</span>
-                  <span className="font-medium">85%</span>
+                  <span className="font-medium">{(() => {
+                    const fields = [
+                      contractor?.businessName,
+                      contractor?.description,
+                      contractor?.businessAddress,
+                      contractor?.city,
+                      contractor?.postcode,
+                      contractor?.phone,
+                      contractor?.website,
+                      contractor?.operatingArea,
+                      contractor?.servicesProvided,
+                      contractor?.yearsExperience,
+                    ];
+                    const filled = fields.filter(Boolean).length;
+                    const percent = Math.round((filled / fields.length) * 100);
+                    return `${percent}%`;
+                  })()}</span>
                 </div>
-                <Progress value={85} className="h-2" />
+                <Progress value={(() => {
+                  const fields = [
+                    contractor?.businessName,
+                    contractor?.description,
+                    contractor?.businessAddress,
+                    contractor?.city,
+                    contractor?.postcode,
+                    contractor?.phone,
+                    contractor?.website,
+                    contractor?.operatingArea,
+                    contractor?.servicesProvided,
+                    contractor?.yearsExperience,
+                  ];
+                  const filled = fields.filter(Boolean).length;
+                  return Math.round((filled / fields.length) * 100);
+                })()} className="h-2" />
               </div>
-              
               <Button variant="outline" asChild className="w-full">
                 <Link href="/profile">
                   Edit Profile
@@ -403,7 +436,7 @@ export default function ContractorDashboard() {
                   </div>
                       {review.comment && (
                         <p className="text-sm text-muted-foreground">
-                          "{review.comment}"
+                          &quot;{review.comment}&quot;
                         </p>
                       )}
                     </div>
@@ -465,7 +498,7 @@ export default function ContractorDashboard() {
 
                       {application.coverLetter && (
                         <p className="text-sm mb-3 text-muted-foreground">
-                          "{application.coverLetter.substring(0, 150)}..."
+                          &quot;{application.coverLetter.substring(0, 150)}...&quot;
                         </p>
                       )}
 
@@ -600,7 +633,7 @@ export default function ContractorDashboard() {
                       
                       {review.comment && (
                         <p className="text-muted-foreground">
-                          "{review.comment}"
+                          &quot;{review.comment}&quot;
                         </p>
                       )}
                   </div>
