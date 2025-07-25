@@ -181,65 +181,7 @@ export default function SuperAdminPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Analytics & Reports
-            </CardTitle>
-            <CardDescription>
-              View platform analytics and generate reports
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Link href="/super-admin/analytics/revenue">
-              <Button variant="outline" className="w-full">Revenue Reports</Button>
-            </Link>
-            <Link href="/super-admin/analytics/users">
-              <Button variant="outline" className="w-full">User Analytics</Button>
-            </Link>
-            <Link href="/super-admin/analytics/jobs">
-              <Button variant="outline" className="w-full">Job Statistics</Button>
-            </Link>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              System Settings
-            </CardTitle>
-            <CardDescription>
-              Configure platform settings and preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Link href="/super-admin/settings/platform">
-              <Button variant="outline" className="w-full">Platform Settings</Button>
-            </Link>
-            <Link href="/super-admin/settings/payment">
-              <Button variant="outline" className="w-full">Payment Config</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security & Permissions
-            </CardTitle>
-            <CardDescription>
-              Manage security settings and user permissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Link href="/super-admin/security/roles">
-              <Button variant="outline" className="w-full">Admin Roles</Button>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
