@@ -1,16 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Shield, Users, Building2, FileText, Settings, BarChart3, AlertTriangle } from "lucide-react"
+import { Shield, Users, Building2, FileText, Settings, BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { adminApi, handleApiError } from "@/lib/api"
+
+interface DashboardStats {
+  users: { total: number; active: number; inactive: number };
+  contractors: { total: number; approved: number; pending: number };
+  customers: { total: number };
+  jobs: { total: number; active: number; completed: number };
+  reviews: { total: number; flagged: number };
+  applications: { total: number; pending: number };
+  services: { total: number; active: number };
+  revenue: { total: number };
+  recent: { users: any[]; jobs: any[] };
+}
 
 export default function SuperAdminPage() {
   const { user, logout } = useAuth()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
   
   // Debug function to test logout
   const handleDebugLogout = async () => {
@@ -23,16 +38,33 @@ export default function SuperAdminPage() {
       console.error("🔴 Logout error:", error)
     }
   }
-  const [stats] = useState({
-    totalUsers: 15420,
-    totalContractors: 3250,
-    totalCustomers: 12170,
-    totalJobs: 8950,
-    activeJobs: 2340,
-    completedJobs: 6610,
-    pendingReviews: 145,
-    flaggedContent: 23,
-  })
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true)
+      const dashboardData = await adminApi.getDashboardStats()
+      setStats(dashboardData)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch dashboard statistics')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="container py-32">
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading dashboard...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container py-32">
@@ -65,8 +97,12 @@ export default function SuperAdminPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <div className="text-2xl font-bold">
+              {stats?.users?.total?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.users?.active || 0} active users
+            </p>
           </CardContent>
         </Card>
 
@@ -76,8 +112,12 @@ export default function SuperAdminPage() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalContractors.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+8% from last month</p>
+            <div className="text-2xl font-bold">
+              {stats?.contractors?.total?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.contractors?.approved || 0} verified
+            </p>
           </CardContent>
         </Card>
 
@@ -87,8 +127,12 @@ export default function SuperAdminPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalJobs.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+15% from last month</p>
+            <div className="text-2xl font-bold">
+              {stats?.jobs?.total?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.jobs?.completed || 0} completed
+            </p>
           </CardContent>
         </Card>
 
@@ -98,8 +142,12 @@ export default function SuperAdminPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeJobs.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+5% from last week</p>
+            <div className="text-2xl font-bold">
+              {stats?.jobs?.active?.toLocaleString() || '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.jobs?.active || 0} in progress
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -119,11 +167,11 @@ export default function SuperAdminPage() {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm">Total Customers</span>
-              <Badge variant="secondary">{stats.totalCustomers.toLocaleString()}</Badge>
+              <Badge variant="secondary">{stats?.customers?.total?.toLocaleString() || '0'}</Badge>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm">Total Contractors</span>
-              <Badge variant="secondary">{stats.totalContractors.toLocaleString()}</Badge>
+              <Badge variant="secondary">{stats?.contractors?.total?.toLocaleString() || '0'}</Badge>
             </div>
             <Link href="/super-admin/users">
               <Button className="w-full">Manage Users</Button>
@@ -144,11 +192,11 @@ export default function SuperAdminPage() {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm">Completed Jobs</span>
-              <Badge variant="default">{stats.completedJobs.toLocaleString()}</Badge>
+              <Badge variant="default">{stats?.jobs?.completed?.toLocaleString() || '0'}</Badge>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm">Active Jobs</span>
-              <Badge variant="outline">{stats.activeJobs.toLocaleString()}</Badge>
+              <Badge variant="outline">{stats?.jobs?.active?.toLocaleString() || '0'}</Badge>
             </div>
             <Link href="/super-admin/jobs">
               <Button className="w-full">Manage Jobs</Button>
@@ -168,12 +216,12 @@ export default function SuperAdminPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm">Pending Reviews</span>
-              <Badge variant="destructive">{stats.pendingReviews}</Badge>
+              <span className="text-sm">Total Reviews</span>
+              <Badge variant="secondary">{stats?.reviews?.total || '0'}</Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm">Flagged Content</span>
-              <Badge variant="destructive">{stats.flaggedContent}</Badge>
+              <span className="text-sm">Flagged Reviews</span>
+              <Badge variant="destructive">{stats?.reviews?.flagged || '0'}</Badge>
             </div>
             <Link href="/super-admin/content">
               <Button variant="destructive" className="w-full">Review Content</Button>
