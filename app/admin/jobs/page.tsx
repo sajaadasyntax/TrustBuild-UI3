@@ -447,24 +447,6 @@ export default function JobOversightPage() {
                   ))}
                 </ul>
               </div>
-              <div>
-                <strong>Assign Contractor:</strong>
-                <Select value={selectedContractorId} onValueChange={setSelectedContractorId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select contractor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contractors.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.businessName || c.user?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button className="mt-2" onClick={handleAssignContractor} disabled={assigning || !selectedContractorId}>
-                  {assigning ? 'Assigning...' : 'Assign Contractor'}
-                </Button>
-              </div>
             </div>
           )}
         </DialogContent>
