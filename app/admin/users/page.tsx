@@ -35,8 +35,10 @@ import {
 } from "lucide-react"
 import { adminApi, handleApiError, User } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AdminUsersPage() {
+  const { user } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [totalUsers, setTotalUsers] = useState(0)
@@ -153,13 +155,14 @@ export default function AdminUsersPage() {
             </p>
           </div>
           
-          <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Crown className="h-4 w-4" />
-                Create Admin
-              </Button>
-            </DialogTrigger>
+          {user?.role === 'SUPER_ADMIN' && (
+            <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Crown className="h-4 w-4" />
+                  Create Admin
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Admin</DialogTitle>
@@ -217,7 +220,8 @@ export default function AdminUsersPage() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          )}
         </div>
 
         {/* Filters */}
