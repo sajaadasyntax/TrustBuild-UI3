@@ -18,6 +18,7 @@ export default function ReviewManagementPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [moderatingReviews, setModeratingReviews] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchReviews()
@@ -59,24 +60,54 @@ export default function ReviewManagementPage() {
     return matchesSearch && matchesStatus && matchesRating
   })
 
-  const handleApprove = (reviewId: string) => {
-    setReviews(prev => 
-      prev.map(review => 
-        review.id === reviewId 
-          ? { ...review, isVerified: true, flagReason: null }
-          : review
+  const handleApprove = async (reviewId: string) => {
+    if (moderatingReviews.has(reviewId)) return;
+    
+    setModeratingReviews(prev => new Set(prev).add(reviewId))
+    
+    try {
+      await adminApi.moderateContent('review', reviewId, 'approve')
+      setReviews(prev => 
+        prev.map(review => 
+          review.id === reviewId 
+            ? { ...review, isVerified: true }
+            : review
+        )
       )
-    )
+    } catch (error) {
+      handleApiError(error, 'Failed to approve review')
+    } finally {
+      setModeratingReviews(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(reviewId)
+        return newSet
+      })
+    }
   }
 
-  const handleReject = (reviewId: string) => {
-    setReviews(prev => 
-      prev.map(review => 
-        review.id === reviewId 
-          ? { ...review, isVerified: false, flagReason: null }
-          : review
+  const handleReject = async (reviewId: string) => {
+    if (moderatingReviews.has(reviewId)) return;
+    
+    setModeratingReviews(prev => new Set(prev).add(reviewId))
+    
+    try {
+      await adminApi.moderateContent('review', reviewId, 'reject')
+      setReviews(prev => 
+        prev.map(review => 
+          review.id === reviewId 
+            ? { ...review, isVerified: false }
+            : review
+        )
       )
-    )
+    } catch (error) {
+      handleApiError(error, 'Failed to reject review')
+    } finally {
+      setModeratingReviews(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(reviewId)
+        return newSet
+      })
+    }
   }
 
   const getStatusBadge = (review: Review) => {
@@ -236,17 +267,19 @@ export default function ReviewManagementPage() {
                         size="sm" 
                         onClick={() => handleApprove(review.id)}
                         className="bg-green-600 hover:bg-green-700"
+                        disabled={moderatingReviews.has(review.id)}
                       >
                         <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
+                        {moderatingReviews.has(review.id) ? 'Approving...' : 'Approve'}
                       </Button>
                       <Button 
                         variant="destructive" 
                         size="sm"
                         onClick={() => handleReject(review.id)}
+                        disabled={moderatingReviews.has(review.id)}
                       >
                         <X className="h-4 w-4 mr-1" />
-                        Reject
+                        {moderatingReviews.has(review.id) ? 'Rejecting...' : 'Reject'}
                       </Button>
                     </>
                   )}
