@@ -253,8 +253,20 @@ export interface Review {
 
 export interface PaginatedResponse<T> {
   status: 'success';
+  data: T[] & {
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+}
+
+export interface UsersPaginatedResponse {
+  status: 'success';
   data: {
-    users: T[];
+    users: User[];
     pagination: {
       page: number;
       limit: number;
@@ -474,7 +486,7 @@ export const usersApi = {
   getAllUsers: async (params: {
     page?: number;
     limit?: number;
-  } = {}): Promise<PaginatedResponse<User>> => {
+  } = {}): Promise<UsersPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
@@ -1081,7 +1093,7 @@ export const adminApi = {
     role?: string;
     status?: string;
     search?: string;
-  } = {}): Promise<PaginatedResponse<User>> => {
+  } = {}): Promise<UsersPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
