@@ -253,7 +253,8 @@ export interface Review {
 
 export interface PaginatedResponse<T> {
   status: 'success';
-  data: T[] & {
+  data: {
+    users: T[];
     pagination: {
       page: number;
       limit: number;
