@@ -71,30 +71,72 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
 
   const createPaymentIntent = async () => {
     try {
-      // Check if user is authenticated
+      // Enhanced authentication check with debugging
       const token = localStorage.getItem('auth_token')
+      console.log('🔍 Payment Intent - Auth Check:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        tokenStart: token?.substring(0, 20)
+      })
+      
       if (!token) {
+        console.error('❌ No auth token found')
         toast({
           title: "Authentication Required",
           description: "Please log in to continue with payment.",
           variant: "destructive"
         })
+        // Redirect to login
+        window.location.href = '/login'
         return
       }
 
+      // Check if token is expired
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const isExpired = Date.now() > payload.exp * 1000
+        console.log('🔍 Token Check:', {
+          expires: new Date(payload.exp * 1000),
+          isExpired,
+          userId: payload.id
+        })
+        
+        if (isExpired) {
+          console.error('❌ Token expired')
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('refresh_token')
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive"
+          })
+          window.location.href = '/login'
+          return
+        }
+      } catch (e) {
+        console.error('❌ Invalid token format:', e)
+        localStorage.removeItem('auth_token')
+        window.location.href = '/login'
+        return
+      }
+
+      console.log('✅ Auth check passed, creating payment intent...')
       const response = await paymentsApi.createPaymentIntent(job.id)
+      console.log('✅ Payment intent created:', response.data)
       setClientSecret(response.data.clientSecret)
     } catch (error) {
-      console.error('Payment Intent Error:', error)
+      console.error('❌ Payment Intent Error:', error)
       
       // Handle specific authentication errors
-      if (error instanceof Error && error.message.includes('401')) {
+      if (error instanceof Error && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+        console.error('❌ Authentication error detected')
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('refresh_token')
         toast({
-          title: "Authentication Expired",
-          description: "Your session has expired. Please log in again.",
+          title: "Authentication Failed",
+          description: "Your session is invalid. Please log in again.",
           variant: "destructive"
         })
-        // Redirect to login
         window.location.href = '/login'
         return
       }
