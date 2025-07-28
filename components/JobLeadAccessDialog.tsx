@@ -71,9 +71,34 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
 
   const createPaymentIntent = async () => {
     try {
+      // Check if user is authenticated
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to continue with payment.",
+          variant: "destructive"
+        })
+        return
+      }
+
       const response = await paymentsApi.createPaymentIntent(job.id)
       setClientSecret(response.data.clientSecret)
     } catch (error) {
+      console.error('Payment Intent Error:', error)
+      
+      // Handle specific authentication errors
+      if (error instanceof Error && error.message.includes('401')) {
+        toast({
+          title: "Authentication Expired",
+          description: "Your session has expired. Please log in again.",
+          variant: "destructive"
+        })
+        // Redirect to login
+        window.location.href = '/login'
+        return
+      }
+      
       handleApiError(error, 'Failed to initialize payment')
     }
   }
