@@ -10,16 +10,17 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           {
-            key: 'Content-Security-Policy-Report-Only',
+            key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://m.stripe.network https://*.stripe.com https://*.stripe.network https://newassets.hcaptcha.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://m.stripe.network https://m.stripe.com https://*.stripe.com https://*.stripe.network https://newassets.hcaptcha.com",
               "connect-src 'self' https://api.stripe.com https://merchant-ui-api.stripe.com https://maps.googleapis.com https://*.stripe.com https://*.stripe.network https://api.trustbuild.uk wss://api.trustbuild.uk",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://fonts.gstatic.com https://*.stripe.com https://fonts.googleapis.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https: https://*.stripe.com",
+              "font-src 'self' data: https://fonts.gstatic.com https://*.stripe.com https://fonts.googleapis.com https://m.stripe.network https://m.stripe.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.stripe.com",
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.stripe.network https://newassets.hcaptcha.com",
               "child-src 'self' https://js.stripe.com https://*.stripe.com",
+              "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'"
@@ -28,6 +29,10 @@ const nextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
           }
         ]
       }
