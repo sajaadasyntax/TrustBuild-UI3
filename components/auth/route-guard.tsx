@@ -24,7 +24,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
       '/dashboard/contractor',
       '/dashboard/client',
       '/admin',
-      '/super-admin'
+      '/super-admin',
+      '/post-job'
     ]
 
     // Check if current route is protected
@@ -75,6 +76,16 @@ export function RouteGuard({ children }: RouteGuardProps) {
         router.push(dashboardRoute)
         return
       }
+      
+      // Post job - only CUSTOMER role (customers post jobs, contractors complete them)
+      if (pathname === '/post-job' && user.role !== 'CUSTOMER') {
+        setIsRedirecting(true)
+        const dashboardRoute = user.role === 'SUPER_ADMIN' ? '/super-admin'
+          : user.role === 'ADMIN' ? '/admin' 
+          : '/dashboard/contractor'
+        router.push(dashboardRoute)
+        return
+      }
     }
 
     // If authenticated and on login/register/home, redirect to appropriate dashboard
@@ -112,7 +123,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
     '/dashboard/contractor',
     '/dashboard/client',
     '/admin',
-    '/super-admin'
+    '/super-admin',
+    '/post-job'
   ]
 
   const isProtectedRoute = protectedRoutes.some(route => 
