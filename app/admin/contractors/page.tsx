@@ -30,7 +30,11 @@ import {
   Users,
   Shield,
   AlertTriangle,
-  Activity
+  Activity,
+  CreditCard,
+  Plus,
+  Minus,
+  History
 } from 'lucide-react'
 import { contractorsApi, adminApi, handleApiError, Contractor } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -92,6 +96,7 @@ export default function AdminContractors() {
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
+  const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [approvalData, setApprovalData] = useState({
     approved: true,
     reason: '',
@@ -99,6 +104,11 @@ export default function AdminContractors() {
   })
   const [statusData, setStatusData] = useState({
     status: '',
+    reason: ''
+  })
+  const [creditData, setCreditData] = useState({
+    type: 'ADDITION' as 'ADDITION' | 'DEDUCTION',
+    amount: 1,
     reason: ''
   })
   const [processing, setProcessing] = useState(false)
@@ -216,6 +226,43 @@ export default function AdminContractors() {
     } finally {
       setProcessing(false)
     }
+  }
+
+  const handleCreditAdjustment = async () => {
+    if (!selectedContractor) return
+
+    try {
+      setProcessing(true)
+      // Handle credit amount based on type (positive for addition, negative for deduction)
+      const adjustmentAmount = creditData.type === 'DEDUCTION' ? -creditData.amount : creditData.amount
+      await adminApi.adjustContractorCredits(
+        selectedContractor.id,
+        adjustmentAmount,
+        creditData.reason
+      )
+      
+      const action = creditData.type === 'ADDITION' ? 'added' : 'removed'
+      toast({
+        title: 'Credits Updated',
+        description: `Successfully ${action} ${creditData.amount} credit${creditData.amount !== 1 ? 's' : ''} ${creditData.type === 'ADDITION' ? 'to' : 'from'} ${selectedContractor.user.name}`,
+      })
+      
+      fetchContractors()
+      fetchStats()
+      setShowCreditDialog(false)
+      setSelectedContractor(null)
+      setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
+    } catch (error) {
+      handleApiError(error, 'Failed to adjust credits')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const openCreditDialog = (contractor: Contractor) => {
+    setSelectedContractor(contractor)
+    setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
+    setShowCreditDialog(true)
   }
 
   const exportContractors = async () => {
@@ -637,11 +684,27 @@ export default function AdminContractors() {
                             <span>{contractor.jobsCompleted || 0} jobs completed</span>
                             <span>•</span>
                             <span>Joined {new Date(contractor.createdAt).toLocaleDateString()}</span>
+                            <span>•</span>
+                            <div className="flex items-center">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              <span className="font-medium text-blue-600">
+                                {contractor.creditsBalance || 0} credits
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCreditDialog(contractor)}
+                          className="h-8 px-2"
+                        >
+                          <CreditCard className="h-3 w-3 mr-1" />
+                          Credits: {contractor.creditsBalance || 0}
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -690,6 +753,14 @@ export default function AdminContractors() {
                                 Reactivate
                               </DropdownMenuItem>
                             )}
+
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => openCreditDialog(contractor)}
+                            >
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Manage Credits
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -977,6 +1048,155 @@ export default function AdminContractors() {
                 </>
               ) : (
                 'Update Status'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Adjustment Dialog */}
+      <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Contractor Credits</DialogTitle>
+            <DialogDescription>
+              {selectedContractor ? 
+                `Adjust credits for ${selectedContractor.businessName || selectedContractor.user.name}` :
+                'Adjust contractor credits'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedContractor && (
+            <div className="space-y-4">
+              {/* Current Credit Information */}
+              <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Current Credits:</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {selectedContractor.creditsBalance || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Weekly Limit:</span>
+                  <span>{selectedContractor.weeklyCreditsLimit || 3}</span>
+                </div>
+              </div>
+
+              {/* Credit Adjustment Form */}
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label>Action</Label>
+                  <Select 
+                    value={creditData.type} 
+                    onValueChange={(value: 'ADDITION' | 'DEDUCTION') => 
+                      setCreditData(prev => ({ ...prev, type: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ADDITION">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-2 text-green-600" />
+                          Add Credits
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="DEDUCTION">
+                        <div className="flex items-center">
+                          <Minus className="h-4 w-4 mr-2 text-red-600" />
+                          Remove Credits
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="creditAmount">Amount</Label>
+                  <Input
+                    id="creditAmount"
+                    type="number"
+                    min="1"
+                    max={creditData.type === 'DEDUCTION' ? selectedContractor.creditsBalance : 50}
+                    value={creditData.amount}
+                    onChange={(e) => setCreditData(prev => ({ 
+                      ...prev, 
+                      amount: parseInt(e.target.value) || 1 
+                    }))}
+                    placeholder="Number of credits"
+                  />
+                  {creditData.type === 'DEDUCTION' && creditData.amount > (selectedContractor.creditsBalance || 0) && (
+                    <p className="text-sm text-red-600">
+                      Cannot remove more credits than available ({selectedContractor.creditsBalance || 0})
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="creditReason">Reason *</Label>
+                  <Textarea
+                    id="creditReason"
+                    value={creditData.reason}
+                    onChange={(e) => setCreditData(prev => ({ ...prev, reason: e.target.value }))}
+                    placeholder="Reason for credit adjustment (required)..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Preview */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm font-medium mb-1">Preview:</p>
+                  <p className="text-sm text-muted-foreground">
+                    {creditData.type === 'ADDITION' ? 'Add' : 'Remove'} {creditData.amount} credit{creditData.amount !== 1 ? 's' : ''}
+                    {creditData.type === 'ADDITION' ? ' to' : ' from'} {selectedContractor.businessName || selectedContractor.user.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    New balance: {
+                      creditData.type === 'ADDITION' 
+                        ? (selectedContractor.creditsBalance || 0) + creditData.amount
+                        : Math.max(0, (selectedContractor.creditsBalance || 0) - creditData.amount)
+                    } credits
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCreditDialog(false)
+                setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreditAdjustment}
+              disabled={
+                processing || 
+                !creditData.reason.trim() || 
+                creditData.amount < 1 ||
+                (creditData.type === 'DEDUCTION' && creditData.amount > (selectedContractor?.creditsBalance || 0))
+              }
+            >
+              {processing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {creditData.type === 'ADDITION' ? (
+                    <Plus className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Minus className="mr-2 h-4 w-4" />
+                  )}
+                  {creditData.type === 'ADDITION' ? 'Add' : 'Remove'} Credits
+                </>
               )}
             </Button>
           </div>

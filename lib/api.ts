@@ -1336,6 +1336,7 @@ export const adminApi = {
     status?: string;
     type?: string;
     search?: string;
+    dateFilter?: string;
   } = {}): Promise<{
     status: 'success';
     data: {

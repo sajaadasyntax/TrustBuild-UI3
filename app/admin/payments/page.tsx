@@ -30,6 +30,7 @@ import {
   Banknote
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { adminApi } from '@/lib/api'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,7 +107,6 @@ export default function AdminPayments() {
   const [showTransactionDialog, setShowTransactionDialog] = useState(false)
   const [exporting, setExporting] = useState(false)
 
-  // Mock data for demonstration
   useEffect(() => {
     if (isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
       fetchPaymentStats()
@@ -117,20 +117,9 @@ export default function AdminPayments() {
   const fetchPaymentStats = async () => {
     try {
       setStatsLoading(true)
-      // Mock data - replace with actual Stripe API calls
-      const mockStats: PaymentStats = {
-        totalRevenue: 124500.50,
-        monthlyRevenue: 18750.25,
-        totalTransactions: 1247,
-        successfulPayments: 1198,
-        failedPayments: 32,
-        pendingPayments: 17,
-        averageTransactionValue: 99.84,
-        revenueGrowth: 12.5,
-        subscriptionRevenue: 67800.00,
-        jobPaymentRevenue: 56700.50
-      }
-      setStats(mockStats)
+      // Use real API to fetch payment statistics
+      const stats = await adminApi.getPaymentStats()
+      setStats(stats)
     } catch (error) {
       console.error('Error fetching payment stats:', error)
       toast({
@@ -146,61 +135,17 @@ export default function AdminPayments() {
   const fetchTransactions = async () => {
     try {
       setLoading(true)
-      // Mock data - replace with actual Stripe API calls
-      const mockTransactions: Transaction[] = [
-        {
-          id: '1',
-          amount: 299.99,
-          currency: 'GBP',
-          status: 'succeeded',
-          type: 'subscription',
-          customer: {
-            name: 'John Smith',
-            email: 'john@example.com'
-          },
-          contractor: {
-            businessName: 'Smith Construction',
-            user: { name: 'John Smith' }
-          },
-          description: 'Premium subscription - Monthly',
-          createdAt: new Date().toISOString(),
-          stripePaymentId: 'pi_1234567890'
-        },
-        {
-          id: '2',
-          amount: 150.00,
-          currency: 'GBP',
-          status: 'succeeded',
-          type: 'job_payment',
-          customer: {
-            name: 'Sarah Johnson',
-            email: 'sarah@example.com'
-          },
-          description: 'Job completion payment - Kitchen renovation',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          stripePaymentId: 'pi_0987654321'
-        },
-        {
-          id: '3',
-          amount: 75.50,
-          currency: 'GBP',
-          status: 'failed',
-          type: 'job_unlock',
-          customer: {
-            name: 'Mike Wilson',
-            email: 'mike@example.com'
-          },
-          contractor: {
-            businessName: 'Wilson Plumbing',
-            user: { name: 'Mike Wilson' }
-          },
-          description: 'Job details unlock fee',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          stripePaymentId: 'pi_1122334455'
-        }
-      ]
-      setTransactions(mockTransactions)
-      setTotalPages(Math.ceil(mockTransactions.length / 20))
+      // Use real API to fetch payment transactions
+      const response = await adminApi.getPaymentTransactions({
+        page,
+        limit: 20,
+        status: statusFilter,
+        type: typeFilter,
+        search: searchTerm,
+        dateFilter
+      })
+      setTransactions(response.data.transactions)
+      setTotalPages(response.data.pagination.pages)
     } catch (error) {
       console.error('Error fetching transactions:', error)
       toast({

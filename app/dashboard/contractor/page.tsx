@@ -25,6 +25,11 @@ export default function ContractorDashboard() {
   const [completedJobs, setCompletedJobs] = useState<Job[]>([])
   const [recentReviews, setRecentReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [creditInfo, setCreditInfo] = useState<{
+    creditsBalance: number;
+    weeklyCreditsLimit: number;
+    nextCreditReset: string;
+  } | null>(null)
   const [stats, setStats] = useState({
     totalApplications: 0,
     activeJobs: 0,
@@ -45,6 +50,18 @@ export default function ContractorDashboard() {
       // Fetch contractor profile
       const contractorData = await contractorsApi.getMyProfile()
       setContractor(contractorData)
+
+      // Fetch current credit information
+      try {
+        const earningsData = await contractorsApi.getMyEarnings()
+        setCreditInfo({
+          creditsBalance: earningsData.creditsBalance,
+          weeklyCreditsLimit: earningsData.weeklyCreditsLimit,
+          nextCreditReset: earningsData.nextCreditReset
+        })
+      } catch (error) {
+        console.warn('Failed to fetch credit info:', error)
+      }
 
       // Fetch job applications
       const applicationsData = await jobsApi.getMyApplications()
@@ -193,8 +210,8 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{contractor?.subscription?.freeApplicationsLeft ?? 0}</div>
-                <p className="text-sm text-muted-foreground">Remaining this week</p>
+                <div className="text-3xl font-bold text-primary">{creditInfo?.creditsBalance ?? contractor?.creditsBalance ?? 0}</div>
+                <p className="text-sm text-muted-foreground">of {creditInfo?.weeklyCreditsLimit ?? contractor?.weeklyCreditsLimit ?? 3} remaining this week</p>
                 <div className="flex items-center mt-2 text-xs">
                   <Bell className="h-3 w-3 mr-1" />
                   <span>Resets on Sunday</span>
@@ -356,7 +373,7 @@ export default function ContractorDashboard() {
               <CardHeader>
                 <CardTitle>Active Jobs</CardTitle>
                   <CardDescription>
-                  Jobs you're currently working on
+                  Jobs you&apos;re currently working on
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
