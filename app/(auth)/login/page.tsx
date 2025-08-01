@@ -15,6 +15,7 @@ import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
 import { ApiError } from "@/lib/api"
+import { Eye, EyeOff } from "lucide-react"
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const { toast } = useToast()
   const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -108,13 +110,28 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input 
-                id="password" 
-                type="password"
-                autoComplete="current-password"
-                disabled={isLoading}
-                {...form.register("password")}
-              />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  {...form.register("password")}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
               {form.formState.errors.password && (
                 <p className="px-1 text-xs text-red-600">
                   {form.formState.errors.password.message}

@@ -26,6 +26,8 @@ const formSchema = z.object({
   address: z.string().min(5, "Please enter a valid address"),
   city: z.string().min(2, "Please enter a valid city"),
   postcode: z.string().min(5, "Please enter a valid postcode"),
+  phone: z.string().min(10, "Please enter a valid phone number"),
+  email: z.string().email("Please enter a valid email address"),
   urgency: z.enum(["low", "medium", "high"]),
   timeline: z.enum(["asap", "week", "month", "flexible"]),
   notes: z.string().optional(),
@@ -51,6 +53,8 @@ export default function PostJobPage() {
       address: "",
       city: "",
       postcode: "",
+      phone: "",
+      email: "",
       urgency: "medium",
       timeline: "flexible",
       notes: "",
@@ -120,7 +124,7 @@ export default function PostJobPage() {
       const isValid = await form.trigger(["title", "description", "serviceId"])
       if (isValid) setStep(2)
     } else if (step === 2) {
-      const isValid = await form.trigger(["address", "city", "postcode"])
+      const isValid = await form.trigger(["address", "city", "postcode", "phone", "email"])
       if (isValid) setStep(3)
     }
   }
@@ -148,6 +152,8 @@ export default function PostJobPage() {
         category: selectedService?.name || 'General Construction',
         location: `${data.address}, ${data.city}`,
         postcode: data.postcode,
+        phone: data.phone,
+        email: data.email,
         urgency: data.timeline, // Use timeline for urgency field in backend
         urgent: data.urgency === 'high', // Keep for backward compatibility
         timeline: data.timeline,
@@ -355,6 +361,38 @@ export default function PostJobPage() {
                   />
                   {form.formState.errors.postcode && (
                     <p className="text-sm text-destructive">{form.formState.errors.postcode.message}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    Phone Number <span className="text-destructive">*</span>
+                  </Label>
+                  <Input 
+                    id="phone" 
+                    type="tel"
+                    placeholder="07123 456789"
+                    {...form.register("phone")}
+                  />
+                  {form.formState.errors.phone && (
+                    <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Input 
+                    id="email" 
+                    type="email"
+                    placeholder="john@example.com"
+                    {...form.register("email")}
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
                   )}
                 </div>
               </div>

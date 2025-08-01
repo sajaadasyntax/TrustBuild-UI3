@@ -1398,9 +1398,9 @@ export const adminApi = {
     newBalance: number;
     transaction: CreditTransaction;
   }> => {
-    const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/credits`, {
-      method: 'PATCH',
-      body: JSON.stringify({ amount, reason }),
+    const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/adjust-credits`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, reason, type: amount > 0 ? 'ADDITION' : 'DEDUCTION' }),
     });
     return response.data;
   },
@@ -1696,9 +1696,9 @@ export const jobManagementApi = {
     newBalance: number;
     transaction: CreditTransaction;
   }> => {
-    const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/credits`, {
-      method: 'PATCH',
-      body: JSON.stringify({ amount, reason }),
+    const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/adjust-credits`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, reason, type: amount > 0 ? 'ADDITION' : 'DEDUCTION' }),
     });
     return response.data;
   },

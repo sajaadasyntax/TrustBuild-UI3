@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/hooks/use-toast"
 import { authApi, ApiError } from "@/lib/api"
+import { Eye, EyeOff } from "lucide-react"
 
 const baseSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -59,6 +60,8 @@ export default function RegisterPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [role, setRole] = useState<"CUSTOMER" | "CONTRACTOR">("CUSTOMER")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const customerForm = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -242,14 +245,29 @@ export default function RegisterPage() {
                   </div>
                   
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                                    <div className="space-y-2">
                     <Label htmlFor="customer-password">Password</Label>
-                    <Input 
-                      id="customer-password" 
-                      type="password"
-                    disabled={isLoading}
-                      {...customerForm.register("password")}
-                    />
+                    <div className="relative">
+                      <Input 
+                        id="customer-password" 
+                        type={showPassword ? "text" : "password"}
+                        disabled={isLoading}
+                        {...customerForm.register("password")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                     {customerForm.formState.errors.password && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.password.message}</p>
                     )}
@@ -257,16 +275,31 @@ export default function RegisterPage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="customer-confirm-password">Confirm Password</Label>
-                    <Input 
-                      id="customer-confirm-password" 
-                      type="password"
-                    disabled={isLoading}
-                      {...customerForm.register("confirmPassword")}
-                    />
+                    <div className="relative">
+                      <Input 
+                        id="customer-confirm-password" 
+                        type={showConfirmPassword ? "text" : "password"}
+                        disabled={isLoading}
+                        {...customerForm.register("confirmPassword")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                     {customerForm.formState.errors.confirmPassword && (
                     <p className="text-xs text-red-600">{customerForm.formState.errors.confirmPassword.message}</p>
                     )}
-                </div>
+                  </div>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -360,12 +393,27 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="contractor-password">Password</Label>
-                    <Input 
-                      id="contractor-password" 
-                      type="password"
-                    disabled={isLoading}
-                      {...contractorForm.register("password")}
-                    />
+                    <div className="relative">
+                      <Input 
+                        id="contractor-password" 
+                        type={showPassword ? "text" : "password"}
+                        disabled={isLoading}
+                        {...contractorForm.register("password")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                     {contractorForm.formState.errors.password && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.password.message}</p>
                     )}
@@ -373,12 +421,27 @@ export default function RegisterPage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="contractor-confirm-password">Confirm Password</Label>
-                    <Input 
-                      id="contractor-confirm-password" 
-                      type="password"
-                    disabled={isLoading}
-                      {...contractorForm.register("confirmPassword")}
-                    />
+                    <div className="relative">
+                      <Input 
+                        id="contractor-confirm-password" 
+                        type={showConfirmPassword ? "text" : "password"}
+                        disabled={isLoading}
+                        {...contractorForm.register("confirmPassword")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                     {contractorForm.formState.errors.confirmPassword && (
                     <p className="text-xs text-red-600">{contractorForm.formState.errors.confirmPassword.message}</p>
                   )}

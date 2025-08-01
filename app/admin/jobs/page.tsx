@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw } from "lucide-react"
+import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw, PoundSterling } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { adminApi, Job, handleApiError, contractorsApi } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 interface JobStats {
   totalJobs: number;
@@ -36,6 +38,11 @@ export default function JobOversightPage() {
   const { toast } = useToast()
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showDetails, setShowDetails] = useState(false)
+  const [showPriceDialog, setShowPriceDialog] = useState(false)
+  const [editingPrice, setEditingPrice] = useState({
+    currentLeadPrice: 0,
+    reason: ''
+  })
   const [contractors, setContractors] = useState<any[]>([])
   const [assigning, setAssigning] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState<string>('')
@@ -112,12 +119,44 @@ export default function JobOversightPage() {
     }
   }
 
-  const openDetails = async (job: Job) => {
+  const openDetails = (job: Job) => {
     setSelectedJob(job)
     setShowDetails(true)
-    // Fetch contractors for assignment dropdown
-    const res = await contractorsApi.getAll({ limit: 100 })
-    setContractors(res.data.contractors)
+  }
+
+  const openPriceDialog = (job: Job) => {
+    setSelectedJob(job)
+    setEditingPrice({
+      currentLeadPrice: job.currentLeadPrice || 0,
+      reason: ''
+    })
+    setShowPriceDialog(true)
+  }
+
+  const handlePriceUpdate = async () => {
+    if (!selectedJob || !editingPrice.reason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for the price adjustment",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      await adminApi.setJobLeadPrice(selectedJob.id, editingPrice.currentLeadPrice, editingPrice.reason)
+      
+      toast({
+        title: "Price Updated",
+        description: `Job lead price updated to ${formatCurrency(editingPrice.currentLeadPrice)}`,
+      })
+      
+      setShowPriceDialog(false)
+      setEditingPrice({ currentLeadPrice: 0, reason: '' })
+      fetchJobs() // Refresh the jobs list
+    } catch (error) {
+      handleApiError(error, 'Failed to update job price')
+    }
   }
 
   const handleAssignContractor = async () => {
@@ -312,6 +351,10 @@ export default function JobOversightPage() {
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => openPriceDialog(job)}>
+                    <PoundSterling className="h-4 w-4 mr-1" />
+                    Edit Price
+                  </Button>
                   <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Change Status" />
@@ -449,6 +492,75 @@ export default function JobOversightPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Job Price Edit Dialog */}
+      <Dialog open={showPriceDialog} onOpenChange={setShowPriceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Job Lead Price</DialogTitle>
+            <DialogDescription>
+              Adjust the lead access price for &ldquo;{selectedJob?.title}&rdquo;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="currentPrice">Current Budget</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Customer budget: {selectedJob?.budget ? formatCurrency(selectedJob.budget) : 'Quote on request'}
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="leadPrice">Lead Access Price</Label>
+              <Input
+                id="leadPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={editingPrice.currentLeadPrice}
+                onChange={(e) => setEditingPrice(prev => ({ 
+                  ...prev, 
+                  currentLeadPrice: parseFloat(e.target.value) || 0 
+                }))}
+                placeholder="Enter lead price..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Price contractors pay to access this job lead
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="priceReason">Reason for Price Adjustment</Label>
+              <Textarea
+                id="priceReason"
+                value={editingPrice.reason}
+                onChange={(e) => setEditingPrice(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Explain why the price is being adjusted..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowPriceDialog(false)
+                  setEditingPrice({ currentLeadPrice: 0, reason: '' })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePriceUpdate}
+                disabled={!editingPrice.reason.trim() || editingPrice.currentLeadPrice < 0}
+              >
+                Update Price
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

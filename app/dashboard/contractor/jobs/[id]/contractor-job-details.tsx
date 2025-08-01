@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
-import { MapPin, Calendar, Clock, User, Star, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react"
+import { MapPin, Calendar, Clock, User, Star, MessageSquare, CheckCircle2, AlertCircle, Phone, Mail } from "lucide-react"
 import { useState } from "react"
 import { Job, jobsApi, handleApiError } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
@@ -200,6 +200,26 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
                   <span>Customer</span>
                 </div>
               </div>
+              
+              {/* Contact Information */}
+              {job.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href={`tel:${job.phone}`} className="text-sm text-blue-600 hover:underline">
+                    {job.phone}
+                  </a>
+                </div>
+              )}
+              
+              {job.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a href={`mailto:${job.email}`} className="text-sm text-blue-600 hover:underline">
+                    {job.email}
+                  </a>
+                </div>
+              )}
+              
               <p className="text-sm text-muted-foreground">
                 Customer
               </p>
