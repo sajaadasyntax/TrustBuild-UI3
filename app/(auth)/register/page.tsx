@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -62,6 +62,15 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"CUSTOMER" | "CONTRACTOR">("CUSTOMER")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  
+  // Check URL parameters for role pre-selection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const roleParam = urlParams.get('role')
+    if (roleParam === 'contractor') {
+      setRole('CONTRACTOR')
+    }
+  }, [])
   
   const customerForm = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),

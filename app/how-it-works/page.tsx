@@ -238,7 +238,7 @@ export default function HowItWorksPage() {
                       Access new projects, showcase your skills, and grow your business through verified leads and customer reviews.
                     </p>
                     <Button asChild variant="outline" className="w-full">
-                      <Link href="/register">
+                      <Link href="/register?role=contractor">
                         Join as Contractor
                       </Link>
                     </Button>

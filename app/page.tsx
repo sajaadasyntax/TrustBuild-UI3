@@ -58,7 +58,7 @@ export default function Home() {
                 <Link href="/post-job">Post a Job</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="bg-white/20 hover:bg-white/30 border-white">
-                <Link href="/contractors">Join as a Contractor</Link>
+                <Link href="/register?role=contractor">Join as a Contractor</Link>
               </Button>
             </div>
           </div>
@@ -367,7 +367,7 @@ export default function Home() {
                 <Link href="/post-job">Post a Job</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-primary-foreground/10">
-                <Link href="/register">Join as a Contractor</Link>
+                <Link href="/register?role=contractor">Join as a Contractor</Link>
               </Button>
             </div>
           </div>
