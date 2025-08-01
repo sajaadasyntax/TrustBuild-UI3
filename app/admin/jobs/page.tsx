@@ -401,6 +401,27 @@ export default function JobOversightPage() {
                 </div>
               </div>
               
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <p className="text-sm font-medium">Lead Price</p>
+                  <p className="text-sm text-muted-foreground">
+                    {job.currentLeadPrice ? formatCurrency(job.currentLeadPrice) : 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Job Size</p>
+                  <p className="text-sm text-muted-foreground">
+                    <Badge variant={job.jobSize === 'LARGE' ? 'destructive' : job.jobSize === 'MEDIUM' ? 'default' : 'secondary'}>
+                      {job.jobSize || 'Not classified'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Service</p>
+                  <p className="text-sm text-muted-foreground">{job.service?.name || 'N/A'}</p>
+                </div>
+              </div>
+
               {job.description && (
                 <div className="mt-4">
                   <p className="text-sm font-medium">Description</p>

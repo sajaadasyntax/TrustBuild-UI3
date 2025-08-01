@@ -25,7 +25,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
       '/dashboard/client',
       '/admin',
       '/super-admin',
-      '/post-job'
+      '/post-job',
+      '/contractors',
+      '/jobs',
+      '/profile'
     ]
 
     // Check if current route is protected
@@ -124,7 +127,10 @@ export function RouteGuard({ children }: RouteGuardProps) {
     '/dashboard/client',
     '/admin',
     '/super-admin',
-    '/post-job'
+    '/post-job',
+    '/contractors',
+    '/jobs',
+    '/profile'
   ]
 
   const isProtectedRoute = protectedRoutes.some(route => 
