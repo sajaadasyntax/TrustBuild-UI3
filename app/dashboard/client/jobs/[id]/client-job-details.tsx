@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2, PenTool, User } from "lucide-react"
+import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2, PenTool, User, Eye, ShoppingCart } from "lucide-react"
 import { useState } from "react"
 import {
   Dialog,
@@ -40,6 +40,12 @@ interface Job {
   assignedContractorId?: string
   progress?: number
   timeline: string
+  accessCount?: number
+  purchasedBy?: Array<{
+    contractorName: string
+    purchasedAt: string
+    method: string
+  }>
   applications?: Array<{
     id: string
     contractor: string
@@ -312,6 +318,48 @@ export function ClientJobDetails({ job }: { job: Job }) {
                       </div>
                     </DialogContent>
                   </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Job Purchase Status */}
+          {job.status === "OPEN" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  Job Lead Activity
+                </CardTitle>
+                <CardDescription>
+                  See how many contractors have viewed your job details
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4">
+                  <div className="text-3xl font-bold text-primary mb-2">
+                    {job.accessCount || 0}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {job.accessCount === 1 ? 'contractor has' : 'contractors have'} purchased access to your job
+                  </p>
+                  
+                  {job.purchasedBy && job.purchasedBy.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <h4 className="text-sm font-medium">Recent Purchases:</h4>
+                      {job.purchasedBy.slice(0, 3).map((purchase, index) => (
+                        <div key={index} className="text-xs text-muted-foreground flex items-center justify-between">
+                          <span>{purchase.contractorName}</span>
+                          <span>{new Date(purchase.purchasedAt).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                      {job.purchasedBy.length > 3 && (
+                        <p className="text-xs text-muted-foreground">
+                          +{job.purchasedBy.length - 3} more
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

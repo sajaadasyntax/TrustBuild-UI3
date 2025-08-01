@@ -144,6 +144,12 @@ export interface Job {
   milestones?: Milestone[];
   hasAccess?: boolean; // Computed field
   currentLeadPrice?: number; // Computed field
+  accessCount?: number; // Computed field - number of contractors who purchased access
+  purchasedBy?: Array<{
+    contractorName: string;
+    purchasedAt: string;
+    method: string;
+  }>; // Computed field - list of contractors who purchased access
 }
 
 export interface JobApplication {
@@ -1398,9 +1404,10 @@ export const adminApi = {
     newBalance: number;
     transaction: CreditTransaction;
   }> => {
+    const type = amount > 0 ? 'ADDITION' : 'DEDUCTION';
     const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/adjust-credits`, {
       method: 'POST',
-      body: JSON.stringify({ amount, reason, type: amount > 0 ? 'ADDITION' : 'DEDUCTION' }),
+      body: JSON.stringify({ amount: Math.abs(amount), reason, type }),
     });
     return response.data;
   },
@@ -1696,9 +1703,10 @@ export const jobManagementApi = {
     newBalance: number;
     transaction: CreditTransaction;
   }> => {
+    const type = amount > 0 ? 'ADDITION' : 'DEDUCTION';
     const response = await apiRequest<{ data: any }>(`/admin/contractors/${contractorId}/adjust-credits`, {
       method: 'POST',
-      body: JSON.stringify({ amount, reason, type: amount > 0 ? 'ADDITION' : 'DEDUCTION' }),
+      body: JSON.stringify({ amount: Math.abs(amount), reason, type }),
     });
     return response.data;
   },

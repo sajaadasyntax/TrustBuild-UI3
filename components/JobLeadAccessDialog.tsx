@@ -186,7 +186,7 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
 
       if (paymentIntent?.status === 'succeeded') {
         // Call backend to complete job access purchase
-        await paymentsApi.purchaseJobAccess({
+        const result = await paymentsApi.purchaseJobAccess({
           jobId: job.id,
           paymentMethod: 'STRIPE',
           stripePaymentIntentId: paymentIntent.id
@@ -194,7 +194,7 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
         
         toast({
           title: "Payment Successful!",
-          description: `Job access purchased. Payment of £${leadPrice} processed.`,
+          description: `Job access purchased. Payment of £${leadPrice} processed. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
         })
         
         onSuccess()
@@ -304,14 +304,14 @@ export default function JobLeadAccessDialog({
 
     try {
       setProcessingPayment(true)
-      await paymentsApi.purchaseJobAccess({
+      const result = await paymentsApi.purchaseJobAccess({
         jobId: job.id,
         paymentMethod: 'CREDIT'
       })
 
       toast({
         title: "Access Granted!",
-        description: "Job details unlocked using 1 credit",
+        description: `Job details unlocked using 1 credit. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
       })
       
       onAccessGranted?.()

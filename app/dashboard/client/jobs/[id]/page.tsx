@@ -158,6 +158,8 @@ export default function Page({ params }: { params: { id: string } }) {
     contractor: getContractorInfo(),
     progress: job.status === 'IN_PROGRESS' ? 50 : job.status === 'COMPLETED' ? 100 : 0,
     timeline: job.urgency || 'flexible',
+    accessCount: job.accessCount || 0,
+    purchasedBy: job.purchasedBy || [],
     applications: Array.isArray(job.applications) ? job.applications.map(app => ({
       id: app.id,
       contractor: app.contractor?.user?.name || app.contractor?.businessName || 'Unknown Contractor',

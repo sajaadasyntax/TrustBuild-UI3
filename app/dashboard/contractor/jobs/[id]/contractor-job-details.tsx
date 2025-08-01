@@ -202,20 +202,20 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
               </div>
               
               {/* Contact Information */}
-              {job.phone && (
+              {job.customer.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${job.phone}`} className="text-sm text-blue-600 hover:underline">
-                    {job.phone}
+                  <a href={`tel:${job.customer.phone}`} className="text-sm text-blue-600 hover:underline">
+                    {job.customer.phone}
                   </a>
                 </div>
               )}
               
-              {job.email && (
+              {job.customer.user.email && (
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${job.email}`} className="text-sm text-blue-600 hover:underline">
-                    {job.email}
+                  <a href={`mailto:${job.customer.user.email}`} className="text-sm text-blue-600 hover:underline">
+                    {job.customer.user.email}
                   </a>
                 </div>
               )}
