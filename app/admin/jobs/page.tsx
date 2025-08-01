@@ -404,7 +404,7 @@ export default function JobOversightPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div>
                   <p className="text-sm font-medium">Lead Price</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground font-mono">
                     {job.currentLeadPrice ? formatCurrency(job.currentLeadPrice) : 'Not set'}
                   </p>
                 </div>
@@ -496,6 +496,15 @@ export default function JobOversightPage() {
               </div>
               <div>
                 <strong>Budget:</strong> {formatCurrency(selectedJob.budget)}
+              </div>
+              <div>
+                <strong>Lead Price:</strong> {selectedJob.currentLeadPrice ? formatCurrency(selectedJob.currentLeadPrice) : 'Not set'}
+              </div>
+              <div>
+                <strong>Job Size:</strong> 
+                <Badge variant={selectedJob.jobSize === 'LARGE' ? 'destructive' : selectedJob.jobSize === 'MEDIUM' ? 'default' : 'secondary'} className="ml-2">
+                  {selectedJob.jobSize || 'Not classified'}
+                </Badge>
               </div>
               <div>
                 <strong>Description:</strong>

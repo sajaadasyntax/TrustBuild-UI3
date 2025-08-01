@@ -125,6 +125,8 @@ export interface Job {
   budget?: number;
   location: string;
   postcode?: string;
+  phone?: string;
+  email?: string;
   urgency?: string;
   status: 'DRAFT' | 'POSTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   startDate?: string;
