@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, MapPin, DollarSign, Search, Briefcase, TrendingUp } from 'lucide-react'
 import { jobsApi, servicesApi, handleApiError, Job } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function JobsPage() {
+  const { user } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -105,6 +107,15 @@ export default function JobsPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount)
+  }
+
+  const formatLocation = (job: Job) => {
+    // For contractors, only show postcode area until they purchase access
+    if (user?.role === 'CONTRACTOR') {
+      return job.postcode ? `${job.postcode} area` : 'Area available after purchase'
+    }
+    // For customers and admins, show full location
+    return job.location
   }
 
   const getUrgencyColor = (isUrgent: boolean) => {
@@ -246,7 +257,7 @@ export default function JobsPage() {
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {job.location}
+                        {formatLocation(job)}
                       </span>
                       <span className="flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />

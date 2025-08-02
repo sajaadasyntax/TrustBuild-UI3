@@ -54,6 +54,9 @@ export default function JobDetailsPage() {
   useEffect(() => {
     if (job && user?.role === 'CONTRACTOR') {
       checkJobAccess(job.id)
+    } else if (job && user?.role !== 'CONTRACTOR') {
+      // For non-contractors, set access check as complete
+      setCheckingAccess(false)
     }
   }, [job, user])
 
@@ -62,11 +65,19 @@ export default function JobDetailsPage() {
       setLoading(true)
       const jobData = await jobsApi.getById(jobId)
       setJob(jobData)
+      
+      // For contractors, keep loading state until access check is complete
+      if (user?.role === 'CONTRACTOR') {
+        setCheckingAccess(true)
+      }
     } catch (error) {
       handleApiError(error, 'Failed to fetch job details')
       router.push('/jobs')
     } finally {
-      setLoading(false)
+      // Only set loading to false for non-contractors
+      if (user?.role !== 'CONTRACTOR') {
+        setLoading(false)
+      }
     }
   }
 
@@ -80,6 +91,7 @@ export default function JobDetailsPage() {
       setHasAccess(false)
     } finally {
       setCheckingAccess(false)
+      setLoading(false) // Now safe to show content
     }
   }
 
@@ -242,7 +254,8 @@ export default function JobDetailsPage() {
     return user?.role === 'CONTRACTOR' && !hasAccess && !checkingAccess
   }
 
-  if (loading) {
+  // Show loading if data is loading OR if contractor access check is in progress
+  if (loading || (user?.role === 'CONTRACTOR' && checkingAccess)) {
     return (
       <div className="container py-32">
         <div className="max-w-4xl mx-auto">
@@ -289,7 +302,10 @@ export default function JobDetailsPage() {
               <div className="flex items-center gap-4 text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  {job.location}
+                  {showRestrictedContent() 
+                    ? (job.postcode ? `${job.postcode} area` : 'Area details available after purchase')
+                    : job.location
+                  }
                 </span>
                 <span className="flex items-center gap-1">
                   <DollarSign className="h-4 w-4" />
@@ -340,13 +356,8 @@ export default function JobDetailsPage() {
                       <strong>Description:</strong> {job.description.substring(0, 300)}...
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <strong>Location:</strong> {job.location}
+                      <strong>Location:</strong> {job.postcode ? `${job.postcode} area` : 'Location details available after purchase'}
                     </div>
-                    {job.postcode && (
-                      <div className="text-sm text-muted-foreground">
-                        <strong>Postcode:</strong> {job.postcode}
-                      </div>
-                    )}
                     {job.customer && job.customer.user && (
                       <div className="text-sm text-muted-foreground">
                         <strong>Customer Name:</strong> {job.customer.user.name}
@@ -382,7 +393,12 @@ export default function JobDetailsPage() {
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Location</Label>
-                    <p className="text-muted-foreground">{job.location}</p>
+                    <p className="text-muted-foreground">
+                      {showRestrictedContent() 
+                        ? (job.postcode ? `${job.postcode} area` : 'Area details available after purchase')
+                        : job.location
+                      }
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Timeline</Label>

@@ -1423,6 +1423,15 @@ export const adminApi = {
     return response.data.job;
   },
 
+  // Job budget edit
+  setJobBudget: async (jobId: string, budget: number, reason?: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/budget`, {
+      method: 'PATCH',
+      body: JSON.stringify({ budget, reason }),
+    });
+    return response.data.job;
+  },
+
   // Weekly credit reset for all contractors
   resetWeeklyCredits: async (): Promise<{
     resetCount: number;
@@ -1718,6 +1727,15 @@ export const jobManagementApi = {
     const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/lead-price`, {
       method: 'PATCH',
       body: JSON.stringify({ price, reason }),
+    });
+    return response.data.job;
+  },
+
+  // Job budget edit
+  setJobBudget: async (jobId: string, budget: number, reason?: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/budget`, {
+      method: 'PATCH',
+      body: JSON.stringify({ budget, reason }),
     });
     return response.data.job;
   },

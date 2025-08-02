@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw, PoundSterling } from "lucide-react"
+import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw, PoundSterling, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,11 +38,16 @@ export default function JobOversightPage() {
   const { toast } = useToast()
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-  const [showPriceDialog, setShowPriceDialog] = useState(false)
+  const [showPriceDialog, setShowPriceDialog] = useState(false);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [editingPrice, setEditingPrice] = useState({
     currentLeadPrice: 0,
     reason: ''
-  })
+  });
+  const [editingBudget, setEditingBudget] = useState({
+    budget: 0,
+    reason: ''
+  });
   const [contractors, setContractors] = useState<any[]>([])
   const [assigning, setAssigning] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState<string>('')
@@ -133,31 +138,64 @@ export default function JobOversightPage() {
     setShowPriceDialog(true)
   }
 
-  const handlePriceUpdate = async () => {
-    if (!selectedJob || !editingPrice.reason.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a reason for the price adjustment",
-        variant: "destructive"
-      })
-      return
-    }
+  const openBudgetDialog = (job: Job) => {
+    setSelectedJob(job)
+    setEditingBudget({
+      budget: job.budget || 0,
+      reason: ''
+    })
+    setShowBudgetDialog(true)
+  }
 
+  const handlePriceUpdate = async () => {
+    if (!selectedJob) return;
+    
     try {
-      await adminApi.setJobLeadPrice(selectedJob.id, editingPrice.currentLeadPrice, editingPrice.reason)
+      setLoading(true);
+      await adminApi.setJobLeadPrice(selectedJob.id, editingPrice.currentLeadPrice, editingPrice.reason);
       
+      // Refresh jobs data
+      await fetchJobs();
+      
+      setShowPriceDialog(false);
+      setEditingPrice({ currentLeadPrice: 0, reason: '' });
+      
+      // Show success message
       toast({
         title: "Price Updated",
         description: `Job lead price updated to ${formatCurrency(editingPrice.currentLeadPrice)}`,
       })
-      
-      setShowPriceDialog(false)
-      setEditingPrice({ currentLeadPrice: 0, reason: '' })
-      fetchJobs() // Refresh the jobs list
     } catch (error) {
       handleApiError(error, 'Failed to update job price')
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const handleBudgetUpdate = async () => {
+    if (!selectedJob) return;
+    
+    try {
+      setLoading(true);
+      await adminApi.setJobBudget(selectedJob.id, editingBudget.budget, editingBudget.reason);
+      
+      // Refresh jobs data
+      await fetchJobs();
+      
+      setShowBudgetDialog(false);
+      setEditingBudget({ budget: 0, reason: '' });
+      
+      // Show success message
+      toast({
+        title: "Budget Updated",
+        description: `Job budget updated to ${formatCurrency(editingBudget.budget)}`,
+      })
+    } catch (error) {
+      handleApiError(error, 'Failed to update job budget')
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAssignContractor = async () => {
     if (!selectedJob || !selectedContractorId) return
@@ -353,7 +391,11 @@ export default function JobOversightPage() {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => openPriceDialog(job)}>
                     <PoundSterling className="h-4 w-4 mr-1" />
-                    Edit Price
+                    Edit Lead Price
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openBudgetDialog(job)}>
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Edit Budget
                   </Button>
                   <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
                     <SelectTrigger className="w-32">
@@ -590,6 +632,69 @@ export default function JobOversightPage() {
                 Update Price
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Job Budget Edit Dialog */}
+      <Dialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Job Budget</DialogTitle>
+            <DialogDescription>
+              Adjust the customer budget for &ldquo;{selectedJob?.title}&rdquo;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="currentBudget">Current Budget</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Current: {selectedJob?.budget ? formatCurrency(selectedJob.budget) : 'Quote on request'}
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="newBudget">New Budget</Label>
+              <Input
+                id="newBudget"
+                type="number"
+                step="0.01"
+                min="0"
+                value={editingBudget.budget}
+                onChange={(e) => setEditingBudget(prev => ({ 
+                  ...prev, 
+                  budget: parseFloat(e.target.value) || 0 
+                }))}
+                placeholder="Enter new budget..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Amount the customer&apos;s willing to pay for this job
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="budgetReason">Reason for Budget Adjustment</Label>
+              <Textarea
+                id="budgetReason"
+                value={editingBudget.reason}
+                onChange={(e) => setEditingBudget(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Explain why this budget adjustment is needed..."
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowBudgetDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBudgetUpdate}
+              disabled={!editingBudget.reason.trim()}
+            >
+              Update Budget
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

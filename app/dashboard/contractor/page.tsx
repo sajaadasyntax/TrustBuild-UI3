@@ -106,6 +106,13 @@ export default function ContractorDashboard() {
     }).format(amount)
   }
 
+  // Helper to format location based on access level
+  const formatLocationForApplication = (job: any) => {
+    // For applications, contractor may not have purchased access yet
+    // Only show postcode area unless they have confirmed access
+    return job.postcode ? `${job.postcode} area` : 'Area details available after purchase'
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -501,7 +508,7 @@ export default function ContractorDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
-                          {application.job.location}
+                          {formatLocationForApplication(application.job)}
                         </div>
                         <div className="flex items-center">
                           <DollarSign className="h-4 w-4 mr-1" />
