@@ -816,9 +816,15 @@ export const jobsApi = {
     location: string;
     budget?: number;
     urgent?: boolean;
-    images?: string[];
-    requirements?: string;
+    serviceId?: string;
+    jobSize?: 'SMALL' | 'MEDIUM' | 'LARGE';
+    postcode?: string;
+    phone?: string;
+    email?: string;
+    urgency?: string;
     timeline?: string;
+    requirements?: string;
+    images?: string[];
     contactPreference?: string;
   }): Promise<Job> => {
     const response = await apiRequest<{ data: { job: Job } }>('/jobs', {

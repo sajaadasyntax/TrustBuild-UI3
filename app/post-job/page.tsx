@@ -14,15 +14,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckCheck, MapPin, Calendar, PoundSterling } from "lucide-react"
+import { CheckCheck, MapPin, Calendar, PoundSterling, Info } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
   budget: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Budget must be a positive number if provided"),
   serviceId: z.string().min(1, "Please select a service category"),
+  jobSize: z.enum(["SMALL", "MEDIUM", "LARGE"], {
+    required_error: "Please select a job size",
+  }),
   address: z.string().min(5, "Please enter a valid address"),
   city: z.string().min(2, "Please enter a valid city"),
   postcode: z.string().min(5, "Please enter a valid postcode"),
@@ -42,6 +46,7 @@ export default function PostJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [servicesLoading, setServicesLoading] = useState(true)
+  const [estimatedLeadPrice, setEstimatedLeadPrice] = useState<number | null>(null)
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(formSchema),
@@ -50,6 +55,7 @@ export default function PostJobPage() {
       description: "",
       budget: "",
       serviceId: "",
+      jobSize: "MEDIUM" as const,
       address: "",
       city: "",
       postcode: "",
@@ -61,6 +67,33 @@ export default function PostJobPage() {
       termsAccepted: false,
     },
   })
+
+  // Watch for changes in serviceId and jobSize to calculate lead price
+  const watchedServiceId = form.watch("serviceId")
+  const watchedJobSize = form.watch("jobSize")
+
+  useEffect(() => {
+    if (watchedServiceId && watchedJobSize) {
+      const selectedService = services.find(s => s.id === watchedServiceId)
+      if (selectedService) {
+        let price = 0
+        switch (watchedJobSize) {
+          case 'SMALL':
+            price = selectedService.smallJobPrice || 15
+            break
+          case 'MEDIUM':
+            price = selectedService.mediumJobPrice || 30
+            break
+          case 'LARGE':
+            price = selectedService.largeJobPrice || 50
+            break
+        }
+        setEstimatedLeadPrice(price)
+      }
+    } else {
+      setEstimatedLeadPrice(null)
+    }
+  }, [watchedServiceId, watchedJobSize, services])
 
   useEffect(() => {
     fetchServices()
@@ -120,12 +153,17 @@ export default function PostJobPage() {
   }
 
   const nextStep = async () => {
+    let fieldsToValidate: (keyof JobFormValues)[] = []
+
     if (step === 1) {
-      const isValid = await form.trigger(["title", "description", "serviceId"])
-      if (isValid) setStep(2)
+      fieldsToValidate = ['title', 'description', 'serviceId', 'jobSize']
     } else if (step === 2) {
-      const isValid = await form.trigger(["address", "city", "postcode", "phone", "email"])
-      if (isValid) setStep(3)
+      fieldsToValidate = ['address', 'city', 'postcode', 'phone', 'email']
+    }
+
+    const isValid = await form.trigger(fieldsToValidate)
+    if (isValid && step < 3) {
+      setStep(step + 1)
     }
   }
 
@@ -143,25 +181,26 @@ export default function PostJobPage() {
       // Handle fallback services - if the serviceId starts with 'fallback-', don't include it
       const isFallbackService = data.serviceId.startsWith('fallback-')
       
-      const jobData = {
+      const jobPayload = {
         title: data.title,
         description: data.description,
-        budget: data.budget ? parseFloat(data.budget) : undefined,
-        // Only include serviceId if it's not a fallback service
-        ...(isFallbackService ? {} : { serviceId: data.serviceId }),
         category: selectedService?.name || 'General Construction',
         location: `${data.address}, ${data.city}`,
+        budget: data.budget ? parseFloat(data.budget) : undefined,
+        urgent: data.urgency === 'high',
+        serviceId: data.serviceId,
+        jobSize: data.jobSize,
         postcode: data.postcode,
+        urgency: data.timeline,
+        timeline: data.timeline,
+        requirements: data.notes || undefined,
+        // Additional fields for customer contact
         phone: data.phone,
         email: data.email,
-        urgency: data.timeline, // Use timeline for urgency field in backend
-        urgent: data.urgency === 'high', // Keep for backward compatibility
-        timeline: data.timeline,
-        requirements: data.notes,
       }
 
-      console.log('Submitting job data:', jobData)
-      const createdJob = await jobsApi.create(jobData)
+      console.log('Submitting job data:', jobPayload)
+      const createdJob = await jobsApi.create(jobPayload)
       
       toast({
         title: "Success!",
@@ -310,6 +349,72 @@ export default function PostJobPage() {
                   Leave blank if you&apos;d prefer contractors to provide quotes instead of a fixed budget.
                 </p>
               </div>
+
+                <FormField
+                  control={form.control}
+                  name="jobSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Size</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="grid grid-cols-1 gap-4"
+                        >
+                          <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="SMALL" />
+                            <div className="flex-1">
+                              <Label className="font-medium">Small Job</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Simple tasks, repairs, or consultations. Usually completed in a few hours to 1 day.
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Examples: Minor repairs, consultations, small installations
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="MEDIUM" />
+                            <div className="flex-1">
+                              <Label className="font-medium">Medium Job</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Moderate projects requiring some planning. Typically 1-5 days of work.
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Examples: Room renovations, garden landscaping, appliance installations
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                            <RadioGroupItem value="LARGE" />
+                            <div className="flex-1">
+                              <Label className="font-medium">Large Job</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Complex projects requiring significant planning and time. Multiple weeks or months.
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Examples: Full home renovations, large construction projects, major landscaping
+                              </p>
+                            </div>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                      {estimatedLeadPrice && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center gap-2 text-blue-800 text-sm font-medium">
+                            <Info className="h-4 w-4" />
+                            Lead Price Information
+                          </div>
+                          <p className="text-blue-700 text-sm mt-1">
+                            Contractors will pay £{estimatedLeadPrice} to access this job. This helps us attract serious professionals while keeping your project affordable.
+                          </p>
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
             </div>
           )}
           
