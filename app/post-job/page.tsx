@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCheck, MapPin, Calendar, PoundSterling, Info } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form"
 
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
@@ -259,7 +259,8 @@ export default function PostJobPage() {
       </div>
       
       <Card className="p-6">
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+                  <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
           {/* Step 1: Project Details */}
           {step === 1 && (
             <div className="space-y-6">
@@ -612,7 +613,8 @@ export default function PostJobPage() {
               </Button>
             )}
           </div>
-        </form>
+                  </form>
+          </Form>
       </Card>
     </div>
   )
