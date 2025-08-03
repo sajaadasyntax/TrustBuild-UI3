@@ -489,7 +489,7 @@ export default function PostJobPage() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">
-                    Email Address <span className="text-destructive">*</span>
+                    Contact Email <span className="text-destructive">*</span>
                   </Label>
                   <Input 
                     id="email" 
@@ -497,6 +497,9 @@ export default function PostJobPage() {
                     placeholder="john@example.com"
                     {...form.register("email")}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    This email will be used for job-related communications only
+                  </p>
                   {form.formState.errors.email && (
                     <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
                   )}
