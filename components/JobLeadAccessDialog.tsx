@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Target
 } from 'lucide-react'
-import { jobsApi, paymentsApi, handleApiError, Job, Contractor } from '@/lib/api'
+import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { loadStripe } from '@stripe/stripe-js'
@@ -289,11 +289,15 @@ export default function JobLeadAccessDialog({
   const fetchContractor = async () => {
     try {
       setLoading(true)
+      // Fetch fresh contractor data to get accurate credit balance
+      const contractorData = await contractorsApi.getMyProfile()
+      setContractor(contractorData)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch contractor information')
+      // Fallback to user.contractor if API fails
       if (user?.contractor) {
         setContractor(user.contractor)
       }
-    } catch (error) {
-      handleApiError(error, 'Failed to fetch contractor information')
     } finally {
       setLoading(false)
     }
@@ -302,12 +306,25 @@ export default function JobLeadAccessDialog({
   const handleCreditPayment = async () => {
     if (!job || !user) return
 
+    // Validate credit balance before proceeding
+    if (creditsBalance < 1) {
+      toast({
+        title: "Insufficient Credits",
+        description: "You don't have enough credits to access this job. Please purchase credits or use card payment.",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       setProcessingPayment(true)
       const result = await paymentsApi.purchaseJobAccess({
         jobId: job.id,
         paymentMethod: 'CREDIT'
       })
+
+      // Refresh contractor data to get updated credit balance
+      await fetchContractor()
 
       toast({
         title: "Access Granted!",
@@ -351,6 +368,7 @@ export default function JobLeadAccessDialog({
 
   // Get effective lead price based on the TrustBuilders pricing model
   const getEffectiveLeadPrice = () => {
+    // Use override price if set
     if (job.leadPrice && job.leadPrice > 0) {
       return job.leadPrice;
     }
@@ -359,29 +377,48 @@ export default function JobLeadAccessDialog({
     if (job.service && job.jobSize) {
       switch (job.jobSize) {
         case 'SMALL':
-          return job.service.smallJobPrice || 15;
+          return job.service.smallJobPrice || 0;
         case 'MEDIUM':
-          return job.service.mediumJobPrice || 30;
+          return job.service.mediumJobPrice || 0;
         case 'LARGE':
-          return job.service.largeJobPrice || 50;
+          return job.service.largeJobPrice || 0;
+        default:
+          return job.service.mediumJobPrice || 0;
       }
     }
     
-    // Fallback pricing for jobs without service data
-    switch (job.jobSize) {
-      case 'SMALL':
-        return 20;
-      case 'MEDIUM':
-        return 35;
-      case 'LARGE':
-        return 50;
-      default:
-        return 25;
-    }
+    // If no service data, return 0 to indicate pricing error
+    return 0;
   };
 
   const leadPrice = getEffectiveLeadPrice();
   const creditsBalance = contractor?.creditsBalance || 0;
+
+  // Show error if lead price is invalid
+  if (leadPrice === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pricing Error</DialogTitle>
+            <DialogDescription>
+              Unable to determine the lead price for this job. Please contact support.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-sm text-gray-600">
+              This job appears to have missing or invalid pricing information. 
+              Please try again later or contact our support team.
+            </p>
+            <Button onClick={onClose} className="mt-4">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (loading) {
     return (
