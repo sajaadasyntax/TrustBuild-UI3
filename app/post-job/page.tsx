@@ -108,9 +108,9 @@ export default function PostJobPage() {
       
       // Handle the correct API response structure for services
       let fetchedServices: Service[] = []
-      if (response?.status === 'success' && response?.data) {
-        // The response.data is an array with pagination info
-        fetchedServices = Array.isArray(response.data) ? response.data.filter((item: any) => item.id) : []
+      if (response?.status === 'success' && response?.data?.services) {
+        // The response.data.services is the array of services
+        fetchedServices = response.data.services.filter((item: any) => item.id)
       }
       
       console.log('Processed services:', fetchedServices)
@@ -188,7 +188,7 @@ export default function PostJobPage() {
         location: `${data.address}, ${data.city}`,
         budget: data.budget ? parseFloat(data.budget) : undefined,
         urgent: data.urgency === 'high',
-        serviceId: data.serviceId,
+        serviceId: isFallbackService ? undefined : data.serviceId,
         jobSize: data.jobSize,
         postcode: data.postcode,
         urgency: data.timeline,

@@ -310,6 +310,19 @@ export interface JobsPaginatedResponse {
   };
 }
 
+export interface ServicesPaginatedResponse {
+  status: 'success';
+  data: {
+    services: Service[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+}
+
 export interface ApiResponse<T> {
   status: 'success' | 'error';
   data?: T;
@@ -1032,7 +1045,7 @@ export const servicesApi = {
     category?: string;
     search?: string;
     isActive?: boolean;
-  } = {}): Promise<PaginatedResponse<Service>> => {
+  } = {}): Promise<ServicesPaginatedResponse> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
