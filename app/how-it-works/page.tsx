@@ -153,8 +153,8 @@ export default function HowItWorksPage() {
                         <span className="text-sm font-semibold text-primary">1</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold">Post Your Job</h4>
-                        <p className="text-sm text-muted-foreground">Describe your project in minutes with photos and requirements</p>
+                        <h4 className="font-semibold">Post your job</h4>
+                        <p className="text-sm text-muted-foreground">Share details about your project.</p>
                       </div>
                     </div>
                     
@@ -163,8 +163,8 @@ export default function HowItWorksPage() {
                         <span className="text-sm font-semibold text-primary">2</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold">Receive Interest</h4>
-                        <p className="text-sm text-muted-foreground">Get quotes and proposals from qualified professionals</p>
+                        <h4 className="font-semibold">Receive interest</h4>
+                        <p className="text-sm text-muted-foreground">Qualified contractors will review your job and express interest.</p>
                       </div>
                     </div>
                     
@@ -173,15 +173,25 @@ export default function HowItWorksPage() {
                         <span className="text-sm font-semibold text-primary">3</span>
                       </div>
                       <div>
-                        <h4 className="font-semibold">Choose with Confidence</h4>
-                        <p className="text-sm text-muted-foreground">Review profiles, ratings, and past work to make the right choice</p>
+                        <h4 className="font-semibold">Choose and connect</h4>
+                        <p className="text-sm text-muted-foreground">Review profiles and select the right professional for the job.</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-sm font-semibold text-primary">4</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Rate your experience</h4>
+                        <p className="text-sm text-muted-foreground">Help others by leaving a review after the work is done.</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="pt-4">
                     <p className="text-center text-muted-foreground mb-6">
-                      Post your job in minutes, receive interest from professionals, and choose the right one for you with confidence.
+                      It&apos;s simple, transparent, and built to save you time and stress.
                     </p>
                     <Button asChild className="w-full">
                       <Link href="/post-job">

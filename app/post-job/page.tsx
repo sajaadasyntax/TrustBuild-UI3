@@ -219,9 +219,28 @@ export default function PostJobPage() {
   return (
     <div className="container mx-auto max-w-3xl py-32">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Post a New Job</h1>
+        <h1 className="text-3xl font-bold mb-4">Post a Job</h1>
+        <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+          Looking for a reliable contractor? Get started in minutes. Just tell us what you need, your location, and when you&apos;d like the work done. We&apos;ll match your request with trusted contractors in your area.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCheck className="h-5 w-5" />
+            <span>Free to post</span>
+          </div>
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCheck className="h-5 w-5" />
+            <span>No obligation</span>
+          </div>
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCheck className="h-5 w-5" />
+            <span>Get responses quickly from verified professionals</span>
+          </div>
+        </div>
+        
         <p className="text-muted-foreground">
-          Tell us about your project and we&apos;ll help you find the right contractor
+          Start your project today with TrustBuild.
         </p>
       </div>
       

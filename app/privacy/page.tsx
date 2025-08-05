@@ -17,12 +17,21 @@ export default function PrivacyPage() {
         Back to Home
       </Link>
       
-      <h1 className="text-3xl font-bold mb-6">TrustBuild – Privacy Policy</h1>
+      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
       <p className="text-sm text-muted-foreground mb-8">Effective Date: April 15, 2023</p>
       
-      <p className="mb-6">At TrustBuild, we value your privacy. This Privacy Policy explains how we collect, use, and protect your information.</p>
+      <p className="mb-6">We take your privacy seriously. TrustBuild collects only the necessary information to provide our services. Your data is never sold to third parties.</p>
       
       <div className="space-y-6">
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Data Protection</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>We use secure encryption to protect your information.</li>
+            <li>You can request data deletion at any time.</li>
+            <li>We comply with the UK GDPR and Data Protection Act 2018.</li>
+          </ul>
+        </section>
+        
         <section>
           <h2 className="text-xl font-semibold mb-2">1. Information We Collect</h2>
           <ul className="list-disc pl-6 space-y-1">
@@ -71,6 +80,11 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold mb-2">8. Contact</h2>
           <p>For questions regarding this Privacy Policy, please contact us at: <a href="mailto:privacy@trustbuild.com" className="text-primary hover:underline">privacy@trustbuild.com</a></p>
+        </section>
+        
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Full Privacy Policy</h2>
+          <p>For full details, please read our <a href="#" className="text-primary hover:underline">Full Privacy Policy</a> (link to full document).</p>
         </section>
       </div>
     </div>
