@@ -496,7 +496,7 @@ export default function AdminContractors() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalContractors}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.approvalRate.toFixed(1)}% approved
+                {typeof stats.approvalRate === 'number' ? stats.approvalRate.toFixed(1) : stats.approvalRate || '0.0'}% approved
               </p>
             </CardContent>
           </Card>
@@ -533,7 +533,9 @@ export default function AdminContractors() {
               <TrendingUp className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.completionRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {typeof stats.completionRate === 'number' ? stats.completionRate.toFixed(1) : stats.completionRate || '0.0'}%
+              </div>
               <p className="text-xs text-muted-foreground">
                 Job completion rate
               </p>
