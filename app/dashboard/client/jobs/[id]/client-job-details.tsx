@@ -44,6 +44,7 @@ interface Job {
   timeline: string
   accessCount?: number
   purchasedBy?: Array<{
+    contractorId?: string
     contractorName: string
     purchasedAt: string
     method: string
@@ -179,9 +180,9 @@ export function ClientJobDetails({ job }: { job: Job }) {
     }
   };
 
-  const handleConfirmCompletion = async () => {
+  const handleConfirmCompletion = async (jobId: string) => {
     try {
-      await jobsApi.confirmJobCompletion(job.id);
+      await jobsApi.confirmJobCompletion(jobId);
       toast({
         title: "Job Completed!",
         description: `Job confirmed as completed successfully`,
@@ -463,8 +464,8 @@ export function ClientJobDetails({ job }: { job: Job }) {
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => handleMarkJobAsWon(purchase.contractorId)}
-                            disabled={job.wonByContractorId === purchase.contractorId}
+                            onClick={() => handleMarkJobAsWon(purchase.contractorId || '')}
+                            disabled={!purchase.contractorId || job.wonByContractorId === purchase.contractorId}
                           >
                             {job.wonByContractorId === purchase.contractorId ? 'Selected as Winner' : 'Select as Winner'}
                           </Button>
@@ -527,7 +528,7 @@ export function ClientJobDetails({ job }: { job: Job }) {
                       <span className="font-medium text-green-800">Job Completed Successfully</span>
                     </div>
                     <p className="text-sm text-green-700">
-                      Final amount: £{job.finalAmount} • Confirmed on {new Date(job.updatedAt).toLocaleDateString()}
+                      Final amount: £{job.finalAmount} • Confirmed on {job.updatedAt ? new Date(job.updatedAt).toLocaleDateString() : 'Unknown date'}
                     </p>
                     {job.commissionPaid && (
                       <p className="text-xs text-green-600 mt-1">
