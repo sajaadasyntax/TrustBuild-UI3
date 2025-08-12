@@ -42,17 +42,17 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
     }
   }
 
-  const handleMarkAsWon = async () => {
+  const handleExpressInterest = async () => {
     try {
       setUpdating(true)
-      await jobsApi.markJobAsWon(job.id)
+      await jobsApi.expressInterest(job.id)
       toast({
-        title: "Job Won!",
-        description: "You have successfully marked this job as won.",
+        title: "Interest Expressed!",
+        description: "You have expressed interest in this job. The customer will review and may select you.",
       })
       onJobUpdate(job.id)
     } catch (error) {
-      handleApiError(error, 'Failed to mark job as won')
+      handleApiError(error, 'Failed to express interest')
     } finally {
       setUpdating(false)
     }
@@ -236,26 +236,29 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Job Winning Workflow */}
+          {/* Express Interest */}
           {job.hasAccess && !job.wonByContractorId && job.status === 'POSTED' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5" />
-                  Mark as Won
+                  Express Interest
                 </CardTitle>
                 <CardDescription>
-                  Have you agreed with the customer to do this job?
+                  Let the customer know you're interested in taking on this job
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button 
-                  onClick={handleMarkAsWon} 
+                  onClick={handleExpressInterest} 
                   disabled={updating}
                   className="w-full"
                 >
-                  {updating ? "Updating..." : "I Won This Job"}
+                  {updating ? "Sending..." : "Express Interest"}
                 </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  The customer will review all interested contractors and select one to complete the job.
+                </p>
               </CardContent>
             </Card>
           )}

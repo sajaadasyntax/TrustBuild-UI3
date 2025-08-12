@@ -961,6 +961,20 @@ export const jobsApi = {
       body: JSON.stringify({ contractorId }),
     }),
 
+  // Customer selects contractor for job
+  selectContractor: (jobId: string, contractorId: string) =>
+    apiRequest(`/jobs/${jobId}/select-contractor`, {
+      method: 'PATCH',
+      body: JSON.stringify({ contractorId }),
+    }),
+
+  // Contractor expresses interest in job
+  expressInterest: (jobId: string, message?: string) =>
+    apiRequest(`/jobs/${jobId}/express-interest`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
   // Complete job with final amount (contractor only)
   completeJobWithAmount: (jobId: string, finalAmount: number) =>
     apiRequest(`/jobs/${jobId}/complete-with-amount`, {

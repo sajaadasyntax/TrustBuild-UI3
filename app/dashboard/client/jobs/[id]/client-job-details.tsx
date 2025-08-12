@@ -169,14 +169,14 @@ export function ClientJobDetails({ job }: { job: Job }) {
 
   const handleMarkJobAsWon = async (contractorId: string) => {
     try {
-      await jobsApi.markJobAsWon(job.id, contractorId);
+      await jobsApi.selectContractor(job.id, contractorId);
       toast({
-        title: "Job Won!",
-        description: `Job assigned to contractor successfully`,
+        title: "Contractor Selected!",
+        description: `You have selected this contractor for your job.`,
       });
       // Refresh job data or update state if needed
     } catch (error) {
-      handleApiError(error, 'Failed to mark job as won');
+      handleApiError(error, 'Failed to select contractor');
     }
   };
 
