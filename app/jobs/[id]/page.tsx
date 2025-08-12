@@ -85,6 +85,7 @@ export default function JobDetailsPage() {
     try {
       setCheckingAccess(true)
       const accessData = await jobsApi.checkAccess(jobId)
+      console.log('Job Access Check Result:', accessData) // Debug log
       setHasAccess(accessData.hasAccess)
     } catch (error) {
       console.error('Error checking job access:', error)
@@ -148,8 +149,22 @@ export default function JobDetailsPage() {
       
       setShowApplicationForm(false)
       await fetchJob(job.id)
-    } catch (error) {
-      handleApiError(error, 'Failed to submit application')
+    } catch (error: any) {
+      // Check for access-related errors
+      if (error?.response?.status === 403 || error?.message?.includes('access')) {
+        toast({
+          title: "Access Required",
+          description: "You need to purchase job access before applying. Please purchase access first.",
+          variant: "destructive"
+        })
+        setShowApplicationForm(false) // Close the form
+        // Optionally refresh access status
+        if (job) {
+          await checkJobAccess(job.id)
+        }
+      } else {
+        handleApiError(error, 'Failed to submit application')
+      }
     } finally {
       setApplying(false)
     }
@@ -556,7 +571,7 @@ export default function JobDetailsPage() {
                   <CardDescription>
                     {isQuoteOnRequest() 
                       ? "This is a quote-on-request job. Please provide your quote when applying."
-                      : "Submit your application to be considered for this project."
+                      : "Submit your application to be considered for this job."
                     }
                   </CardDescription>
                 </CardHeader>
@@ -565,19 +580,27 @@ export default function JobDetailsPage() {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
                         <Lock className="h-4 w-4" />
-                        Access Required
+                        Access Required to Apply
                       </div>
                       <p className="text-sm text-blue-700 mb-3">
-                        Pay the access fee to view customer details and apply for this job.
+                        To apply for this job and access the customer&apos;s contact details, you need to purchase job access first. 
+                        This allows you to see the full job description, customer contact information, and submit your application.
                       </p>
+                      <div className="text-xs text-blue-600 mb-3 p-2 bg-blue-100 rounded">
+                        <strong>How it works:</strong><br/>
+                        1. Purchase access to this job<br/>
+                        2. Get instant access to customer contact details<br/>
+                        3. Submit your quote and application<br/>
+                        4. Contact the customer directly
+                      </div>
                       <Button 
                         onClick={() => setShowAccessDialog(true)}
                         size="sm"
                       >
-                        Pay Access Fee
+                        Purchase Job Access
                       </Button>
                     </div>
-                  ) : !showApplicationForm ? (
+                                  ) : !showApplicationForm ? (
                     <Button onClick={() => setShowApplicationForm(true)}>
                       {isQuoteOnRequest() ? "Provide Quote & Apply" : "Apply Now"}
                     </Button>
