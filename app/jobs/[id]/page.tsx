@@ -313,28 +313,31 @@ export default function JobDetailsPage() {
           
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                {showRestrictedContent() ? 'Job Available' : job.title}
+              </h1>
               <div className="flex items-center gap-4 text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  {showRestrictedContent() 
-                    ? (job.postcode ? `${job.postcode} area` : 'Area details available after purchase')
-                    : job.location
-                  }
+                  {job.postcode ? `${job.postcode} area` : 'Location available after purchase'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  {job.budget ? formatBudget(job.budget) : 'Quote on request'}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Posted {new Date(job.createdAt).toLocaleDateString()}
-                </span>
+                {!showRestrictedContent() && (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      {job.budget ? formatBudget(job.budget) : 'Quote on request'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      Posted {new Date(job.createdAt).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             
             <div className="flex items-center gap-2">
-              {job.isUrgent && (
+              {!showRestrictedContent() && job.isUrgent && (
                 <Badge className="bg-red-100 text-red-800">
                   Urgent
                 </Badge>
@@ -342,6 +345,11 @@ export default function JobDetailsPage() {
               <Badge className={getStatusColor(job.status)}>
                 {job.status.toLowerCase().replace('_', ' ')}
               </Badge>
+              {showRestrictedContent() && (
+                <Badge variant="outline">
+                  {job.jobSize}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -350,39 +358,45 @@ export default function JobDetailsPage() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Job Description</CardTitle>
+                <CardTitle>
+                  {showRestrictedContent() ? 'Job Information' : 'Job Description'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {showRestrictedContent() ? (
                   <div className="space-y-4">
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2 text-gray-600 mb-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
                         <Lock className="h-4 w-4" />
-                        <span className="font-medium">Access Required</span>
+                        <span>Purchase Access to View Full Details</span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Pay the access fee to view the full job description and customer contact details.
+                      <p className="text-sm text-blue-700 mb-3">
+                        Purchase access to see the complete job description, customer contact details, and submit your application.
                       </p>
                       <Button onClick={() => setShowAccessDialog(true)} size="sm">
-                        View Access Options
+                        Purchase Job Access
                       </Button>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Description:</strong> {job.description.substring(0, 300)}...
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Location:</strong> {job.postcode ? `${job.postcode} area` : 'Location details available after purchase'}
-                    </div>
-                    {job.customer && job.customer.user && (
-                      <div className="text-sm text-muted-foreground">
-                        <strong>Customer Name:</strong> {job.customer.user.name}
+                    
+                    {/* Only show basic job info */}
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Service Type</Label>
+                        <p className="text-sm">{job.service?.name || 'General'}</p>
                       </div>
-                    )}
-                    {job.customer && job.customer.city && (
-                      <div className="text-sm text-muted-foreground">
-                        <strong>Customer City:</strong> {job.customer.city}
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Job Size</Label>
+                        <p className="text-sm">{job.jobSize}</p>
                       </div>
-                    )}
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Area</Label>
+                        <p className="text-sm">{job.postcode ? `${job.postcode} area` : 'Available after purchase'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Status</Label>
+                        <p className="text-sm capitalize">{job.status.toLowerCase().replace('_', ' ')}</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-muted-foreground whitespace-pre-wrap">
@@ -392,53 +406,39 @@ export default function JobDetailsPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Job Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Service Type</Label>
-                    <p className="text-muted-foreground">{job.service?.name || 'General'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Budget</Label>
-                    <p className="text-muted-foreground">{job.budget ? formatBudget(job.budget) : 'Quote on request'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Location</Label>
-                    <p className="text-muted-foreground">
-                      {showRestrictedContent() 
-                        ? (job.postcode ? `${job.postcode} area` : 'Area details available after purchase')
-                        : job.location
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Timeline</Label>
-                    <p className="text-muted-foreground">{job.urgency || 'Flexible'}</p>
-                  </div>
-                  {showRestrictedContent() ? (
-                    <div className="col-span-2">
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-gray-600 text-sm">
-                          <Lock className="h-3 w-3" />
-                          <span>Contact details available after purchase</span>
-                        </div>
-                      </div>
+            {!showRestrictedContent() && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Job Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Service Type</Label>
+                      <p className="text-muted-foreground">{job.service?.name || 'General'}</p>
                     </div>
-                  ) : (
-                    job.postcode && (
+                    <div>
+                      <Label className="text-sm font-medium">Budget</Label>
+                      <p className="text-muted-foreground">{job.budget ? formatBudget(job.budget) : 'Quote on request'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Location</Label>
+                      <p className="text-muted-foreground">{job.location}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Timeline</Label>
+                      <p className="text-muted-foreground">{job.urgency || 'Flexible'}</p>
+                    </div>
+                    {job.postcode && (
                       <div>
                         <Label className="text-sm font-medium">Postcode</Label>
                         <p className="text-muted-foreground">{job.postcode}</p>
                       </div>
-                    )
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {canAcceptDirectly() && job.budget && (
               <Card>
@@ -773,29 +773,19 @@ export default function JobDetailsPage() {
               </CardHeader>
               <CardContent>
                 {showRestrictedContent() ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-gray-600 mb-2">
-                      <Lock className="h-4 w-4" />
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                      <Lock className="h-5 w-5" />
                       <span className="font-medium">Customer Details Locked</span>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
-                      Pay the access fee to view customer information and contact details.
+                      Purchase access to view customer information and contact details.
                     </p>
-                    {job.customer && job.customer.user && (
-                      <div className="text-sm text-muted-foreground">
-                        <strong>Name:</strong> {job.customer.user.name}
-                      </div>
-                    )}
-                    {job.customer && job.customer.city && (
-                      <div className="text-sm text-muted-foreground">
-                        <strong>City:</strong> {job.customer.city}
-                      </div>
-                    )}
                     <Button 
                       onClick={() => setShowAccessDialog(true)}
                       size="sm"
                     >
-                      Unlock Customer Details
+                      Purchase Access
                     </Button>
                   </div>
                 ) : (
