@@ -438,6 +438,11 @@ export default function JobLeadAccessDialog({
           </DialogTitle>
           <DialogDescription>
             Get full access to job details, customer contact information, and the ability to submit a quote.
+            <br />
+            <span className="text-sm text-muted-foreground mt-2 block">
+              {job.contractorsWithAccess || 0} of {job.maxContractorsPerJob || 5} contractors have purchased access 
+              • {job.spotsRemaining || 0} spots remaining
+            </span>
           </DialogDescription>
         </DialogHeader>
 

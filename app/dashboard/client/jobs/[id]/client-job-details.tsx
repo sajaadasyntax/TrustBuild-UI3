@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2, PenTool, User, Eye, ShoppingCart } from "lucide-react"
+import { Clock, MapPin, Calendar, Building2, MessageSquare, Star, CheckCircle2, PenTool, User, Eye, ShoppingCart, CheckCircle } from "lucide-react"
 import { useState } from "react"
 import {
   Dialog,
@@ -19,6 +19,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { reviewsApi, handleApiError } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { jobsApi } from "@/lib/api"
 
 interface Job {
   id: string
@@ -45,7 +47,36 @@ interface Job {
     contractorName: string
     purchasedAt: string
     method: string
+    averageRating?: number
+    reviewCount?: number
+    jobsCompleted?: number
+    portfolio?: Array<{
+      imageUrl: string
+      title: string
+    }>
+    reviews?: Array<{
+      comment: string
+      rating: number
+      customer?: {
+        user?: {
+          name: string
+        }
+      }
+    }>
   }>
+  wonByContractorId?: string
+  wonByContractor?: {
+    user?: {
+      name: string
+    }
+  }
+  finalAmount?: number
+  customerConfirmed?: boolean
+  commissionPaid?: boolean
+  updatedAt?: string
+  maxContractorsPerJob?: number
+  contractorsWithAccess?: number
+  spotsRemaining?: number
   applications?: Array<{
     id: string
     contractor: string
@@ -134,6 +165,32 @@ export function ClientJobDetails({ job }: { job: Job }) {
       setSubmittingReview(false)
     }
   }
+
+  const handleMarkJobAsWon = async (contractorId: string) => {
+    try {
+      await jobsApi.markJobAsWon(job.id, contractorId);
+      toast({
+        title: "Job Won!",
+        description: `Job assigned to contractor successfully`,
+      });
+      // Refresh job data or update state if needed
+    } catch (error) {
+      handleApiError(error, 'Failed to mark job as won');
+    }
+  };
+
+  const handleConfirmCompletion = async () => {
+    try {
+      await jobsApi.confirmJobCompletion(job.id);
+      toast({
+        title: "Job Completed!",
+        description: `Job confirmed as completed successfully`,
+      });
+      // Refresh job data or update state if needed
+    } catch (error) {
+      handleApiError(error, 'Failed to confirm job completion');
+    }
+  };
 
   const renderStars = (rating: number, interactive = false, onClick?: (rating: number) => void) => {
     return (
@@ -329,38 +386,156 @@ export function ClientJobDetails({ job }: { job: Job }) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
-                  Job Lead Activity
+                  Contractors Who Purchased Your Job
                 </CardTitle>
                 <CardDescription>
-                  See how many contractors have viewed your job details
+                  {job.contractorsWithAccess || 0} of {job.maxContractorsPerJob || 5} spots taken • {job.spotsRemaining || 0} spots remaining
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-4">
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    {job.accessCount || 0}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {job.accessCount === 1 ? 'contractor has' : 'contractors have'} purchased access to your job
-                  </p>
-                  
-                  {job.purchasedBy && job.purchasedBy.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <h4 className="text-sm font-medium">Recent Purchases:</h4>
-                      {job.purchasedBy.slice(0, 3).map((purchase, index) => (
-                        <div key={index} className="text-xs text-muted-foreground flex items-center justify-between">
-                          <span>{purchase.contractorName}</span>
-                          <span>{new Date(purchase.purchasedAt).toLocaleDateString()}</span>
+                {job.purchasedBy && job.purchasedBy.length > 0 ? (
+                  <div className="space-y-4">
+                    {job.purchasedBy.map((purchase, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>
+                                {purchase.contractorName.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-medium">{purchase.contractorName}</h4>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>★ {purchase.averageRating?.toFixed(1) || 'No ratings'}</span>
+                                <span>•</span>
+                                <span>{purchase.reviewCount || 0} reviews</span>
+                                <span>•</span>
+                                <span>{purchase.jobsCompleted || 0} jobs completed</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">
+                              Purchased {new Date(purchase.purchasedAt).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              via {purchase.method === 'CREDIT' ? 'Credits' : 'Direct Payment'}
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                      {job.purchasedBy.length > 3 && (
-                        <p className="text-xs text-muted-foreground">
-                          +{job.purchasedBy.length - 3} more
-                        </p>
-                      )}
+                        
+                        {/* Portfolio preview */}
+                        {purchase.portfolio && purchase.portfolio.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium mb-2">Recent Work:</h5>
+                            <div className="flex gap-2">
+                              {purchase.portfolio.slice(0, 3).map((item, idx) => (
+                                <div key={idx} className="w-16 h-16 rounded bg-muted overflow-hidden">
+                                  <img 
+                                    src={item.imageUrl} 
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Recent reviews */}
+                        {purchase.reviews && purchase.reviews.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium mb-2">Recent Review:</h5>
+                            <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                              <div className="flex items-center gap-1 mb-1">
+                                <span>★★★★★</span>
+                                <span className="text-xs">by {purchase.reviews[0].customer?.user?.name}</span>
+                              </div>
+                              <p className="text-xs">
+                                {purchase.reviews[0].comment?.substring(0, 100)}
+                                {purchase.reviews[0].comment?.length > 100 ? '...' : ''}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleMarkJobAsWon(purchase.contractorId)}
+                            disabled={job.wonByContractorId === purchase.contractorId}
+                          >
+                            {job.wonByContractorId === purchase.contractorId ? 'Selected as Winner' : 'Select as Winner'}
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Contact Contractor
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No contractors have purchased access yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Contractors need to purchase access to see your full contact details
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Job Completion Workflow */}
+          {job.wonByContractorId && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Job Progress
+                </CardTitle>
+                <CardDescription>
+                  Selected contractor: {job.wonByContractor?.user?.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {job.status === 'COMPLETED' && job.finalAmount && !job.customerConfirmed && (
+                  <div className="border border-orange-200 bg-orange-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                      <span className="font-medium text-orange-800">Awaiting Your Confirmation</span>
                     </div>
-                  )}
-                </div>
+                    <p className="text-sm text-orange-700 mb-3">
+                      The contractor has marked this job as completed with a final amount of £{job.finalAmount}.
+                      Please confirm that the work is completed and the amount is correct.
+                    </p>
+                    <Button 
+                      onClick={() => handleConfirmCompletion(job.id)}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      Confirm Completion & Amount
+                    </Button>
+                  </div>
+                )}
+                
+                {job.customerConfirmed && (
+                  <div className="border border-green-200 bg-green-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">Job Completed Successfully</span>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      Final amount: £{job.finalAmount} • Confirmed on {new Date(job.updatedAt).toLocaleDateString()}
+                    </p>
+                    {job.commissionPaid && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Commission (5%) has been charged to the contractor
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

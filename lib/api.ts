@@ -136,6 +136,21 @@ export interface Job {
   jobSize: 'SMALL' | 'MEDIUM' | 'LARGE';
   leadPrice?: number;
   estimatedValue?: number;
+  
+  // Job purchase limits
+  maxContractorsPerJob?: number;
+  
+  // Job completion tracking
+  wonByContractorId?: string;
+  wonByContractor?: {
+    user?: {
+      name: string;
+    };
+  };
+  finalAmount?: number;
+  customerConfirmed?: boolean;
+  commissionPaid?: boolean;
+  
   createdAt: string;
   updatedAt: string;
   customer: Customer;
@@ -147,10 +162,30 @@ export interface Job {
   hasAccess?: boolean; // Computed field
   currentLeadPrice?: number; // Computed field
   accessCount?: number; // Computed field - number of contractors who purchased access
+  contractorsWithAccess?: number; // Computed field - number of contractors with access
+  spotsRemaining?: number; // Computed field - remaining spots for contractors
   purchasedBy?: Array<{
+    contractorId?: string;
     contractorName: string;
     purchasedAt: string;
     method: string;
+    paidAmount?: number;
+    averageRating?: number;
+    reviewCount?: number;
+    jobsCompleted?: number;
+    portfolio?: Array<{
+      imageUrl: string;
+      title: string;
+    }>;
+    reviews?: Array<{
+      comment: string;
+      rating: number;
+      customer?: {
+        user?: {
+          name: string;
+        };
+      };
+    }>;
   }>; // Computed field - list of contractors who purchased access
 }
 
@@ -919,6 +954,32 @@ export const jobsApi = {
     return response.data.job;
   },
 
+  // Mark job as won by contractor
+  markJobAsWon: (jobId: string, contractorId?: string) =>
+    apiRequest(`/jobs/${jobId}/mark-won`, {
+      method: 'PATCH',
+      body: JSON.stringify({ contractorId }),
+    }),
+
+  // Complete job with final amount (contractor only)
+  completeJobWithAmount: (jobId: string, finalAmount: number) =>
+    apiRequest(`/jobs/${jobId}/complete-with-amount`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finalAmount }),
+    }),
+
+  // Customer confirm job completion and amount
+  confirmJobCompletion: (jobId: string) =>
+    apiRequest(`/jobs/${jobId}/confirm-completion`, {
+      method: 'PATCH',
+    }),
+
+  // Request review after customer confirmation
+  requestReview: (jobId: string) =>
+    apiRequest(`/jobs/${jobId}/request-review`, {
+      method: 'POST',
+    }),
+
   // Admin job methods
   getAllJobs: async (params: {
     page?: number;
@@ -1513,6 +1574,23 @@ export const adminApi = {
       body: JSON.stringify({ contractorId }),
     });
   },
+
+  // Get admin settings
+  getSettings: () => apiRequest('/admin/settings'),
+  
+  // Update admin setting
+  updateSetting: (key: string, value: string, description?: string) =>
+    apiRequest(`/admin/settings/${key}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value, description }),
+    }),
+  
+  // Update job contractor limit
+  updateJobContractorLimit: (jobId: string, maxContractorsPerJob: number) =>
+    apiRequest(`/admin/jobs/${jobId}/contractor-limit`, {
+      method: 'PATCH',
+      body: JSON.stringify({ maxContractorsPerJob }),
+    }),
 };
 
 // Payment API

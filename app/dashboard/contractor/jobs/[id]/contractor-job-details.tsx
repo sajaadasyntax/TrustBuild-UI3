@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
-import { MapPin, Calendar, Clock, User, Star, MessageSquare, CheckCircle2, AlertCircle, Phone, Mail } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { MapPin, Calendar, Clock, User, Star, MessageSquare, CheckCircle2, AlertCircle, Phone, Mail, Trophy, DollarSign } from "lucide-react"
 import { useState } from "react"
 import { Job, jobsApi, handleApiError } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 
 export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpdate: (jobId: string) => void }) {
   const [updating, setUpdating] = useState(false)
+  const [finalAmount, setFinalAmount] = useState('')
 
   const formatBudget = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -34,6 +37,63 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
       onJobUpdate(job.id)
     } catch (error) {
       handleApiError(error, 'Failed to update job status')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleMarkAsWon = async () => {
+    try {
+      setUpdating(true)
+      await jobsApi.markJobAsWon(job.id)
+      toast({
+        title: "Job Won!",
+        description: "You have successfully marked this job as won.",
+      })
+      onJobUpdate(job.id)
+    } catch (error) {
+      handleApiError(error, 'Failed to mark job as won')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleCompleteWithAmount = async () => {
+    if (!finalAmount || parseFloat(finalAmount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid final amount.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setUpdating(true)
+      await jobsApi.completeJobWithAmount(job.id, parseFloat(finalAmount))
+      toast({
+        title: "Job Completed!",
+        description: "Job marked as completed. Waiting for customer confirmation.",
+      })
+      onJobUpdate(job.id)
+    } catch (error) {
+      handleApiError(error, 'Failed to complete job')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleRequestReview = async () => {
+    try {
+      setUpdating(true)
+      await jobsApi.requestReview(job.id)
+      toast({
+        title: "Review Requested!",
+        description: "Review request sent to customer.",
+      })
+      onJobUpdate(job.id)
+    } catch (error) {
+      handleApiError(error, 'Failed to request review')
     } finally {
       setUpdating(false)
     }
@@ -176,6 +236,131 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Job Winning Workflow */}
+          {job.hasAccess && !job.wonByContractorId && job.status === 'POSTED' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Mark as Won
+                </CardTitle>
+                <CardDescription>
+                  Have you agreed with the customer to do this job?
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleMarkAsWon} 
+                  disabled={updating}
+                  className="w-full"
+                >
+                  {updating ? "Updating..." : "I Won This Job"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Job Completion Workflow */}
+          {job.wonByContractorId && job.status === 'IN_PROGRESS' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Complete Job
+                </CardTitle>
+                <CardDescription>
+                  Enter the final amount and mark job as completed
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="finalAmount">Final Amount (£)</Label>
+                  <Input
+                    id="finalAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Enter final amount"
+                    value={finalAmount}
+                    onChange={(e) => setFinalAmount(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleCompleteWithAmount} 
+                  disabled={updating || !finalAmount}
+                  className="w-full"
+                >
+                  {updating ? "Completing..." : "Complete Job"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Awaiting Customer Confirmation */}
+          {job.status === 'COMPLETED' && job.finalAmount && !job.customerConfirmed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Awaiting Confirmation
+                </CardTitle>
+                <CardDescription>
+                  Waiting for customer to confirm completion
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Final amount: £{job.finalAmount}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    The customer will confirm the work is completed and the amount is correct.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Request Review */}
+          {job.customerConfirmed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Request Review
+                </CardTitle>
+                <CardDescription>
+                  Ask the customer to leave a review for your work
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="border border-green-200 bg-green-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Job Completed Successfully</span>
+                    </div>
+                    <p className="text-xs text-green-700">
+                      Final amount: £{job.finalAmount} • Confirmed by customer
+                    </p>
+                    {job.commissionPaid && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Commission (5%) has been charged
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={handleRequestReview} 
+                    disabled={updating}
+                    className="w-full"
+                  >
+                    {updating ? "Sending..." : "Request Review"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Budget</CardTitle>
