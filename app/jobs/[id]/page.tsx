@@ -851,7 +851,10 @@ export default function JobDetailsPage() {
              jobSize: job.jobSize,
              leadPrice: job.leadPrice,
              requiresQuote: !job.budget || job.budget === 0,
-             service: job.service
+             service: job.service,
+             contractorsWithAccess: job.contractorsWithAccess,
+             maxContractorsPerJob: job.maxContractorsPerJob,
+             spotsRemaining: job.spotsRemaining,
            }}
          />
        )}

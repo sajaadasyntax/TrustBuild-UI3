@@ -46,6 +46,10 @@ export interface JobLeadAccessDialogProps {
       mediumJobPrice: number;
       largeJobPrice: number;
     };
+    // New contractor tracking properties
+    contractorsWithAccess?: number;
+    maxContractorsPerJob?: number;
+    spotsRemaining?: number;
   };
   onAccessGranted?: () => void;
 }
