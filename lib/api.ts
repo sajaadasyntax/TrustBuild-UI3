@@ -975,6 +975,12 @@ export const jobsApi = {
       body: JSON.stringify({ message }),
     }),
 
+  // Contractor marks job as won (contractor can mark themselves as winner)
+  contractorMarkJobAsWon: (jobId: string) =>
+    apiRequest(`/jobs/${jobId}/contractor-mark-won`, {
+      method: 'PATCH',
+    }),
+
   // Complete job with final amount (contractor only)
   completeJobWithAmount: (jobId: string, finalAmount: number) =>
     apiRequest(`/jobs/${jobId}/complete-with-amount`, {

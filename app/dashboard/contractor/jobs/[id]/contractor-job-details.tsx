@@ -99,6 +99,22 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
     }
   }
 
+  const handleMarkJobAsWon = async () => {
+    try {
+      setUpdating(true)
+      await jobsApi.contractorMarkJobAsWon(job.id)
+      toast({
+        title: "Job Marked as Won!",
+        description: "You have successfully marked this job as won. The customer will be notified.",
+      })
+      onJobUpdate(job.id)
+    } catch (error) {
+      handleApiError(error, 'Failed to mark job as won')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   return (
     <div className="container py-32">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -236,29 +252,43 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Express Interest */}
+          {/* Job Actions for Posted Jobs */}
           {job.hasAccess && !job.wonByContractorId && job.status === 'POSTED' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5" />
-                  Express Interest
+                  Job Actions
                 </CardTitle>
                 <CardDescription>
-                  Let the customer know you're interested in taking on this job
+                  Take action on this job opportunity
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <Button 
                   onClick={handleExpressInterest} 
                   disabled={updating}
+                  variant="outline"
                   className="w-full"
                 >
                   {updating ? "Sending..." : "Express Interest"}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  The customer will review all interested contractors and select one to complete the job.
+                <p className="text-xs text-muted-foreground">
+                  Let the customer know you&apos;re interested and wait for their selection.
                 </p>
+                
+                <div className="border-t pt-3">
+                  <Button 
+                    onClick={handleMarkJobAsWon} 
+                    disabled={updating}
+                    className="w-full"
+                  >
+                    {updating ? "Processing..." : "Won the Job"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Mark this job as won if you and the customer have agreed you&apos;ll do the work.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
