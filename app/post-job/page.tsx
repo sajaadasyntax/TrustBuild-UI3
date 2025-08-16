@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckCheck, MapPin, Calendar, PoundSterling, Info } from "lucide-react"
+import { CheckCheck, MapPin, Calendar, PoundSterling } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form"
@@ -46,7 +46,7 @@ export default function PostJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [servicesLoading, setServicesLoading] = useState(true)
-  const [estimatedLeadPrice, setEstimatedLeadPrice] = useState<number | null>(null)
+
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(formSchema),
@@ -68,32 +68,7 @@ export default function PostJobPage() {
     },
   })
 
-  // Watch for changes in serviceId and jobSize to calculate lead price
-  const watchedServiceId = form.watch("serviceId")
-  const watchedJobSize = form.watch("jobSize")
 
-  useEffect(() => {
-    if (watchedServiceId && watchedJobSize) {
-      const selectedService = services.find(s => s.id === watchedServiceId)
-      if (selectedService) {
-        let price = 0
-        switch (watchedJobSize) {
-          case 'SMALL':
-            price = selectedService.smallJobPrice || 15
-            break
-          case 'MEDIUM':
-            price = selectedService.mediumJobPrice || 30
-            break
-          case 'LARGE':
-            price = selectedService.largeJobPrice || 50
-            break
-        }
-        setEstimatedLeadPrice(price)
-      }
-    } else {
-      setEstimatedLeadPrice(null)
-    }
-  }, [watchedServiceId, watchedJobSize, services])
 
   useEffect(() => {
     fetchServices()
@@ -421,17 +396,6 @@ export default function PostJobPage() {
                         </RadioGroup>
                       </FormControl>
                       <FormMessage />
-                      {estimatedLeadPrice && (
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-center gap-2 text-blue-800 text-sm font-medium">
-                            <Info className="h-4 w-4" />
-                            Lead Price Information
-                          </div>
-                          <p className="text-blue-700 text-sm mt-1">
-                            Contractors will pay £{estimatedLeadPrice} to access this job. This helps us attract serious professionals while keeping your project affordable.
-                          </p>
-                        </div>
-                      )}
                     </FormItem>
                   )}
                 />

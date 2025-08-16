@@ -277,7 +277,7 @@ export default function HowItWorksPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/jobs">
+                <Link href="/register?role=contractor">
                   <Search className="mr-2 h-4 w-4" />
                   Browse Jobs
                 </Link>
