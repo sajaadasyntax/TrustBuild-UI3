@@ -172,15 +172,8 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
                 </p>
               </div>
 
-              {job.status === 'POSTED' && (
-                <Button 
-                  onClick={() => handleStatusUpdate('IN_PROGRESS')}
-                  className="w-full"
-                  disabled={updating}
-                >
-                  {updating ? 'Updating...' : 'Start Working'}
-                </Button>
-              )}
+              {/* Removed: Contractors cannot start work without customer confirmation
+                   The customer must use the "Confirm & Allow Work to Start" button */}
 
               {job.status === 'IN_PROGRESS' && (
                 <Button 

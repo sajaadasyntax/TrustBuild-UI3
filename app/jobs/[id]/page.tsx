@@ -733,26 +733,8 @@ export default function JobDetailsPage() {
                       </Button>
                     )}
 
-                    {job.status === 'POSTED' && (
-                      <Button 
-                        onClick={async () => {
-                          try {
-                            await jobsApi.updateStatus(job.id, 'IN_PROGRESS')
-                            toast({
-                              title: "Job started!",
-                              description: "The job has been marked as in progress.",
-                            })
-                            await fetchJob(job.id)
-                          } catch (error) {
-                            handleApiError(error, 'Failed to update job status')
-                          }
-                        }}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        Start Working
-                      </Button>
-                    )}
+                    {/* Removed: Contractors cannot start work without customer confirmation
+                         The customer must approve contractor selection first */}
 
                     {job.status === 'COMPLETED' && (
                       <div className="flex items-center gap-2 text-sm text-green-600">
