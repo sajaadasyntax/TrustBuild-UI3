@@ -25,7 +25,7 @@ import { jobsApi } from "@/lib/api"
 interface Job {
   id: string
   title: string
-  status: "OPEN" | "IN_PROGRESS" | "COMPLETED"
+  status: "OPEN" | "POSTED" | "IN_PROGRESS" | "COMPLETED"
   description: string
   location: string
   postedAt: string
@@ -190,6 +190,19 @@ export function ClientJobDetails({ job }: { job: Job }) {
       // Refresh job data or update state if needed
     } catch (error) {
       handleApiError(error, 'Failed to confirm job completion');
+    }
+  };
+
+  const handleConfirmContractorStart = async (jobId: string) => {
+    try {
+      await jobsApi.confirmContractorStart(jobId);
+      toast({
+        title: "Work Started!",
+        description: `Contractor confirmed and work can now begin`,
+      });
+      // Refresh job data or update state if needed
+    } catch (error) {
+      handleApiError(error, 'Failed to confirm contractor start');
     }
   };
 
@@ -502,6 +515,26 @@ export function ClientJobDetails({ job }: { job: Job }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Awaiting contractor start confirmation */}
+                {job.status === 'POSTED' && job.wonByContractorId && (
+                  <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">Contractor Selected - Awaiting Your Confirmation</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-3">
+                      {job.wonByContractor?.user?.name} has been selected for this job. 
+                      Please confirm that you want them to start working on your project.
+                    </p>
+                    <Button 
+                      onClick={() => handleConfirmContractorStart(job.id)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Confirm & Allow Work to Start
+                    </Button>
+                  </div>
+                )}
+                
                 {job.status === 'COMPLETED' && job.finalAmount && !job.customerConfirmed && (
                   <div className="border border-orange-200 bg-orange-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">

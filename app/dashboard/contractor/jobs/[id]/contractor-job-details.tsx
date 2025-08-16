@@ -293,6 +293,32 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
             </Card>
           )}
 
+          {/* Waiting for Customer Confirmation */}
+          {job.wonByContractorId && job.status === 'POSTED' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Awaiting Customer Confirmation
+                </CardTitle>
+                <CardDescription>
+                  You have been selected for this job. Waiting for customer confirmation to start work.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border border-amber-200 bg-amber-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-amber-600" />
+                    <span className="font-medium text-amber-800">Selected - Awaiting Start Approval</span>
+                  </div>
+                  <p className="text-sm text-amber-700">
+                    Great news! You&apos;ve been selected for this job. The customer needs to confirm that you can start working on their project. You&apos;ll be notified once they approve and you can begin work.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Job Completion Workflow */}
           {job.wonByContractorId && job.status === 'IN_PROGRESS' && (
             <Card>

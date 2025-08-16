@@ -994,6 +994,12 @@ export const jobsApi = {
       method: 'PATCH',
     }),
 
+  // Customer confirms contractor selection and allows work to start
+  confirmContractorStart: (jobId: string) =>
+    apiRequest(`/jobs/${jobId}/confirm-contractor-start`, {
+      method: 'PATCH',
+    }),
+
   // Request review after customer confirmation
   requestReview: (jobId: string) =>
     apiRequest(`/jobs/${jobId}/request-review`, {
