@@ -280,6 +280,7 @@ export default function JobLeadAccessDialog({
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [contractor, setContractor] = useState<Contractor | null>(null)
+  const [currentLeadPrice, setCurrentLeadPrice] = useState<number | null>(null)
   const [processingPayment, setProcessingPayment] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'CREDIT' | 'STRIPE' | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
@@ -296,6 +297,17 @@ export default function JobLeadAccessDialog({
       // Fetch fresh contractor data to get accurate credit balance
       const contractorData = await contractorsApi.getMyProfile()
       setContractor(contractorData)
+      
+      // Fetch current lead price to ensure we have the latest admin pricing
+      try {
+        const accessData = await jobsApi.checkAccess(job.id)
+        setCurrentLeadPrice(accessData.leadPrice)
+        console.log('Updated lead price from server:', accessData.leadPrice)
+      } catch (accessError) {
+        console.error('Failed to fetch current lead price:', accessError)
+        // Fallback to job's lead price if access check fails
+        setCurrentLeadPrice(null)
+      }
     } catch (error) {
       handleApiError(error, 'Failed to fetch contractor information')
       // Fallback to user.contractor if API fails
@@ -372,6 +384,11 @@ export default function JobLeadAccessDialog({
 
   // Get effective lead price based on the TrustBuilders pricing model
   const getEffectiveLeadPrice = () => {
+    // First, use the current lead price from server if available (most up-to-date)
+    if (currentLeadPrice !== null && currentLeadPrice > 0) {
+      return currentLeadPrice;
+    }
+    
     // Use override price if set
     if (job.leadPrice && job.leadPrice > 0) {
       return job.leadPrice;
