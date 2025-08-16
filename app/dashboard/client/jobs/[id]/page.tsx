@@ -85,11 +85,12 @@ export default function Page({ params }: { params: { id: string } }) {
   }
 
   // Convert the job data to match the expected format for ClientJobDetails
-  const mapStatus = (status: string): "OPEN" | "IN_PROGRESS" | "COMPLETED" => {
+  const mapStatus = (status: string): "OPEN" | "POSTED" | "IN_PROGRESS" | "COMPLETED" => {
     switch (status) {
-      case 'POSTED':
       case 'DRAFT':
         return 'OPEN'
+      case 'POSTED':
+        return 'POSTED'  // Keep POSTED status for contractor confirmation workflow
       case 'IN_PROGRESS':
         return 'IN_PROGRESS'
       case 'COMPLETED':
