@@ -88,7 +88,7 @@ interface Job {
   }>
 }
 
-export function ClientJobDetails({ job }: { job: Job }) {
+export function ClientJobDetails({ job, onJobUpdate }: { job: Job; onJobUpdate?: () => void }) {
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
@@ -174,7 +174,11 @@ export function ClientJobDetails({ job }: { job: Job }) {
         title: "Contractor Selected!",
         description: `You have selected this contractor for your job.`,
       });
-      // Refresh job data or update state if needed
+      
+      // Refresh job data to show updated status
+      if (onJobUpdate) {
+        await onJobUpdate();
+      }
     } catch (error) {
       handleApiError(error, 'Failed to select contractor');
     }
@@ -187,7 +191,11 @@ export function ClientJobDetails({ job }: { job: Job }) {
         title: "Job Completed!",
         description: `Job confirmed as completed successfully`,
       });
-      // Refresh job data or update state if needed
+      
+      // Refresh job data to show updated status
+      if (onJobUpdate) {
+        await onJobUpdate();
+      }
     } catch (error) {
       handleApiError(error, 'Failed to confirm job completion');
     }
@@ -195,13 +203,21 @@ export function ClientJobDetails({ job }: { job: Job }) {
 
   const handleConfirmContractorStart = async (jobId: string) => {
     try {
-      await jobsApi.confirmContractorStart(jobId);
+      console.log('Confirming contractor start for job:', jobId);
+      const response = await jobsApi.confirmContractorStart(jobId);
+      console.log('Contractor start confirmation response:', response);
+      
       toast({
         title: "Work Started!",
         description: `Contractor confirmed and work can now begin`,
       });
-      // Refresh job data or update state if needed
+      
+      // Refresh job data to show updated status
+      if (onJobUpdate) {
+        await onJobUpdate();
+      }
     } catch (error) {
+      console.error('Error confirming contractor start:', error);
       handleApiError(error, 'Failed to confirm contractor start');
     }
   };

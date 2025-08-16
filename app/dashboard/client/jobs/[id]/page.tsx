@@ -15,22 +15,22 @@ export default function Page({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        setLoading(true)
-        console.log('Fetching job with ID:', params.id)
-        const response = await jobsApi.getById(params.id)
-        console.log('Job API response:', response)
-        setJob(response)
-      } catch (err: any) {
-        console.error('Error fetching job:', err)
-        setError(err.message || 'Failed to load job details')
-      } finally {
-        setLoading(false)
-      }
+  const fetchJob = async () => {
+    try {
+      setLoading(true)
+      console.log('Fetching job with ID:', params.id)
+      const response = await jobsApi.getById(params.id)
+      console.log('Job API response:', response)
+      setJob(response)
+    } catch (err: any) {
+      console.error('Error fetching job:', err)
+      setError(err.message || 'Failed to load job details')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     if (params.id) {
       fetchJob()
     }
@@ -170,5 +170,5 @@ export default function Page({ params }: { params: { id: string } }) {
     })) : [],
   }
 
-  return <ClientJobDetails job={formattedJob} />
+  return <ClientJobDetails job={formattedJob} onJobUpdate={fetchJob} />
 } 
