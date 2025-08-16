@@ -161,6 +161,16 @@ export default function Page({ params }: { params: { id: string } }) {
     timeline: job.urgency || 'flexible',
     accessCount: job.accessCount || 0,
     purchasedBy: job.purchasedBy || [],
+    // Include contractor selection fields for the new workflow
+    wonByContractorId: job.wonByContractorId,
+    wonByContractor: job.wonByContractor,
+    finalAmount: job.finalAmount,
+    customerConfirmed: job.customerConfirmed,
+    commissionPaid: job.commissionPaid,
+    maxContractorsPerJob: job.maxContractorsPerJob,
+    contractorsWithAccess: job.contractorsWithAccess,
+    spotsRemaining: job.spotsRemaining,
+    updatedAt: job.updatedAt,
     applications: Array.isArray(job.applications) ? job.applications.map(app => ({
       id: app.id,
       contractor: app.contractor?.user?.name || app.contractor?.businessName || 'Unknown Contractor',
