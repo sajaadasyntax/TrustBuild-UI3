@@ -25,8 +25,29 @@ import { useAuth } from '@/contexts/AuthContext'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
+// Initialize Stripe with enhanced error handling
+const initializeStripe = async () => {
+  try {
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51Nj0ABHbCjK8rTMWIJnHxmzQVlXMcbWw4JlGDhbFx9F1xDXBvZNNjzZYQGGjRGaR6EsSmLAfzfNXBJZjzYVzYXvZ00vPDpfCpj'
+    
+    console.log('🔄 Initializing Stripe with key:', publishableKey.substring(0, 20) + '...')
+    
+    const stripe = await loadStripe(publishableKey)
+    
+    if (!stripe) {
+      throw new Error('Failed to load Stripe')
+    }
+    
+    console.log('✅ Stripe loaded successfully')
+    return stripe
+  } catch (error) {
+    console.error('❌ Failed to initialize Stripe:', error)
+    // Return fallback test Stripe instance
+    return loadStripe('pk_test_51Nj0ABHbCjK8rTMWIJnHxmzQVlXMcbWw4JlGDhbFx9F1xDXBvZNNjzZYQGGjRGaR6EsSmLAfzfNXBJZjzYVzYXvZ00vPDpfCpj')
+  }
+}
+
+const stripePromise = initializeStripe()
 
 export interface JobLeadAccessDialogProps {
   isOpen: boolean;
@@ -67,11 +88,44 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [stripeLoading, setStripeLoading] = useState(true)
+  const [elementsReady, setElementsReady] = useState(false)
 
   useEffect(() => {
-    // Create payment intent when component mounts
-    createPaymentIntent()
-  }, [])
+    // Wait for Stripe and Elements to be fully loaded before creating payment intent
+    const initializePayment = async () => {
+      if (!stripe || !elements) {
+        console.log('⏳ Waiting for Stripe to load...')
+        return
+      }
+
+      console.log('✅ Stripe and Elements loaded successfully')
+      setStripeLoading(false)
+      
+      // Create payment intent only after Stripe is ready
+      await createPaymentIntent()
+    }
+
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (stripeLoading) {
+        console.warn('⚠️ Stripe loading timeout - forcing ready state')
+        setStripeLoading(false)
+        setElementsReady(true)
+        toast({
+          title: "Loading Timeout",
+          description: "Payment form took too long to load. You can try to proceed.",
+          variant: "destructive"
+        })
+      }
+    }, 10000) // 10 second timeout
+
+    initializePayment()
+
+    return () => {
+      clearTimeout(loadingTimeout)
+    }
+  }, [stripe, elements])
 
   const createPaymentIntent = async () => {
     try {
@@ -145,6 +199,17 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
         return
       }
       
+      // Handle Stripe API key errors
+      if (error instanceof Error && error.message.includes('Invalid API Key')) {
+        console.error('❌ Stripe API key error detected')
+        toast({
+          title: "Payment System Error",
+          description: "There's an issue with our payment system. Please try using credits instead or contact support.",
+          variant: "destructive"
+        })
+        return
+      }
+      
       handleApiError(error, 'Failed to initialize payment')
     }
   }
@@ -152,10 +217,20 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
+    // Enhanced loading checks
     if (!stripe || !elements || !clientSecret) {
       toast({
         title: "Payment Error",
         description: "Payment system not ready. Please try again.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (stripeLoading || !elementsReady) {
+      toast({
+        title: "Payment Loading",
+        description: "Please wait for the payment form to fully load.",
         variant: "destructive"
       })
       return
@@ -166,6 +241,19 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
       toast({
         title: "Payment Error", 
         description: "Card information not found. Please try again.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Additional check: Ensure CardElement is ready
+    try {
+      await cardElement.focus()
+    } catch (error) {
+      console.error('❌ CardElement not ready:', error)
+      toast({
+        title: "Card Form Not Ready",
+        description: "Please wait a moment and try again.",
         variant: "destructive"
       })
       return
@@ -215,8 +303,34 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="border rounded-lg p-4">
         <h4 className="font-medium mb-3">Card Details</h4>
-        <div className="border rounded p-3 bg-white">
+        <div className="border rounded p-3 bg-white relative">
+          {stripeLoading && (
+            <div className="absolute inset-0 bg-gray-50 flex items-center justify-center rounded z-10">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-gray-600">Loading payment form...</span>
+              </div>
+            </div>
+          )}
           <CardElement
+            onReady={() => {
+              console.log('✅ CardElement is ready')
+              setElementsReady(true)
+            }}
+            onChange={(event) => {
+              // Monitor element state changes
+              if (event.error) {
+                console.warn('⚠️ CardElement error:', event.error.message)
+              } else if (event.complete) {
+                console.log('✅ CardElement input complete')
+              }
+            }}
+            onFocus={() => {
+              console.log('👀 CardElement focused')
+            }}
+            onBlur={() => {
+              console.log('👋 CardElement blurred')
+            }}
             options={{
               style: {
                 base: {
@@ -225,6 +339,9 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
                   '::placeholder': {
                     color: '#aab7c4',
                   },
+                },
+                invalid: {
+                  color: '#9e2146',
                 },
               },
             }}
@@ -251,13 +368,18 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
         </Button>
         <Button
           type="submit"
-          disabled={!stripe || processing}
+          disabled={!stripe || !elements || !clientSecret || stripeLoading || !elementsReady || processing}
           className="flex-1"
         >
           {processing ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               Processing...
+            </>
+          ) : stripeLoading || !elementsReady ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Loading...
             </>
           ) : (
             <>
