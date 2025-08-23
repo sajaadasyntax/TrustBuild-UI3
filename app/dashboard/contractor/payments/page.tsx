@@ -219,6 +219,27 @@ export default function ContractorPayments() {
       setLoading(false)
     }
   }
+  
+  // Fetch credit transactions separately from Stripe payments
+  const fetchCreditTransactions = async () => {
+    try {
+      setCreditLoading(true)
+      // Fetch credit transaction history from API
+      const creditHistory = await paymentsApi.getCreditHistory(page, 10)
+      
+      // Set credit transactions
+      setCreditTransactions(creditHistory.data.transactions || [])
+    } catch (error) {
+      console.error('Error fetching credit transactions:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch credit transaction data',
+        variant: 'destructive',
+      })
+    } finally {
+      setCreditLoading(false)
+    }
+  }
 
   const handleWithdraw = async () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
@@ -712,11 +733,17 @@ export default function ContractorPayments() {
                                     <Eye className="mr-2 h-4 w-4" />
                                     View Details
                                   </DropdownMenuItem>
-                                  {transaction.stripeTransactionId && (
-                                    <DropdownMenuItem>
-                                      <Download className="mr-2 h-4 w-4" />
-                                      Download Receipt
-                                    </DropdownMenuItem>
+                                  {transaction.isStripeTransaction && (
+                                    <>
+                                      <DropdownMenuItem>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Stripe Receipt
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem>
+                                        <CreditCard className="mr-2 h-4 w-4" />
+                                        View in Stripe Dashboard
+                                      </DropdownMenuItem>
+                                    </>
                                   )}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem>
@@ -772,13 +799,68 @@ export default function ContractorPayments() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Target className="mx-auto h-12 w-12 opacity-50 mb-4" />
-                <p className="text-muted-foreground">Credit history will be displayed here</p>
-                <p className="text-sm text-muted-foreground">
-                  Track weekly resets and job lead purchases
-                </p>
-              </div>
+              {creditLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading credit history...</span>
+                </div>
+              ) : creditTransactions.length === 0 ? (
+                <div className="text-center py-8">
+                  <Target className="mx-auto h-12 w-12 opacity-50 mb-4" />
+                  <p className="text-muted-foreground">No credit transactions found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Credit transactions will appear here when you use or receive credits
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Job</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {creditTransactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell className="text-sm">
+                            {formatDate(transaction.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={
+                              transaction.type === 'ADDITION' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }>
+                              {transaction.type === 'ADDITION' ? 'Credit Added' : 'Credit Used'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="max-w-xs">
+                            <div className="truncate">{transaction.description}</div>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <span className={transaction.type === 'ADDITION' ? 'text-green-600' : 'text-red-600'}>
+                              {transaction.type === 'ADDITION' ? '+' : '-'}
+                              {transaction.amount} {transaction.amount === 1 ? 'Credit' : 'Credits'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {transaction.jobId && (
+                              <span className="text-sm text-blue-600 hover:underline cursor-pointer">
+                                View Job
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -878,11 +960,17 @@ export default function ContractorPayments() {
                                       <Eye className="mr-2 h-4 w-4" />
                                       View Details
                                     </DropdownMenuItem>
-                                    {transaction.stripeTransactionId && (
-                                      <DropdownMenuItem>
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Receipt
-                                      </DropdownMenuItem>
+                                    {transaction.isStripeTransaction && (
+                                      <>
+                                        <DropdownMenuItem>
+                                          <Download className="mr-2 h-4 w-4" />
+                                          Download Stripe Receipt
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                          <CreditCard className="mr-2 h-4 w-4" />
+                                          View in Stripe Dashboard
+                                        </DropdownMenuItem>
+                                      </>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
