@@ -40,6 +40,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { handleApiError } from '@/lib/api'
+import subscriptionApi from '@/lib/subscriptionApi'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -119,33 +120,16 @@ const PaymentForm = ({
         setError(result.error.message || 'Payment failed')
       } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
         // Call confirm endpoint
-        // Get auth token
-        const token = localStorage.getItem('auth_token')
-        if (!token) {
-          throw new Error('Not authenticated')
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/confirm`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            stripePaymentIntentId: result.paymentIntent.id,
-            plan: plan.id,
-          }),
-        })
-        
-        if (response.ok) {
+        try {
+          await subscriptionApi.confirmSubscription(result.paymentIntent.id, plan.id)
+          
           toast({
             title: 'Subscription Activated',
             description: `Your ${plan.name} subscription has been activated successfully.`,
           })
           onSuccess()
-        } else {
-          const errorData = await response.json()
-          setError(errorData.message || 'Failed to confirm subscription')
+        } catch (confirmError: any) {
+          setError(confirmError.message || 'Failed to confirm subscription')
         }
       }
     } catch (err: any) {
@@ -318,34 +302,15 @@ const CurrentSubscription = ({
   const handleCancelSubscription = async () => {
     try {
       setCancelling(true)
-      // Get auth token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('Not authenticated')
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/cancel`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
       
-      if (response.ok) {
-        toast({
-          title: 'Subscription Cancelled',
-          description: `Your subscription has been cancelled. You'll have access until ${subscription.endDate}.`,
-        })
-        setShowCancelDialog(false)
-        onCancel()
-      } else {
-        const errorData = await response.json()
-        toast({
-          title: 'Error',
-          description: errorData.message || 'Failed to cancel subscription',
-          variant: 'destructive',
-        })
-      }
+      const response = await subscriptionApi.cancelSubscription()
+      
+      toast({
+        title: 'Subscription Cancelled',
+        description: `Your subscription has been cancelled. You'll have access until ${subscription.endDate}.`,
+      })
+      setShowCancelDialog(false)
+      onCancel()
     } catch (error) {
       handleApiError(error, 'Failed to cancel subscription')
     } finally {
@@ -518,35 +483,13 @@ export default function SubscriptionManager() {
         setLoading(true)
         setError(null)
         
-        // Get auth token
-        const token = localStorage.getItem('auth_token')
-        if (!token) {
-          throw new Error('Not authenticated')
-        }
-
         // Fetch current subscription
-        const subscriptionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/current`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        if (!subscriptionResponse.ok) {
-          throw new Error('Failed to fetch subscription data')
-        }
-        const subscriptionData = await subscriptionResponse.json()
-        setCurrentSubscription(subscriptionData.data.subscription)
+        const subscriptionData = await subscriptionApi.getCurrentSubscription()
+        setCurrentSubscription(subscriptionData.subscription)
         
         // Fetch plans
-        const plansResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/plans`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        if (!plansResponse.ok) {
-          throw new Error('Failed to fetch subscription plans')
-        }
-        const plansData = await plansResponse.json()
-        setPlans(plansData.data.plans)
+        const plans = await subscriptionApi.getPlans()
+        setPlans(plans)
       } catch (error) {
         console.error('Error fetching subscription data:', error)
         setError('Failed to load subscription data. Please try again.')
@@ -565,28 +508,8 @@ export default function SubscriptionManager() {
       setProcessingPayment(true)
       setError(null)
       
-      // Get auth token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('Not authenticated')
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/create-payment-intent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ plan: plan.id }),
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to create payment intent')
-      }
-      
-      const data = await response.json()
-      setClientSecret(data.data.clientSecret)
+      const data = await subscriptionApi.createPaymentIntent(plan.id)
+      setClientSecret(data.clientSecret)
     } catch (error: any) {
       console.error('Error creating payment intent:', error)
       setError(error.message || 'Failed to initialize payment. Please try again.')
@@ -600,24 +523,10 @@ export default function SubscriptionManager() {
   const handlePaymentSuccess = async () => {
     try {
       setLoading(true)
-      // Get auth token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('Not authenticated')
-      }
-
-      // Refresh subscription data
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch updated subscription data')
-      }
       
-      const data = await response.json()
-      setCurrentSubscription(data.data.subscription)
+      // Refresh subscription data
+      const data = await subscriptionApi.getCurrentSubscription()
+      setCurrentSubscription(data.subscription)
       setSelectedPlan(null)
       setClientSecret(null)
     } catch (error) {
@@ -632,24 +541,10 @@ export default function SubscriptionManager() {
   const handleCancellationSuccess = async () => {
     try {
       setLoading(true)
-      // Get auth token
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('Not authenticated')
-      }
-
-      // Refresh subscription data
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch updated subscription data')
-      }
       
-      const data = await response.json()
-      setCurrentSubscription(data.data.subscription)
+      // Refresh subscription data
+      const data = await subscriptionApi.getCurrentSubscription()
+      setCurrentSubscription(data.subscription)
     } catch (error) {
       console.error('Error refreshing subscription data:', error)
     } finally {
