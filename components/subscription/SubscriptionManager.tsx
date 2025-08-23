@@ -119,9 +119,18 @@ const PaymentForm = ({
         setError(result.error.message || 'Payment failed')
       } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
         // Call confirm endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/confirm`, {
+        // Get auth token
+        const token = localStorage.getItem('auth_token')
+        if (!token) {
+          throw new Error('Not authenticated')
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/confirm`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({
             stripePaymentIntentId: result.paymentIntent.id,
             plan: plan.id,
@@ -309,8 +318,17 @@ const CurrentSubscription = ({
   const handleCancelSubscription = async () => {
     try {
       setCancelling(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/cancel`, {
+      // Get auth token
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/cancel`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
       
       if (response.ok) {
@@ -500,8 +518,18 @@ export default function SubscriptionManager() {
         setLoading(true)
         setError(null)
         
+        // Get auth token
+        const token = localStorage.getItem('auth_token')
+        if (!token) {
+          throw new Error('Not authenticated')
+        }
+
         // Fetch current subscription
-        const subscriptionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
+        const subscriptionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/current`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         if (!subscriptionResponse.ok) {
           throw new Error('Failed to fetch subscription data')
         }
@@ -509,7 +537,11 @@ export default function SubscriptionManager() {
         setCurrentSubscription(subscriptionData.data.subscription)
         
         // Fetch plans
-        const plansResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/plans`)
+        const plansResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/plans`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         if (!plansResponse.ok) {
           throw new Error('Failed to fetch subscription plans')
         }
@@ -533,9 +565,18 @@ export default function SubscriptionManager() {
       setProcessingPayment(true)
       setError(null)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/create-payment-intent`, {
+      // Get auth token
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/api/subscriptions/create-payment-intent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ plan: plan.id }),
       })
       
@@ -559,8 +600,18 @@ export default function SubscriptionManager() {
   const handlePaymentSuccess = async () => {
     try {
       setLoading(true)
+      // Get auth token
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
       // Refresh subscription data
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch updated subscription data')
       }
@@ -581,8 +632,18 @@ export default function SubscriptionManager() {
   const handleCancellationSuccess = async () => {
     try {
       setLoading(true)
+      // Get auth token
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('Not authenticated')
+      }
+
       // Refresh subscription data
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch updated subscription data')
       }
