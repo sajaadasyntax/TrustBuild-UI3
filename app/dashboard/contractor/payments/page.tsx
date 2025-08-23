@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import SubscriptionManager from '@/components/subscription/SubscriptionManager'
 import { 
   CreditCard,
   DollarSign,
@@ -569,12 +570,19 @@ export default function ContractorPayments() {
         </Button>
       </div>
 
+      {/* Subscription Manager */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Subscription Management</h2>
+        <SubscriptionManager />
+      </div>
+
       {/* Transactions */}
       <Tabs defaultValue="transactions" className="space-y-6">
         <TabsList>
           <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
           <TabsTrigger value="credits">Credit History</TabsTrigger>
           <TabsTrigger value="earnings">Earnings Details</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscription History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -782,6 +790,101 @@ export default function ContractorPayments() {
                   View earnings by job, month, and category
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="subscriptions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription History</CardTitle>
+              <CardDescription>
+                View your subscription payments and plan changes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading subscription history...</span>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.filter(t => t.type === 'subscription').length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            <div className="text-muted-foreground">
+                              <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                              <p>No subscription history found</p>
+                              <p className="text-sm">Your subscription payments will appear here</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        transactions
+                          .filter(t => t.type === 'subscription')
+                          .map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell className="text-sm">
+                                {formatDate(transaction.createdAt)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-blue-100 text-blue-800">
+                                  Subscription
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="max-w-xs">
+                                <div className="truncate">{transaction.description}</div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <span className="text-red-600">
+                                  -{formatCurrency(transaction.amount, transaction.currency)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(transaction.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    {transaction.stripeTransactionId && (
+                                      <DropdownMenuItem>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Receipt
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
