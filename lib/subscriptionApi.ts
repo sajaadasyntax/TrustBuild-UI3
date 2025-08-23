@@ -20,7 +20,8 @@ const apiRequest = async <T>(
   }
 
   try {
-    const response = await fetch(`/api${endpoint}`, {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk';
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         ...headers,
