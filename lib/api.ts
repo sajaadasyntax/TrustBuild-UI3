@@ -1677,6 +1677,80 @@ export const paymentsApi = {
     
   getCreditHistory: (page = 1, limit = 10) => 
     apiRequest<any>(`/payments/credit-history?page=${page}&limit=${limit}`),
+
+  // Subscription management
+  createSubscription: (plan: 'MONTHLY' | 'SIX_MONTHS' | 'YEARLY') =>
+    apiRequest<{
+      subscription: any;
+      clientSecret: string;
+      subscriptionId: string;
+    }>('/payments/create-subscription', {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    }),
+
+  getSubscriptionStatus: () =>
+    apiRequest<{
+      hasSubscription: boolean;
+      subscription: any;
+    }>('/payments/subscription'),
+
+  cancelSubscription: () =>
+    apiRequest<{
+      subscription: any;
+      cancelAtPeriodEnd: boolean;
+      currentPeriodEnd: Date;
+    }>('/payments/cancel-subscription', {
+      method: 'POST',
+    }),
+
+  reactivateSubscription: () =>
+    apiRequest<{
+      subscription: any;
+    }>('/payments/reactivate-subscription', {
+      method: 'POST',
+    }),
+
+  updateSubscriptionPlan: (newPlan: 'MONTHLY' | 'SIX_MONTHS' | 'YEARLY') =>
+    apiRequest<{
+      subscription: any;
+    }>('/payments/update-subscription', {
+      method: 'POST',
+      body: JSON.stringify({ newPlan }),
+    }),
+
+  // Commission management
+  completeJob: (jobId: string, finalAmount: number) =>
+    apiRequest<{
+      job: any;
+      commissionPayment: any;
+      hasCommission: boolean;
+    }>('/payments/complete-job', {
+      method: 'POST',
+      body: JSON.stringify({ jobId, finalAmount }),
+    }),
+
+  getCommissionPayments: (page = 1, limit = 10) =>
+    apiRequest<PaginatedResponse<any>>(`/payments/commissions?page=${page}&limit=${limit}`),
+
+  createCommissionPaymentIntent: (commissionPaymentId: string) =>
+    apiRequest<{
+      clientSecret: string;
+      amount: number;
+      dueDate: Date;
+      jobTitle: string;
+    }>('/payments/create-commission-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ commissionPaymentId }),
+    }),
+
+  payCommission: (commissionPaymentId: string, stripePaymentIntentId: string) =>
+    apiRequest<{
+      commissionPayment: any;
+    }>('/payments/pay-commission', {
+      method: 'POST',
+      body: JSON.stringify({ commissionPaymentId, stripePaymentIntentId }),
+    }),
 };
 
 // Invoice API

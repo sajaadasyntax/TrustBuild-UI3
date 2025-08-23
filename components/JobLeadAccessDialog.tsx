@@ -28,7 +28,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 // Initialize Stripe with enhanced error handling
 const initializeStripe = async () => {
   try {
-    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51Nj0ABHbCjK8rTMWIJnHxmzQVlXMcbWw4JlGDhbFx9F1xDXBvZNNjzZYQGGjRGaR6EsSmLAfzfNXBJZjzYVzYXvZ00vPDpfCpj'
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_FALLBACK_KEY_NOT_SET'
     
     console.log('🔄 Initializing Stripe with key:', publishableKey.substring(0, 20) + '...')
     
@@ -43,7 +43,7 @@ const initializeStripe = async () => {
   } catch (error) {
     console.error('❌ Failed to initialize Stripe:', error)
     // Return fallback test Stripe instance
-    return loadStripe('pk_test_51Nj0ABHbCjK8rTMWIJnHxmzQVlXMcbWw4JlGDhbFx9F1xDXBvZNNjzZYQGGjRGaR6EsSmLAfzfNXBJZjzYVzYXvZ00vPDpfCpj')
+    return loadStripe('pk_test_FALLBACK_KEY_NOT_SET')
   }
 }
 
