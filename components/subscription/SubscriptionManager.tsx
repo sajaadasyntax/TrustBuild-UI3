@@ -45,7 +45,7 @@ import { Elements } from '@stripe/react-stripe-js'
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51OUW6uDYzE0QVbJQXgYYXzDPPIVEzXG2NQmIYIyDdUOWDrTrUHvPkBGpGxEVOyRgzrJQOxqZKhkzs5yFYRFLrPuQ00Qx5XkWzZ')
 
 interface SubscriptionPlan {
   id: string
@@ -110,7 +110,7 @@ const PaymentForm = ({
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: window.location.origin + '/dashboard/contractor/payments?payment_success=true',
+          return_url: 'https://www.trustbuild.uk/dashboard/contractor/payments?payment_success=true',
         },
         redirect: 'if_required',
       })
@@ -119,7 +119,7 @@ const PaymentForm = ({
         setError(result.error.message || 'Payment failed')
       } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
         // Call confirm endpoint
-        const response = await fetch('/api/subscriptions/confirm', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -309,7 +309,7 @@ const CurrentSubscription = ({
   const handleCancelSubscription = async () => {
     try {
       setCancelling(true)
-      const response = await fetch('/api/subscriptions/cancel', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/cancel`, {
         method: 'POST',
       })
       
@@ -501,7 +501,7 @@ export default function SubscriptionManager() {
         setError(null)
         
         // Fetch current subscription
-        const subscriptionResponse = await fetch('/api/subscriptions/current')
+        const subscriptionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
         if (!subscriptionResponse.ok) {
           throw new Error('Failed to fetch subscription data')
         }
@@ -509,7 +509,7 @@ export default function SubscriptionManager() {
         setCurrentSubscription(subscriptionData.data.subscription)
         
         // Fetch plans
-        const plansResponse = await fetch('/api/subscriptions/plans')
+        const plansResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/plans`)
         if (!plansResponse.ok) {
           throw new Error('Failed to fetch subscription plans')
         }
@@ -533,7 +533,7 @@ export default function SubscriptionManager() {
       setProcessingPayment(true)
       setError(null)
       
-      const response = await fetch('/api/subscriptions/create-payment-intent', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: plan.id }),
@@ -560,7 +560,7 @@ export default function SubscriptionManager() {
     try {
       setLoading(true)
       // Refresh subscription data
-      const response = await fetch('/api/subscriptions/current')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
       if (!response.ok) {
         throw new Error('Failed to fetch updated subscription data')
       }
@@ -582,7 +582,7 @@ export default function SubscriptionManager() {
     try {
       setLoading(true)
       // Refresh subscription data
-      const response = await fetch('/api/subscriptions/current')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/subscriptions/current`)
       if (!response.ok) {
         throw new Error('Failed to fetch updated subscription data')
       }
