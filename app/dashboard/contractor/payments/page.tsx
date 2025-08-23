@@ -94,14 +94,16 @@ interface PaymentTransaction {
   };
   createdAt: string;
   stripeTransactionId?: string;
-  creditUsed?: boolean;
+  isStripeTransaction?: boolean; // Flag to identify Stripe transactions
 }
 
 export default function ContractorPayments() {
   const { user, isAuthenticated } = useAuth()
   const [earnings, setEarnings] = useState<ContractorEarnings | null>(null)
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([])
+  const [creditTransactions, setCreditTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [creditLoading, setCreditLoading] = useState(true)
   const [statsLoading, setStatsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -118,6 +120,7 @@ export default function ContractorPayments() {
     if (isAuthenticated && user && user.role === 'CONTRACTOR') {
       fetchEarnings()
       fetchTransactions()
+      fetchCreditTransactions()
       checkCreditReset()
     }
   }, [page, searchTerm, statusFilter, typeFilter, isAuthenticated, user])
@@ -180,22 +183,28 @@ export default function ContractorPayments() {
       // Fetch real payment history from API
       const paymentHistory = await paymentsApi.getPaymentHistory(page, 10)
       
-      // Transform the payment data to match our interface
-      const transformedTransactions: PaymentTransaction[] = paymentHistory.data.payments.map((payment: any) => ({
-        id: payment.id,
-        type: payment.type.toLowerCase() as any,
-        amount: Number(payment.amount),
-        currency: payment.currency,
-        status: payment.status.toLowerCase(),
-        description: payment.description,
-        job: payment.job ? {
-          title: payment.job.title,
-          id: payment.job.id
-        } : undefined,
-        createdAt: payment.createdAt,
-        stripeTransactionId: payment.stripePaymentId,
-        creditUsed: payment.type === 'LEAD_ACCESS'
-      }))
+      // Transform the payment data to match our interface, filtering out credit-related transactions
+      const transformedTransactions: PaymentTransaction[] = paymentHistory.data.payments
+        .filter((payment: any) => {
+          // Only include Stripe-related payments (exclude credit transactions)
+          return payment.stripePaymentId || (payment.type !== 'LEAD_ACCESS' || !payment.creditUsed);
+        })
+        .map((payment: any) => ({
+          id: payment.id,
+          type: payment.type.toLowerCase() as any,
+          amount: Number(payment.amount),
+          currency: payment.currency || 'GBP',
+          status: payment.status.toLowerCase(),
+          description: payment.description,
+          job: payment.job ? {
+            title: payment.job.title,
+            id: payment.job.id
+          } : undefined,
+          createdAt: payment.createdAt,
+          stripeTransactionId: payment.stripePaymentId,
+          // Mark if this is a Stripe transaction
+          isStripeTransaction: !!payment.stripePaymentId
+        }))
       
       setTransactions(transformedTransactions)
       setTotalPages(paymentHistory.data.pagination?.pages || 1)
