@@ -175,10 +175,10 @@ export default function ClientPayments() {
   const fetchInvoices = async () => {
     try {
       setLoading(true)
-      const response = await customersApi.getClientInvoices({
+      const response = await customersApi.getMyInvoices({
         page: 1,
         limit: 10
-      }) as any
+      })
       // For now, just show a message since invoices will be empty
       toast({
         title: 'Invoices Refreshed',
