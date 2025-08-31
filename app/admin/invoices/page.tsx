@@ -83,7 +83,7 @@ export default function AdminInvoicesPage() {
       if (searchTerm) params.search = searchTerm
       
       const response = await adminApi.getInvoices(params)
-      setInvoices(response)
+      setInvoices(response.data)
       setPagination(response.pagination)
     } catch (error) {
       toast({
