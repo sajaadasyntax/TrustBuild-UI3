@@ -26,7 +26,7 @@ import {
 import { Download, FileText, Search } from "lucide-react"
 import { invoicesApi, handleApiError, Invoice } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ContractorInvoicesPage() {
