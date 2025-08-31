@@ -84,7 +84,7 @@ export default function AdminInvoicesPage() {
       
       const response = await adminApi.getInvoices(params)
       setInvoices(response.data)
-      setPagination(response.pagination)
+      setPagination(response.data.pagination)
     } catch (error) {
       toast({
         title: "Error",
