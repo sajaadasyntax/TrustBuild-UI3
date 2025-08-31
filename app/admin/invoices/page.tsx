@@ -33,7 +33,7 @@ import {
 import { Download, FileText, Search, Calendar } from "lucide-react"
 import { invoicesApi, adminApi, handleApiError, Invoice } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { DateRange } from "react-day-picker"

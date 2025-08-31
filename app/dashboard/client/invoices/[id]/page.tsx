@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Download, ArrowLeft, Printer } from "lucide-react"
 import { customersApi, invoicesApi, handleApiError, Invoice } from '@/lib/api'
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ClientInvoiceDetailPage() {
