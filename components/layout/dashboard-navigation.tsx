@@ -51,6 +51,7 @@ export function DashboardNavigation() {
         { label: "Jobs", href: "/jobs", icon: Briefcase },
         { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
         { label: "Payments", href: "/dashboard/contractor/payments", icon: CreditCard },
+        { label: "Invoices", href: "/dashboard/contractor/invoices", icon: FileText },
       ]
     } else if (user?.role === "CUSTOMER") {
       return [
@@ -59,6 +60,7 @@ export function DashboardNavigation() {
         { label: "My Jobs", href: "/dashboard/client/current-jobs", icon: FileText },
         { label: "Reviews", href: "/dashboard/client/reviews", icon: Star },
         { label: "Payments", href: "/dashboard/client/payments", icon: CreditCard },
+        { label: "Invoices", href: "/dashboard/client/invoices", icon: FileText },
       ]
     } else if (user?.role === "ADMIN") {
       return [
@@ -67,6 +69,7 @@ export function DashboardNavigation() {
         { label: "Contractors", href: "/admin/contractors", icon: Users },
         { label: "Jobs", href: "/admin/jobs", icon: BarChart3 },
         { label: "Payments", href: "/admin/payments", icon: CreditCard },
+        { label: "Invoices", href: "/admin/invoices", icon: FileText },
       ]
     }
 

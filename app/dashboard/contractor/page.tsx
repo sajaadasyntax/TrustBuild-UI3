@@ -13,7 +13,7 @@ import {
   AlertCircle, ArrowRight, Bell, BriefcaseBusiness, Clock, CreditCard, FileCheck, 
   FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
 } from "lucide-react"
-import { contractorsApi, jobsApi, reviewsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
+import { contractorsApi, jobsApi, reviewsApi, paymentsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
 
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -39,9 +39,25 @@ export default function ContractorDashboard() {
     totalReviews: 0
   })
 
+  const [subscription, setSubscription] = useState<any>(null)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+
   useEffect(() => {
     fetchDashboardData()
+    fetchSubscriptionData()
   }, [])
+
+  const fetchSubscriptionData = async () => {
+    try {
+      setSubscriptionLoading(true)
+      const { hasSubscription, subscription } = await paymentsApi.getSubscriptionStatus()
+      setSubscription(subscription || null)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch subscription data')
+    } finally {
+      setSubscriptionLoading(false)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -680,38 +696,81 @@ export default function ContractorDashboard() {
             <CardTitle>Subscription Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-between items-center pb-4 border-b">
-              <div>
-                <h3 className="font-medium">Professional Plan</h3>
-                <p className="text-sm text-muted-foreground">Monthly subscription</p>
-              </div>
-              <Badge variant={contractor?.subscription?.status === "ACTIVE" ? "outline" : "destructive"}>
-                {contractor?.subscription?.status}
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Amount</p>
-                <p className="font-medium">{contractor?.subscription?.amount ? formatCurrency(contractor.subscription.amount) : 'N/A'}/month</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Next billing date</p>
-                <p className="font-medium">{contractor?.subscription?.nextBillingDate}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Payment method</p>
-                <div className="flex items-center">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Direct Debit</span>
+            {subscriptionLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b">
+                  <div>
+                    <div className="h-5 bg-gray-300 rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded w-24"></div>
+                  </div>
+                  <div className="h-6 bg-gray-300 rounded w-16"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i}>
+                      <div className="h-3 bg-gray-300 rounded w-20 mb-2"></div>
+                      <div className="h-5 bg-gray-300 rounded w-24"></div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ) : subscription ? (
+              <>
+                <div className="flex justify-between items-center pb-4 border-b">
+                  <div>
+                    <h3 className="font-medium">{subscription.plan || 'Professional Plan'}</h3>
+                    <p className="text-sm text-muted-foreground">{subscription.interval || 'Monthly'} subscription</p>
+                  </div>
+                  <Badge variant={subscription.status === "active" ? "outline" : "destructive"}>
+                    {subscription.status ? subscription.status.toUpperCase() : 'INACTIVE'}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Amount</p>
+                    <p className="font-medium">
+                      {subscription.amount ? formatCurrency(subscription.amount / 100) : 'N/A'}/{subscription.interval || 'month'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Next billing date</p>
+                    <p className="font-medium">
+                      {subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment method</p>
+                    <div className="flex items-center">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      <span className="font-medium">{subscription.paymentMethod || 'Card'}</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No active subscription</h3>
+                <p className="text-muted-foreground mb-4">
+                  Subscribe to unlock premium features and benefits
+                </p>
+                <Button asChild>
+                  <Link href="/dashboard/contractor/subscription">Get Started</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
-          <CardFooter className="flex justify-end space-x-2">
-            <Button variant="outline">Update Payment Method</Button>
-            <Button variant="outline">Manage Subscription</Button>
-          </CardFooter>
+          {subscription && (
+            <CardFooter className="flex justify-end space-x-2">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/contractor/subscription/payment-method">Update Payment Method</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/contractor/subscription">Manage Subscription</Link>
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </div>

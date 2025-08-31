@@ -767,10 +767,10 @@ export const customersApi = {
     return await apiRequest(`/customers/me/payments?${searchParams.toString()}`);
   },
 
-  getClientInvoices: async (params: {
+  getMyInvoices: async (params: {
     page?: number;
     limit?: number;
-  } = {}) => {
+  } = {}): Promise<PaginatedResponse<Invoice>> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -778,7 +778,12 @@ export const customersApi = {
       }
     });
     
-    return await apiRequest(`/customers/me/invoices?${searchParams.toString()}`);
+    return apiRequest(`/customers/me/invoices?${searchParams.toString()}`);
+  },
+  
+  getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
+    const response = await apiRequest<{ data: { invoice: Invoice } }>(`/customers/me/invoices/${invoiceId}`);
+    return response.data.invoice;
   },
 
   getClientPaymentMethods: async (): Promise<any[]> => {
@@ -1186,6 +1191,51 @@ export const adminApi = {
     recent: { users: User[]; jobs: Job[] };
   }> => {
     const response = await apiRequest<{ data: { stats: any } }>('/admin/dashboard');
+    return response.data.stats;
+  },
+  
+  // Invoice Management
+  getInvoices: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+  } = {}): Promise<PaginatedResponse<Invoice>> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    
+    return apiRequest(`/admin/invoices?${searchParams.toString()}`);
+  },
+
+  getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
+    const response = await apiRequest<{ data: { invoice: Invoice } }>(`/admin/invoices/${invoiceId}`);
+    return response.data.invoice;
+  },
+  
+  updateInvoiceStatus: async (invoiceId: string, status: string): Promise<Invoice> => {
+    const response = await apiRequest<{ data: { invoice: Invoice } }>(`/admin/invoices/${invoiceId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    return response.data.invoice;
+  },
+  
+  getInvoiceStats: async (period: string = '30'): Promise<{
+    total: number;
+    paid: number;
+    pending: number;
+    revenue: number;
+    recent: Invoice[];
+    byType: any[];
+  }> => {
+    const response = await apiRequest<{ data: { stats: any } }>(`/admin/invoices/stats?period=${period}`);
     return response.data.stats;
   },
 
