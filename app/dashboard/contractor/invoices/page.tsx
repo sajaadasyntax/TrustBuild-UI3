@@ -50,8 +50,8 @@ export default function ContractorInvoicesPage() {
     try {
       setLoading(true)
       const response = await invoicesApi.getMyInvoices({ page, limit })
-      setInvoices(response.data.invoices)
-      setPagination(response.pagination)
+      setInvoices(response.data)
+      setPagination(response.data.pagination)
     } catch (error) {
       toast({
         title: "Error",
