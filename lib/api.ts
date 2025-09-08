@@ -380,7 +380,7 @@ const getStoredToken = (): string | null => {
 
 const setStoredToken = (token: string): void => {
   if (typeof window === 'undefined') return;
-  // console.log("💾 Storing token:", { tokenLength: token.length, tokenStart: token.substring(0, 20) + '...' });
+  console.log("💾 Storing token:", { tokenLength: token.length, tokenStart: token.substring(0, 20) + '...' });
   localStorage.setItem('auth_token', token);
 };
 
@@ -397,7 +397,7 @@ const apiRequest = async <T>(
 ): Promise<T> => {
   const token = getStoredToken();
   
-  // console.log("🔍 API Request:", { endpoint, hasToken: !!token, tokenLength: token?.length });
+  console.log("🔍 API Request:", { endpoint, hasToken: !!token, tokenLength: token?.length });
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
