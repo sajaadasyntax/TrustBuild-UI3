@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import AdminSubscriptionManager from '@/components/subscription/AdminSubscriptionManager'
 import { 
   CreditCard,
   DollarSign,
@@ -601,15 +602,7 @@ export default function AdminPayments() {
         </TabsContent>
 
         <TabsContent value="subscriptions" className="space-y-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Subscription Management</h3>
-              <p className="text-muted-foreground">
-                Stripe subscription management features coming soon
-              </p>
-            </CardContent>
-          </Card>
+          <AdminSubscriptionManager />
         </TabsContent>
 
         <TabsContent value="refunds" className="space-y-4">

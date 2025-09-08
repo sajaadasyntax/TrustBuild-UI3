@@ -1624,6 +1624,88 @@ export const adminApi = {
     return response.data;
   },
   
+  // Subscription management
+  getSubscriptions: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    plan?: string;
+    search?: string;
+  } = {}): Promise<{
+    status: 'success';
+    data: {
+      subscriptions: any[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    };
+  }> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    
+    const response = await apiRequest<{
+      status: 'success';
+      data: {
+        subscriptions: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(`/admin/subscriptions?${searchParams.toString()}`);
+    
+    return response;
+  },
+  
+  getSubscriptionStats: async (): Promise<any> => {
+    const response = await apiRequest<{ data: any }>('/admin/subscriptions/stats');
+    return response.data;
+  },
+  
+  getSubscriptionById: async (id: string): Promise<any> => {
+    const response = await apiRequest<{ data: any }>(`/admin/subscriptions/${id}`);
+    return response.data;
+  },
+  
+  updateSubscription: async (id: string, data: any): Promise<any> => {
+    const response = await apiRequest<{ data: any }>(`/admin/subscriptions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return response.data;
+  },
+  
+  createSubscriptionForContractor: async (contractorId: string, plan: string): Promise<any> => {
+    const response = await apiRequest<{ data: any }>('/admin/subscriptions/create', {
+      method: 'POST',
+      body: JSON.stringify({ contractorId, plan }),
+    });
+    return response.data;
+  },
+  
+  cancelContractorSubscription: async (contractorId: string): Promise<any> => {
+    const response = await apiRequest<{ data: any }>(`/admin/subscriptions/${contractorId}/cancel`, {
+      method: 'POST',
+    });
+    return response.data;
+  },
+  
+  reactivateContractorSubscription: async (contractorId: string): Promise<any> => {
+    const response = await apiRequest<{ data: any }>(`/admin/subscriptions/${contractorId}/reactivate`, {
+      method: 'POST',
+    });
+    return response.data;
+  },
+  
   searchContractors: (query: string, page = 1, limit = 10) => 
     apiRequest<any>(`/admin/contractors-search?query=${query}&page=${page}&limit=${limit}`),
 
