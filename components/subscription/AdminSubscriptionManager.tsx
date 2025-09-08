@@ -25,7 +25,8 @@ import {
   Activity,
   Filter,
   Edit,
-  PlusCircle
+  PlusCircle,
+  Eye
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import {
