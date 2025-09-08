@@ -76,8 +76,8 @@ export default function AdminInvoicesPage() {
         limit: pagination.limit,
       }
       
-      if (status) params.status = status
-      if (type) params.type = type
+      if (status && status !== "ALL") params.status = status
+      if (type && type !== "ALL") params.type = type
       if (dateRange?.from) params.startDate = dateRange.from.toISOString()
       if (dateRange?.to) params.endDate = dateRange.to.toISOString()
       if (searchTerm) params.search = searchTerm
@@ -203,7 +203,7 @@ export default function AdminInvoicesPage() {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
                   <SelectItem value="PAID">Paid</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="OVERDUE">Overdue</SelectItem>
@@ -218,7 +218,7 @@ export default function AdminInvoicesPage() {
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="ALL">All Types</SelectItem>
                   <SelectItem value="LEAD_ACCESS">Lead Access</SelectItem>
                   <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
                   <SelectItem value="JOB_PAYMENT">Job Payment</SelectItem>

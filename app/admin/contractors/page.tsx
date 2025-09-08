@@ -1096,7 +1096,7 @@ export default function AdminContractors() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select action" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ADDITION">
