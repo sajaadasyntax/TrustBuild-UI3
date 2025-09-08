@@ -397,7 +397,12 @@ const apiRequest = async <T>(
 ): Promise<T> => {
   const token = getStoredToken();
   
-  console.log("🔍 API Request:", { endpoint, hasToken: !!token, tokenLength: token?.length });
+  console.log("🔍 API Request:", { 
+    endpoint, 
+    hasToken: !!token, 
+    tokenLength: token?.length,
+    method: options.method || 'GET'
+  });
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -414,26 +419,42 @@ const apiRequest = async <T>(
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("⚠️ No authentication token found for API request:", endpoint);
   }
 
+  const url = `${API_BASE_URL}${endpoint}`;
+  console.log(`📡 Fetching from: ${url}`);
+  
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
       headers,
     });
 
-    const data = await response.json();
-
+    console.log(`📥 Response status for ${endpoint}:`, response.status);
+    
     if (!response.ok) {
-      throw new ApiError(response.status, data.message || 'API request failed');
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { message: errorText };
+      }
+      
+      console.error(`🚫 API Error (${response.status}) for ${endpoint}:`, errorData);
+      throw new ApiError(response.status, errorData.message || `API request failed with status ${response.status}`);
     }
-
+    
+    const data = await response.json();
     return data;
   } catch (error) {
+    console.error(`❌ Request failed for ${endpoint}:`, error);
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(500, 'Network error occurred');
+    throw new ApiError(500, error instanceof Error ? error.message : 'Network error occurred');
   }
 };
 
@@ -1643,32 +1664,68 @@ export const adminApi = {
       };
     };
   }> => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        searchParams.set(key, value.toString());
-      }
-    });
-    
-    const response = await apiRequest<{
-      status: 'success';
-      data: {
-        subscriptions: any[];
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          pages: number;
+    try {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.set(key, value.toString());
+        }
+      });
+      
+      console.log('Calling subscriptions API with params:', params);
+      const queryString = searchParams.toString();
+      console.log('Query string:', queryString);
+      
+      const response = await apiRequest<{
+        status: 'success';
+        data: {
+          subscriptions: any[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            pages: number;
+          };
         };
-      };
-    }>(`/admin/subscriptions?${searchParams.toString()}`);
-    
-    return response;
+      }>(`/admin/subscriptions?${queryString}`);
+      
+      console.log('Subscriptions API raw response:', response);
+      
+      // Make sure we have a valid response structure
+      if (!response || !response.data || !Array.isArray(response.data.subscriptions)) {
+        console.error('Invalid subscription data format received:', response);
+        // Return a safe default to prevent UI crashes
+        return {
+          status: 'success',
+          data: {
+            subscriptions: [],
+            pagination: {
+              page: params.page || 1,
+              limit: params.limit || 10,
+              total: 0,
+              pages: 1
+            }
+          }
+        };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error in getSubscriptions API call:', error);
+      throw error;
+    }
   },
   
   getSubscriptionStats: async (): Promise<any> => {
-    const response = await apiRequest<{ data: any }>('/admin/subscriptions/stats');
-    return response.data;
+    try {
+      console.log('Calling subscription stats API endpoint');
+      const response = await apiRequest<{ data: any }>('/admin/subscriptions/stats');
+      console.log('Subscription stats raw response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Error in getSubscriptionStats API call:', error);
+      throw error;
+    }
   },
   
   getSubscriptionById: async (id: string): Promise<any> => {

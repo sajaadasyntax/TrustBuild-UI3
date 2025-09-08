@@ -137,9 +137,21 @@ export default function AdminSubscriptionManager() {
   const fetchSubscriptionStats = async () => {
     try {
       setStatsLoading(true)
+      console.log('Fetching subscription stats...')
       const response = await adminApi.getSubscriptionStats()
-      setSummary(response)
+      console.log('Subscription stats response:', response)
+      if (response) {
+        setSummary(response)
+      } else {
+        console.error('Invalid subscription stats data format:', response)
+        toast({
+          title: 'Data Error',
+          description: 'Received invalid subscription statistics from server',
+          variant: 'destructive',
+        })
+      }
     } catch (error) {
+      console.error('Subscription stats error:', error)
       handleApiError(error, 'Failed to fetch subscription statistics')
     } finally {
       setStatsLoading(false)
@@ -149,10 +161,24 @@ export default function AdminSubscriptionManager() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true)
+      console.log('Fetching subscriptions with filters:', filters)
       const response = await adminApi.getSubscriptions(filters)
-      setSubscriptions(response.data.subscriptions)
-      setTotalPages(response.data.pagination.pages)
+      console.log('Subscription API response:', response)
+      if (response && response.data && Array.isArray(response.data.subscriptions)) {
+        setSubscriptions(response.data.subscriptions)
+        setTotalPages(response.data.pagination.pages)
+      } else {
+        console.error('Invalid subscription data format:', response)
+        toast({
+          title: 'Data Error',
+          description: 'Received invalid subscription data format from server',
+          variant: 'destructive',
+        })
+        setSubscriptions([])
+        setTotalPages(1)
+      }
     } catch (error) {
+      console.error('Subscription fetch error:', error)
       handleApiError(error, 'Failed to fetch subscriptions')
     } finally {
       setLoading(false)
