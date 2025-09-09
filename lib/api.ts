@@ -799,7 +799,24 @@ export const customersApi = {
       }
     });
     
-    return apiRequest(`/customers/me/invoices?${searchParams.toString()}`);
+    const response = await apiRequest<{
+      status: string;
+      data: {
+        invoices: Invoice[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        }
+      }
+    }>(`/customers/me/invoices?${searchParams.toString()}`);
+    
+    // Transform the response to match the expected PaginatedResponse format
+    return {
+      data: response.data.invoices,
+      pagination: response.data.pagination
+    };
   },
   
   getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
@@ -1955,7 +1972,22 @@ export const invoicesApi = {
       }
     });
     
-    return apiRequest(`/invoices/my?${searchParams.toString()}`);
+    const response = await apiRequest<{
+      status: string;
+      data: Invoice[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      }
+    }>(`/invoices/my?${searchParams.toString()}`);
+    
+  // Transform the response to match the expected PaginatedResponse format
+  return {
+    status: 'success',
+    data: Object.assign(response.data, { pagination: response.pagination })
+  };
   },
 
   getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
