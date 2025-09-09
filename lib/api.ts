@@ -1873,7 +1873,7 @@ export const paymentsApi = {
       subscription: any;
       clientSecret: string;
       subscriptionId: string;
-    }>('/payments/create-subscription', {
+    }>('/subscriptions/create-payment-intent', {
       method: 'POST',
       body: JSON.stringify({ plan }),
     }),
@@ -1882,30 +1882,30 @@ export const paymentsApi = {
     apiRequest<{
       hasSubscription: boolean;
       subscription: any;
-    }>('/payments/subscription'),
+    }>('/subscriptions/current'),
 
   cancelSubscription: () =>
     apiRequest<{
       subscription: any;
       cancelAtPeriodEnd: boolean;
       currentPeriodEnd: Date;
-    }>('/payments/cancel-subscription', {
+    }>('/subscriptions/cancel', {
       method: 'POST',
     }),
 
   reactivateSubscription: () =>
     apiRequest<{
       subscription: any;
-    }>('/payments/reactivate-subscription', {
+    }>('/subscriptions/confirm', {
       method: 'POST',
     }),
 
   updateSubscriptionPlan: (newPlan: 'MONTHLY' | 'SIX_MONTHS' | 'YEARLY') =>
     apiRequest<{
       subscription: any;
-    }>('/payments/update-subscription', {
+    }>('/subscriptions/confirm', {
       method: 'POST',
-      body: JSON.stringify({ newPlan }),
+      body: JSON.stringify({ plan: newPlan }),
     }),
 
   // Commission management
