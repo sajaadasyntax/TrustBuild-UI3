@@ -812,12 +812,12 @@ export const customersApi = {
       }
     }>(`/customers/me/invoices?${searchParams.toString()}`);
     
-    // Transform the response to match the expected PaginatedResponse format
-    return {
-      data: response.data.invoices,
-      pagination: response.data.pagination
-    };
-  },
+  // Transform the response to match the expected PaginatedResponse format
+  return {
+    status: 'success',
+    data: Object.assign(response.data.invoices, { pagination: response.data.pagination })
+  };
+},
   
   getInvoiceById: async (invoiceId: string): Promise<Invoice> => {
     const response = await apiRequest<{ data: { invoice: Invoice } }>(`/customers/me/invoices/${invoiceId}`);
