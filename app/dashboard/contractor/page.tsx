@@ -773,6 +773,9 @@ export default function ContractorDashboard() {
             </CardFooter>
           )}
         </Card>
+
+        {/* Subscription vs Non-subscription Commission System Explanation */}
+        <CommissionExplanation isSubscribed={!!subscription && subscription.status === "active"} />
       </div>
     </div>
   )
