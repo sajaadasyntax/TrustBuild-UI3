@@ -14,6 +14,7 @@ import {
   FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
 } from "lucide-react"
 import { contractorsApi, jobsApi, reviewsApi, paymentsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
+import { CommissionExplanation } from '@/components/subscription/CommissionExplanation'
 
 import { useAuth } from '@/contexts/AuthContext'
 
