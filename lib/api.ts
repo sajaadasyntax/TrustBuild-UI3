@@ -1159,6 +1159,21 @@ export const reviewsApi = {
     return response.data.reviews;
   },
 
+  addExternalReview: async (reviewData: {
+    rating: number;
+    comment?: string;
+    customerName: string;
+    customerEmail?: string;
+    projectType: string;
+    projectDate?: string;
+  }): Promise<{ review: Review; externalReviewsRemaining: number }> => {
+    const response = await apiRequest<{ data: { review: Review; externalReviewsRemaining: number } }>('/reviews/external', {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+    return response.data;
+  },
+
   flag: async (id: string, reason: string): Promise<void> => {
     await apiRequest(`/reviews/${id}/flag`, {
       method: 'POST',

@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { contractorsApi, Contractor, handleApiError } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Star } from 'lucide-react'
 
 export default function ContractorsDirectory() {
@@ -38,16 +40,32 @@ export default function ContractorsDirectory() {
       <h1 className="text-3xl font-bold mb-8">Find a Contractor</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {contractors.map(contractor => (
-          <Card key={contractor.id}>
+          <Card key={contractor.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle>{contractor.businessName || contractor.user?.name}</CardTitle>
+              {contractor.servicesProvided && (
+                <p className="text-sm text-muted-foreground">{contractor.servicesProvided}</p>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="mb-2 text-muted-foreground">{contractor.city || 'City not specified'}</div>
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-yellow-400" />
+              <div className="mb-3 text-muted-foreground">{contractor.city || 'City not specified'}</div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-4 h-4 ${
+                        star <= (contractor.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
                 <span>{contractor.averageRating?.toFixed(1) || 'N/A'}</span>
+                <span className="text-muted-foreground text-sm">({contractor.reviewCount || 0})</span>
               </div>
+              <Link href={`/contractors/${contractor.id}`}>
+                <Button className="w-full">View Profile</Button>
+              </Link>
             </CardContent>
           </Card>
         ))}

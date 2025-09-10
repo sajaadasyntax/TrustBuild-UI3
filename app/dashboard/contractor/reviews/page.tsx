@@ -1,16 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Star, Search, Filter, MessageSquare, Calendar, User, ThumbsUp, Flag, RefreshCw, AlertCircle } from 'lucide-react'
+import { Star, Search, Filter, MessageSquare, Calendar, User, ThumbsUp, Flag, RefreshCw, AlertCircle, PlusCircle, X } from 'lucide-react'
 import { reviewsApi, handleApiError, Review } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/hooks/use-toast'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 export default function ContractorReviews() {
   const { user, isAuthenticated } = useAuth()
@@ -21,6 +23,19 @@ export default function ContractorReviews() {
   const [showResponseForm, setShowResponseForm] = useState<string | null>(null)
   const [responseText, setResponseText] = useState('')
   const [submittingResponse, setSubmittingResponse] = useState(false)
+  
+  // External review form states
+  const [showExternalReviewForm, setShowExternalReviewForm] = useState(false)
+  const [externalReviewData, setExternalReviewData] = useState({
+    rating: 0,
+    comment: '',
+    customerName: '',
+    customerEmail: '',
+    projectType: '',
+    projectDate: ''
+  })
+  const [submittingExternalReview, setSubmittingExternalReview] = useState(false)
+  const [externalReviewsRemaining, setExternalReviewsRemaining] = useState(3)
 
   useEffect(() => {
     if (isAuthenticated && user && user.role === 'CONTRACTOR') {
@@ -78,6 +93,78 @@ export default function ContractorReviews() {
       handleApiError(error, 'Failed to add response')
     } finally {
       setSubmittingResponse(false)
+    }
+  }
+  
+  const handleExternalReviewChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setExternalReviewData(prev => ({
+      ...prev,
+      [name]: name === 'rating' ? parseInt(value) || 0 : value
+    }))
+  }
+
+  const handleAddExternalReview = async () => {
+    // Validation
+    if (externalReviewData.rating < 1 || externalReviewData.rating > 5) {
+      toast({
+        title: 'Invalid Rating',
+        description: 'Please select a rating between 1 and 5',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!externalReviewData.customerName.trim()) {
+      toast({
+        title: 'Customer Name Required',
+        description: 'Please enter the customer name',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (!externalReviewData.projectType.trim()) {
+      toast({
+        title: 'Project Type Required',
+        description: 'Please enter the type of project',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setSubmittingExternalReview(true)
+      const result = await reviewsApi.addExternalReview(externalReviewData)
+      
+      // Add the new review to state
+      setReviews([result.review, ...reviews])
+      
+      // Update remaining count
+      setExternalReviewsRemaining(result.externalReviewsRemaining)
+      
+      // Reset form
+      setExternalReviewData({
+        rating: 0,
+        comment: '',
+        customerName: '',
+        customerEmail: '',
+        projectType: '',
+        projectDate: ''
+      })
+      
+      // Close form
+      setShowExternalReviewForm(false)
+      
+      toast({
+        title: 'External Review Added',
+        description: `Review added successfully. You have ${result.externalReviewsRemaining} external reviews remaining.`,
+      })
+    } catch (error) {
+      console.error('Error adding external review:', error)
+      handleApiError(error, 'Failed to add external review')
+    } finally {
+      setSubmittingExternalReview(false)
     }
   }
 
@@ -363,9 +450,147 @@ export default function ContractorReviews() {
                 ))
               )}
             </div>
+            {/* External Review Button */}
+            <div className="mt-8">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>External Reviews</CardTitle>
+                  <CardDescription>
+                    Add up to 3 reviews from clients outside the platform
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    You have used {3 - externalReviewsRemaining} of 3 external review slots. 
+                    {externalReviewsRemaining > 0 
+                      ? ` You can add ${externalReviewsRemaining} more external ${externalReviewsRemaining === 1 ? 'review' : 'reviews'}.`
+                      : ' You cannot add any more external reviews.'
+                    }
+                  </p>
+                  <Button 
+                    onClick={() => setShowExternalReviewForm(true)}
+                    disabled={externalReviewsRemaining <= 0}
+                    className="w-full"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add External Review
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
       </div>
+
+      {/* External Review Form Dialog */}
+      <Dialog open={showExternalReviewForm} onOpenChange={setShowExternalReviewForm}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add External Review</DialogTitle>
+            <DialogDescription>
+              Add a review from a previous client outside the platform.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                name="customerName"
+                placeholder="John Smith"
+                value={externalReviewData.customerName}
+                onChange={handleExternalReviewChange}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="customerEmail">Customer Email (Optional)</Label>
+              <Input
+                id="customerEmail"
+                name="customerEmail"
+                type="email"
+                placeholder="customer@example.com"
+                value={externalReviewData.customerEmail}
+                onChange={handleExternalReviewChange}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="projectType">Project Type</Label>
+              <Input
+                id="projectType"
+                name="projectType"
+                placeholder="Kitchen Renovation"
+                value={externalReviewData.projectType}
+                onChange={handleExternalReviewChange}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="projectDate">Project Date (Optional)</Label>
+              <Input
+                id="projectDate"
+                name="projectDate"
+                type="date"
+                value={externalReviewData.projectDate}
+                onChange={handleExternalReviewChange}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label>Rating</Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setExternalReviewData(prev => ({ ...prev, rating: star }))}
+                    className="p-1 focus:outline-none"
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= externalReviewData.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="comment">Review Comment</Label>
+              <Textarea
+                id="comment"
+                name="comment"
+                placeholder="Share what the customer said about your work..."
+                value={externalReviewData.comment}
+                onChange={handleExternalReviewChange}
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExternalReviewForm(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddExternalReview}
+              disabled={submittingExternalReview}
+            >
+              {submittingExternalReview ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Review'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

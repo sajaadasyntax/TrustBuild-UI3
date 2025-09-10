@@ -212,10 +212,22 @@ export default function JobOversightPage() {
   };
   
   // Helper function to determine if the contractor limit update button should be disabled
-  const isContractorLimitUpdateDisabled = () => {
-    return editingContractorLimit.reason === '' || 
-      editingContractorLimit.maxContractorsPerJob < 1 ||
-      (selectedJob && editingContractorLimit.maxContractorsPerJob < (selectedJob.contractorsWithAccess || 0));
+  const isContractorLimitUpdateDisabled = (): boolean => {
+    // Check if reason is empty
+    const isReasonEmpty = editingContractorLimit.reason === '';
+    
+    // Check if max contractors is less than 1
+    const isMaxContractorsTooLow = editingContractorLimit.maxContractorsPerJob < 1;
+    
+    // Check if max contractors is less than current contractors with access
+    let isMaxLessThanCurrent = false;
+    if (selectedJob) {
+      const currentContractors = selectedJob.contractorsWithAccess || 0;
+      isMaxLessThanCurrent = editingContractorLimit.maxContractorsPerJob < currentContractors;
+    }
+    
+    // Return true if any condition is met (button should be disabled)
+    return isReasonEmpty || isMaxContractorsTooLow || isMaxLessThanCurrent;
   };
 
   const handleContractorLimitUpdate = async () => {
