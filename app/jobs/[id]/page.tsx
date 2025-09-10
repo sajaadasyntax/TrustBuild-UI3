@@ -96,11 +96,38 @@ export default function JobDetailsPage() {
     }
   }
 
-  const handleAccessGranted = async () => {
+  const handleAccessGranted = async (customerContactData?: any) => {
     setHasAccess(true)
     setShowAccessDialog(false)
+    
     // Refresh job data to get full details
     if (job) {
+      // Immediately update the job with customer contact details if provided
+      if (customerContactData && customerContactData.customerContact) {
+        // Create an updated job object with the customer contact details
+        const updatedJob = {
+          ...job,
+          customer: {
+            ...job.customer,
+            phone: customerContactData.customerContact.phone || job.customer.phone,
+            user: {
+              ...job.customer.user,
+              name: customerContactData.customerContact.name || job.customer.user.name,
+              email: customerContactData.customerContact.email || job.customer.user.email
+            }
+          }
+        };
+        
+        // Update the job state immediately
+        setJob(updatedJob);
+        
+        toast({
+          title: "Access Granted",
+          description: "Customer contact details are now available.",
+        });
+      }
+      
+      // Still fetch the complete job data to ensure everything is up to date
       await fetchJob(job.id)
     }
   }

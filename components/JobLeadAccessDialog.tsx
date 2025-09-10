@@ -289,7 +289,8 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
           description: `Job access purchased. Payment of £${leadPrice} processed. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
         })
         
-        onSuccess()
+        // Pass the result containing customer contact details to the success callback
+        onSuccess(result)
       }
     } catch (error) {
       console.error('Payment error:', error)
@@ -469,7 +470,8 @@ export default function JobLeadAccessDialog({
         description: `Job details unlocked using 1 credit. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
       })
       
-      onAccessGranted?.()
+      // Pass customer contact details to the callback
+      onAccessGranted?.(result)
       onClose()
     } catch (error) {
       handleApiError(error, 'Failed to purchase job access')
@@ -482,9 +484,10 @@ export default function JobLeadAccessDialog({
     setShowStripeForm(true)
   }
 
-  const handleStripeSuccess = () => {
+  const handleStripeSuccess = (paymentResult?: any) => {
     setShowStripeForm(false)
-    onAccessGranted?.()
+    // Pass the payment result (containing customer contact data) to the callback
+    onAccessGranted?.(paymentResult)
     onClose()
   }
 

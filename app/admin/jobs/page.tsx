@@ -48,6 +48,11 @@ export default function JobOversightPage() {
     budget: 0,
     reason: ''
   });
+  const [editingContractorLimit, setEditingContractorLimit] = useState({
+    maxContractorsPerJob: 5,
+    reason: ''
+  });
+  const [showContractorLimitDialog, setShowContractorLimitDialog] = useState(false);
   const [contractors, setContractors] = useState<any[]>([])
   const [assigning, setAssigning] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState<string>('')
@@ -146,6 +151,15 @@ export default function JobOversightPage() {
     })
     setShowBudgetDialog(true)
   }
+  
+  const openContractorLimitDialog = (job: Job) => {
+    setSelectedJob(job)
+    setEditingContractorLimit({
+      maxContractorsPerJob: job.maxContractorsPerJob || 5,
+      reason: ''
+    })
+    setShowContractorLimitDialog(true)
+  }
 
   const handlePriceUpdate = async () => {
     if (!selectedJob) return;
@@ -192,6 +206,31 @@ export default function JobOversightPage() {
       })
     } catch (error) {
       handleApiError(error, 'Failed to update job budget')
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleContractorLimitUpdate = async () => {
+    if (!selectedJob) return;
+    
+    try {
+      setLoading(true);
+      await adminApi.updateJobContractorLimit(selectedJob.id, editingContractorLimit.maxContractorsPerJob);
+      
+      // Refresh jobs data
+      await fetchJobs();
+      
+      setShowContractorLimitDialog(false);
+      setEditingContractorLimit({ maxContractorsPerJob: 5, reason: '' });
+      
+      // Show success message
+      toast({
+        title: "Contractor Limit Updated",
+        description: `Job contractor limit updated to ${editingContractorLimit.maxContractorsPerJob} contractors`,
+      })
+    } catch (error) {
+      handleApiError(error, 'Failed to update contractor limit')
     } finally {
       setLoading(false);
     }
@@ -397,6 +436,10 @@ export default function JobOversightPage() {
                     <DollarSign className="h-4 w-4 mr-1" />
                     Edit Budget
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => openContractorLimitDialog(job)}>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Contractor Limit
+                  </Button>
                   <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Change Status" />
@@ -443,7 +486,7 @@ export default function JobOversightPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                 <div>
                   <p className="text-sm font-medium">Lead Price</p>
                   <p className="text-sm text-muted-foreground font-mono">
@@ -455,6 +498,14 @@ export default function JobOversightPage() {
                   <p className="text-sm text-muted-foreground">
                     <Badge variant={job.jobSize === 'LARGE' ? 'destructive' : job.jobSize === 'MEDIUM' ? 'default' : 'secondary'}>
                       {job.jobSize || 'Not classified'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Contractor Limit</p>
+                  <p className="text-sm text-muted-foreground">
+                    <Badge variant="outline" className={job.contractorsWithAccess >= (job.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}>
+                      {job.contractorsWithAccess || 0}/{job.maxContractorsPerJob || 5} contractors
                     </Badge>
                   </p>
                 </div>
@@ -547,6 +598,15 @@ export default function JobOversightPage() {
                 <Badge variant={selectedJob.jobSize === 'LARGE' ? 'destructive' : selectedJob.jobSize === 'MEDIUM' ? 'default' : 'secondary'} className="ml-2">
                   {selectedJob.jobSize || 'Not classified'}
                 </Badge>
+              </div>
+              <div>
+                <strong>Contractor Limit:</strong>
+                <Badge variant="outline" className={`ml-2 ${selectedJob.contractorsWithAccess >= (selectedJob.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}`}>
+                  {selectedJob.contractorsWithAccess || 0}/{selectedJob.maxContractorsPerJob || 5} contractors
+                </Badge>
+                {selectedJob.contractorsWithAccess >= (selectedJob.maxContractorsPerJob || 5) && (
+                  <span className="ml-2 text-sm text-red-600">Limit reached</span>
+                )}
               </div>
               <div>
                 <strong>Description:</strong>
@@ -695,6 +755,81 @@ export default function JobOversightPage() {
             >
               Update Budget
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contractor Limit Dialog */}
+      <Dialog open={showContractorLimitDialog} onOpenChange={setShowContractorLimitDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Contractor Limit</DialogTitle>
+            <DialogDescription>
+              Set how many contractors can purchase access to &ldquo;{selectedJob?.title}&rdquo;
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="currentLimit">Current Status</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Currently: {selectedJob?.contractorsWithAccess || 0} of {selectedJob?.maxContractorsPerJob || 5} contractors have purchased access
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="contractorLimit">Maximum Contractors</Label>
+              <Input
+                id="contractorLimit"
+                type="number"
+                min="1"
+                value={editingContractorLimit.maxContractorsPerJob}
+                onChange={(e) => setEditingContractorLimit(prev => ({ 
+                  ...prev, 
+                  maxContractorsPerJob: parseInt(e.target.value) || 1
+                }))}
+                placeholder="Enter maximum contractors..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Maximum number of contractors who can purchase access to this job
+              </p>
+              {selectedJob && editingContractorLimit.maxContractorsPerJob < (selectedJob.contractorsWithAccess || 0) && (
+                <p className="text-xs text-red-600 mt-1">
+                  Warning: Cannot set limit below current contractor count ({selectedJob.contractorsWithAccess})
+                </p>
+              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="limitReason">Reason for Limit Change</Label>
+              <Textarea
+                id="limitReason"
+                value={editingContractorLimit.reason}
+                onChange={(e) => setEditingContractorLimit(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Explain why the contractor limit is being changed..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowContractorLimitDialog(false)
+                  setEditingContractorLimit({ maxContractorsPerJob: 5, reason: '' })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleContractorLimitUpdate}
+                disabled={!editingContractorLimit.reason.trim() || 
+                  editingContractorLimit.maxContractorsPerJob < 1 ||
+                  (selectedJob && editingContractorLimit.maxContractorsPerJob < (selectedJob.contractorsWithAccess || 0))}
+              >
+                Update Limit
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
