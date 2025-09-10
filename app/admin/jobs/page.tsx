@@ -504,7 +504,7 @@ export default function JobOversightPage() {
                 <div>
                   <p className="text-sm font-medium">Contractor Limit</p>
                   <p className="text-sm text-muted-foreground">
-                    <Badge variant="outline" className={job.contractorsWithAccess >= (job.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}>
+                    <Badge variant="outline" className={(job.contractorsWithAccess || 0) >= (job.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}>
                       {job.contractorsWithAccess || 0}/{job.maxContractorsPerJob || 5} contractors
                     </Badge>
                   </p>
