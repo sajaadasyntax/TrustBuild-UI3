@@ -823,7 +823,7 @@ export default function JobOversightPage() {
               </Button>
               <Button
                 onClick={handleContractorLimitUpdate}
-                disabled={!editingContractorLimit.reason.trim() || 
+                disabled={!editingContractorLimit.reason?.trim() || 
                   editingContractorLimit.maxContractorsPerJob < 1 ||
                   (selectedJob && editingContractorLimit.maxContractorsPerJob < (selectedJob.contractorsWithAccess || 0))}
               >
