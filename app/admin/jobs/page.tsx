@@ -601,10 +601,10 @@ export default function JobOversightPage() {
               </div>
               <div>
                 <strong>Contractor Limit:</strong>
-                <Badge variant="outline" className={`ml-2 ${selectedJob.contractorsWithAccess >= (selectedJob.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}`}>
+                <Badge variant="outline" className={`ml-2 ${(selectedJob.contractorsWithAccess || 0) >= (selectedJob.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}`}>
                   {selectedJob.contractorsWithAccess || 0}/{selectedJob.maxContractorsPerJob || 5} contractors
                 </Badge>
-                {selectedJob.contractorsWithAccess >= (selectedJob.maxContractorsPerJob || 5) && (
+                {(selectedJob.contractorsWithAccess || 0) >= (selectedJob.maxContractorsPerJob || 5) && (
                   <span className="ml-2 text-sm text-red-600">Limit reached</span>
                 )}
               </div>
