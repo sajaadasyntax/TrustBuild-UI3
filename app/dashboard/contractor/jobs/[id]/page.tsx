@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { NewContractorJobDetails } from "./new-contractor-job-details"
-import { jobsApi, handleApiError, Job } from '@/lib/api'
+import { jobsApi, contractorsApi, handleApiError, Job } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Page() {
@@ -24,10 +24,11 @@ export default function Page() {
       setLoading(true)
       const jobData = await jobsApi.getById(jobId)
       
-      // Check if contractor is assigned to this job
+      // Check if contractor is assigned to this job (either accepted application or won the job)
+      const contractor = await contractorsApi.getMyProfile()
       const isAssigned = jobData.applications?.some(app => 
         app.contractor?.userId === user?.id && app.status === 'ACCEPTED'
-      )
+      ) || jobData.wonByContractorId === contractor.id
       
       if (!isAssigned) {
         router.push('/dashboard/contractor')
