@@ -121,7 +121,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const handleCompleteJob = async () => {
     try {
       setUpdating(true)
-      await paymentsApi.completeJob(job.id, job.budget || 0)
+      await jobsApi.confirmJobCompletion(job.id)
       
       toast({
         title: "Job Completed!",
