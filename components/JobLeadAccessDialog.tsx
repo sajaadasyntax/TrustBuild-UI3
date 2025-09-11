@@ -640,18 +640,18 @@ export default function JobLeadAccessDialog({
           {/* Subscription Banner - Show only for subscribers */}
           {hasSubscription && (
             <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="mr-4 bg-green-500 p-2 rounded-full">
-                  <CheckCircle className="h-5 w-5 text-white" />
+                <div className="flex items-center">
+                  <div className="mr-4 bg-green-500 p-2 rounded-full">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-800">Subscription Active: {subscriptionPlan}</h4>
+                    <p className="text-sm text-green-700">
+                      Your subscription gives you free access to job details, but you still need to use a lead access point.
+                      A 5% commission will apply after job completion.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-green-800">Subscription Active: {subscriptionPlan}</h4>
-                  <p className="text-sm text-green-700">
-                    Your subscription gives you free access to all job details. 
-                    A 5% commission will apply after job completion.
-                  </p>
-                </div>
-              </div>
             </div>
           )}
 
@@ -699,14 +699,14 @@ export default function JobLeadAccessDialog({
                         <div className="font-medium flex items-center gap-2">
                           Subscription Access
                           <Badge className="bg-green-100 text-green-800 text-xs">
-                            Included
+                            Free Lead Access
                           </Badge>
                         </div>
                         <div className="text-sm text-green-700">
-                          Free access with your active {subscriptionPlan || 'subscription'} plan
+                          Free access with your active {subscriptionPlan || 'subscription'} plan - requires 1 lead access point
                         </div>
                         <div className="text-xs text-green-600 mt-1">
-                          ✓ 5% commission applies only after job completion
+                          ✓ Unlimited lead access points with subscription ✓ 5% commission on completed jobs
                         </div>
                       </div>
                     </div>

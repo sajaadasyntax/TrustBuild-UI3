@@ -51,6 +51,7 @@ export function DashboardNavigation() {
         { label: "Jobs", href: "/jobs", icon: Briefcase },
         { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
         { label: "Payments", href: "/dashboard/contractor/payments", icon: CreditCard },
+        { label: "Commissions", href: "/dashboard/contractor/commissions", icon: BarChart3 },
         { label: "Invoices", href: "/dashboard/contractor/invoices", icon: FileText },
       ]
     } else if (user?.role === "CUSTOMER") {

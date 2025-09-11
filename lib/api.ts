@@ -1951,10 +1951,23 @@ export const paymentsApi = {
       body: JSON.stringify({ jobId, finalAmount }),
     }),
 
-  getCommissionPayments: (page = 1, limit = 10) =>
-    apiRequest<PaginatedResponse<any>>(`/payments/commissions?page=${page}&limit=${limit}`),
+  getCommissionPayments: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  } = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    
+    return apiRequest<PaginatedResponse<any>>(`/payments/commissions?${searchParams.toString()}`);
+  },
 
-  createCommissionPaymentIntent: (commissionPaymentId: string) =>
+  createCommissionPaymentIntent: (data: { commissionPaymentId: string }) =>
     apiRequest<{
       clientSecret: string;
       amount: number;
@@ -1962,15 +1975,15 @@ export const paymentsApi = {
       jobTitle: string;
     }>('/payments/create-commission-payment-intent', {
       method: 'POST',
-      body: JSON.stringify({ commissionPaymentId }),
+      body: JSON.stringify(data),
     }),
 
-  payCommission: (commissionPaymentId: string, stripePaymentIntentId: string) =>
+  payCommission: (data: { commissionPaymentId: string, stripePaymentIntentId: string }) =>
     apiRequest<{
       commissionPayment: any;
     }>('/payments/pay-commission', {
       method: 'POST',
-      body: JSON.stringify({ commissionPaymentId, stripePaymentIntentId }),
+      body: JSON.stringify(data),
     }),
 };
 
