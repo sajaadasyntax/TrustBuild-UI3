@@ -215,14 +215,35 @@ export default function ContractorCommissions() {
   }
 
   // Filter commissions based on search and status
+  console.log('🔍 Filtering commissions:', {
+    totalCommissions: commissions.length,
+    searchTerm,
+    statusFilter,
+    sampleCommission: commissions[0]
+  })
+  
   const filteredCommissions = commissions.filter(commission => {
     const matchesSearch = 
-      commission.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      commission.job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (commission.invoice?.invoiceNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'all' || commission.status === statusFilter
     
+    console.log('🔍 Commission filter check:', {
+      commissionId: commission.id,
+      jobTitle: commission.job?.title,
+      status: commission.status,
+      matchesSearch,
+      matchesStatus,
+      passes: matchesSearch && matchesStatus
+    })
+    
     return matchesSearch && matchesStatus
+  })
+  
+  console.log('✅ Filtered commissions result:', {
+    filtered: filteredCommissions.length,
+    total: commissions.length
   })
 
   if (!isAuthenticated || !user) {
