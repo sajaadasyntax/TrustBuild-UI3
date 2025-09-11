@@ -255,7 +255,7 @@ export default function ContractorCommissions() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Commission Payments</h1>
         <p className="text-muted-foreground">
-          View and manage your 5% commission payments for completed jobs
+          View and manage your 5% commission payments on completed job amounts
         </p>
       </div>
 
@@ -264,7 +264,7 @@ export default function ContractorCommissions() {
         <CardHeader className="pb-3">
           <CardTitle>Subscription Commission System</CardTitle>
           <CardDescription>
-            As a subscribed contractor, you benefit from free job access with a 5% commission after completion
+            As a subscribed contractor, you get 3 weekly credit points for free job access, then pay 5% commission on the final job amount after completion
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -272,15 +272,15 @@ export default function ContractorCommissions() {
             <Info className="h-4 w-4 text-blue-600" />
             <AlertTitle>How it works</AlertTitle>
             <AlertDescription className="mt-2">
-              <p className="mb-2">Your active subscription gives you immediate access to all jobs without upfront costs. 
-              After job completion and customer confirmation, a 5% commission is automatically calculated.</p>
+              <p className="mb-2">Your active subscription gives you 3 weekly credit points for free job access. 
+              After job completion and customer confirmation, a 5% commission is automatically calculated on the final job amount.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="flex flex-col items-center text-center">
                   <div className="bg-blue-100 rounded-full p-3 mb-2">
                     <DollarSign className="h-6 w-6 text-blue-600" />
                   </div>
-                  <p className="font-medium text-sm">5% commission on completed job amount</p>
+                  <p className="font-medium text-sm">5% commission on final job amount</p>
                 </div>
                 <div className="flex flex-col items-center text-center">
                   <div className="bg-blue-100 rounded-full p-3 mb-2">
