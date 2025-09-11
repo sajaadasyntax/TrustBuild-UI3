@@ -79,6 +79,45 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     setShowSelectionDialog(true)
   }
 
+  const handleAcceptApplication = async (application: JobApplication) => {
+    try {
+      setUpdating(true)
+      await jobsApi.acceptApplication(job.id, application.id)
+      
+      toast({
+        title: "Application Accepted!",
+        description: `${application.contractor?.user?.name}'s application has been accepted. You can now select them as your contractor.`,
+      })
+      
+      // Refresh applications
+      await fetchApplications()
+    } catch (error) {
+      handleApiError(error, 'Failed to accept application')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleStartWork = async () => {
+    if (!selectedContractor) return
+
+    try {
+      setUpdating(true)
+      await jobsApi.startWork(job.id)
+      
+      toast({
+        title: "Work Started!",
+        description: "The contractor can now begin work on your job.",
+      })
+      
+      onJobUpdate()
+    } catch (error) {
+      handleApiError(error, 'Failed to start work')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const handleCompleteJob = async () => {
     try {
       setUpdating(true)
@@ -280,7 +319,14 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                       Applied: {new Date(application.appliedAt).toLocaleDateString()}
                     </div>
                     
-                    <div>
+                    <div className="flex gap-2">
+                      {/* Show application status */}
+                      {application.status === 'ACCEPTED' && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                          Application Accepted
+                        </Badge>
+                      )}
+                      
                       {selectedContractor === application.contractorId ? (
                         <div className="flex gap-2">
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
@@ -297,12 +343,23 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                           )}
                         </div>
                       ) : job.status === 'POSTED' && !selectedContractor ? (
-                        <Button
-                          onClick={() => handleSelectContractor(application)}
-                          size="sm"
-                        >
-                          Select This Contractor
-                        </Button>
+                        <div className="flex gap-2">
+                          {application.status === 'PENDING' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAcceptApplication(application)}
+                            >
+                              Accept Application
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => handleSelectContractor(application)}
+                            size="sm"
+                          >
+                            Select This Contractor
+                          </Button>
+                        </div>
                       ) : job.status === 'POSTED' && selectedContractor ? (
                         <Button
                           variant="outline"
@@ -335,6 +392,12 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
 
         {/* Action Buttons */}
         <div className="flex gap-4">
+          {selectedContractor && job.status === 'POSTED' && (
+            <Button onClick={handleStartWork} disabled={updating} className="flex-1">
+              {updating ? 'Starting...' : 'Start Work with Selected Contractor'}
+            </Button>
+          )}
+          
           {canComplete && (
             <Button onClick={handleCompleteJob} disabled={updating} className="flex-1">
               {updating ? 'Processing...' : 'Complete Job & Pay Contractor'}

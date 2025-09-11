@@ -1011,6 +1011,12 @@ export const jobsApi = {
       body: JSON.stringify({ contractorId }),
     }),
 
+  // Customer starts work with selected contractor
+  startWork: (jobId: string) =>
+    apiRequest(`/jobs/${jobId}/start-work`, {
+      method: 'PATCH',
+    }),
+
   // Contractor expresses interest in job
   expressInterest: (jobId: string, message?: string) =>
     apiRequest(`/jobs/${jobId}/express-interest`, {
