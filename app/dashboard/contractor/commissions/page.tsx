@@ -100,7 +100,9 @@ export default function ContractorCommissions() {
       if (searchTerm) params.search = searchTerm
       if (statusFilter !== 'all') params.status = statusFilter
       
+      console.log('🔍 Fetching commissions with params:', params)
       const response = await paymentsApi.getCommissionPayments(params)
+      console.log('📊 Commission API response:', response)
       // Handle both response formats
       if (Array.isArray(response)) {
         // Direct array response
