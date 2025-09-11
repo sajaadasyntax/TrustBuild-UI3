@@ -1893,7 +1893,7 @@ export const paymentsApi = {
 
   checkJobAccess: (jobId: string) => apiRequest<any>(`/payments/job-access/${jobId}`),
   
-  purchaseJobAccess: (data: { jobId: string; paymentMethod: 'CREDIT' | 'STRIPE' | 'SUBSCRIPTION'; stripePaymentIntentId?: string }) =>
+  purchaseJobAccess: (data: { jobId: string; paymentMethod: 'CREDIT' | 'STRIPE' | 'STRIPE_SUBSCRIBER'; stripePaymentIntentId?: string }) =>
     apiRequest<any>('/payments/purchase-job-access', { method: 'POST', body: JSON.stringify(data) }),
     
   createPaymentIntent: (jobId: string) => 

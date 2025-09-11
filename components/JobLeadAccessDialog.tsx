@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -93,43 +93,7 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
   const [stripeLoading, setStripeLoading] = useState(true)
   const [elementsReady, setElementsReady] = useState(false)
 
-  useEffect(() => {
-    // Wait for Stripe and Elements to be fully loaded before creating payment intent
-    const initializePayment = async () => {
-      if (!stripe || !elements) {
-        console.log('⏳ Waiting for Stripe to load...')
-        return
-      }
-
-      console.log('✅ Stripe and Elements loaded successfully')
-      setStripeLoading(false)
-      
-      // Create payment intent only after Stripe is ready
-      await createPaymentIntent()
-    }
-
-    // Set a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (stripeLoading) {
-        console.warn('⚠️ Stripe loading timeout - forcing ready state')
-        setStripeLoading(false)
-        setElementsReady(true)
-        toast({
-          title: "Loading Timeout",
-          description: "Payment form took too long to load. You can try to proceed.",
-          variant: "destructive"
-        })
-      }
-    }, 10000) // 10 second timeout
-
-    initializePayment()
-
-    return () => {
-      clearTimeout(loadingTimeout)
-    }
-  }, [stripe, elements])
-
-  const createPaymentIntent = async () => {
+  const createPaymentIntent = useCallback(async () => {
     try {
       // Enhanced authentication check with debugging
       const token = localStorage.getItem('auth_token')
@@ -214,7 +178,43 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
       
       handleApiError(error, 'Failed to initialize payment')
     }
-  }
+  }, [job.id])
+
+  useEffect(() => {
+    // Wait for Stripe and Elements to be fully loaded before creating payment intent
+    const initializePayment = async () => {
+      if (!stripe || !elements) {
+        console.log('⏳ Waiting for Stripe to load...')
+        return
+      }
+
+      console.log('✅ Stripe and Elements loaded successfully')
+      setStripeLoading(false)
+      
+      // Create payment intent only after Stripe is ready
+      await createPaymentIntent()
+    }
+
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (stripeLoading) {
+        console.warn('⚠️ Stripe loading timeout - forcing ready state')
+        setStripeLoading(false)
+        setElementsReady(true)
+        toast({
+          title: "Loading Timeout",
+          description: "Payment form took too long to load. You can try to proceed.",
+          variant: "destructive"
+        })
+      }
+    }, 10000) // 10 second timeout
+
+    initializePayment()
+
+    return () => {
+      clearTimeout(loadingTimeout)
+    }
+  }, [stripe, elements, createPaymentIntent, stripeLoading])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -407,19 +407,13 @@ export default function JobLeadAccessDialog({
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [currentLeadPrice, setCurrentLeadPrice] = useState<number | null>(null)
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'CREDIT' | 'STRIPE' | 'SUBSCRIPTION' | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'CREDIT' | 'STRIPE' | 'STRIPE_SUBSCRIBER' | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
 
   const [hasSubscription, setHasSubscription] = useState<boolean>(false)
   const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (isOpen && job) {
-      fetchContractor()
-    }
-  }, [isOpen, job])
-
-  const fetchContractor = async () => {
+  const fetchContractor = useCallback(async () => {
     try {
       setLoading(true)
       // Fetch fresh contractor data to get accurate credit balance
@@ -461,7 +455,13 @@ export default function JobLeadAccessDialog({
     } finally {
       setLoading(false)
     }
-  }
+  }, [job, user])
+
+  useEffect(() => {
+    if (isOpen && job) {
+      fetchContractor()
+    }
+  }, [isOpen, job, fetchContractor])
 
   const handleCreditPayment = async () => {
     if (!job || !user) return
@@ -772,10 +772,10 @@ export default function JobLeadAccessDialog({
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    // Pay lead price method (no commission)
+                    // Pay lead price method (no commission, no credit deduction)
                     paymentsApi.purchaseJobAccess({
                       jobId: job.id,
-                      paymentMethod: 'STRIPE'
+                      paymentMethod: 'STRIPE_SUBSCRIBER'
                     }).then(() => {
                       toast({
                         title: "Access Granted!",
