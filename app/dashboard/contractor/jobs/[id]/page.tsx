@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ContractorJobDetails } from "./contractor-job-details"
+import { NewContractorJobDetails } from "./new-contractor-job-details"
 import { jobsApi, handleApiError, Job } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -66,7 +66,7 @@ export default function Page() {
     )
   }
 
-  return <ContractorJobDetails job={job} onJobUpdate={fetchJob} />
+  return <NewContractorJobDetails job={job} onJobUpdate={fetchJob} />
 }
 
 // Legacy mock data for reference

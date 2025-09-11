@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ClientJobDetails } from "./client-job-details"
+import { NewClientJobDetails } from "./new-client-job-details"
 import { jobsApi, Job } from "@/lib/api"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -181,5 +181,5 @@ export default function Page({ params }: { params: { id: string } }) {
     })) : [],
   }
 
-  return <ClientJobDetails job={formattedJob} onJobUpdate={fetchJob} />
+  return <NewClientJobDetails job={job} onJobUpdate={fetchJob} />
 } 
