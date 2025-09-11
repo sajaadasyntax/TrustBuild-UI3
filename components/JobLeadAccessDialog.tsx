@@ -496,7 +496,7 @@ export default function JobLeadAccessDialog({
       })
       
       // Call the access granted callback
-      if (onAccessGranted) onAccessGranted(result.data?.customerContact)
+      if (onAccessGranted) onAccessGranted()
       onClose()
     } catch (error) {
       handleApiError(error, 'Failed to purchase job access')
