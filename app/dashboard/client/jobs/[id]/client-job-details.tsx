@@ -491,13 +491,32 @@ export function ClientJobDetails({ job, onJobUpdate }: { job: Job; onJobUpdate?:
                         )}
                         
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleMarkJobAsWon(purchase.contractorId || '')}
-                            disabled={!purchase.contractorId || job.wonByContractorId === purchase.contractorId}
-                          >
-                            {job.wonByContractorId === purchase.contractorId ? 'Selected as Winner' : 'Select as Winner'}
-                          </Button>
+                          {!job.wonByContractorId ? (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleMarkJobAsWon(purchase.contractorId || '')}
+                              disabled={!purchase.contractorId}
+                            >
+                              Select This Contractor
+                            </Button>
+                          ) : job.wonByContractorId === purchase.contractorId ? (
+                            <div className="flex items-center gap-2 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="font-medium">Selected Contractor</span>
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="outline"
+                              size="sm" 
+                              onClick={() => {
+                                if (confirm("Are you sure you want to change your selected contractor? This will notify both contractors of the change.")) {
+                                  handleMarkJobAsWon(purchase.contractorId || '')
+                                }
+                              }}
+                            >
+                              Change to This Contractor
+                            </Button>
+                          )}
                           <Button variant="outline" size="sm">
                             Contact Contractor
                           </Button>

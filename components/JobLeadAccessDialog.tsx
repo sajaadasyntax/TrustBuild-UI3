@@ -670,17 +670,25 @@ export default function JobLeadAccessDialog({
               <div>
                 <h4 className="font-medium text-blue-900">Your Credits</h4>
                 <p className="text-sm text-blue-700">
-                  You have {creditsBalance} credits available
+                  You have {creditsBalance} {creditsBalance === 1 ? 'credit' : 'credits'} available
                 </p>
+                {contractor?.lastCreditReset && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Next reset: {new Date(new Date(contractor.lastCreditReset).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-              <div className="text-2xl font-bold text-blue-900">
-                {creditsBalance}
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 border border-blue-200">
+                <span className="text-2xl font-bold text-blue-900">{creditsBalance}</span>
               </div>
             </div>
             {creditsBalance < 1 && (
-              <p className="text-sm text-blue-700 mt-2">
-                💡 Credits reset weekly. Subscribe to get 3 free credits every week!
-              </p>
+              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-100 rounded">
+                <p className="text-sm text-yellow-700 flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1 text-yellow-500" />
+                  You have no credits left. Credits reset weekly, or you can subscribe for 3 free credits every week!
+                </p>
+              </div>
             )}
           </div>
 
