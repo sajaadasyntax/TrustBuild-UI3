@@ -125,6 +125,19 @@ export default function ContractorPayments() {
     }
   }, [page, searchTerm, statusFilter, typeFilter, isAuthenticated, user])
 
+  // Refresh data when user returns to the page (e.g., after using credits)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isAuthenticated && user && user.role === 'CONTRACTOR') {
+        fetchEarnings()
+        fetchCreditTransactions()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [isAuthenticated, user])
+
   const checkCreditReset = async () => {
     try {
       setCheckingCredits(true)

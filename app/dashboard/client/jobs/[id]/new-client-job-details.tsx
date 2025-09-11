@@ -164,6 +164,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
 
   const selectedApplication = applications.find(app => app.contractorId === selectedContractor)
   const canComplete = job.status === 'IN_PROGRESS' && selectedContractor
+  const canConfirmCompletion = job.status === 'COMPLETED' && selectedContractor && !job.customerConfirmed
   const contractorsWithAccess = job.jobAccess?.length || 0
 
   return (
@@ -179,6 +180,12 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Contractor Selected
+                </Badge>
+              )}
+              {canConfirmCompletion && (
+                <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                  <Clock className="w-4 h-4 mr-1" />
+                  Awaiting Your Confirmation
                 </Badge>
               )}
             </div>
@@ -402,6 +409,19 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             <Button onClick={handleCompleteJob} disabled={updating} className="flex-1">
               {updating ? 'Processing...' : 'Complete Job & Pay Contractor'}
             </Button>
+          )}
+          
+          {canConfirmCompletion && (
+            <Button onClick={handleCompleteJob} disabled={updating} className="flex-1 bg-green-600 hover:bg-green-700">
+              {updating ? 'Processing...' : 'Confirm Job Completion & Amount'}
+            </Button>
+          )}
+          
+          {job.status === 'COMPLETED' && job.customerConfirmed && (
+            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-4 rounded-lg">
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-medium">Job completed and confirmed! Payment processed.</span>
+            </div>
           )}
         </div>
 
