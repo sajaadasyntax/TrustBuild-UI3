@@ -270,18 +270,7 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
                   Let the customer know you&apos;re interested and wait for their selection.
                 </p>
                 
-                <div className="border-t pt-3">
-                  <Button 
-                    onClick={handleMarkJobAsWon} 
-                    disabled={updating}
-                    className="w-full"
-                  >
-                    {updating ? "Processing..." : "Won the Job"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Mark this job as won if you and the customer have agreed you&apos;ll do the work.
-                  </p>
-                </div>
+                {/* Removed the "Won the Job" button to prevent contractors from auto-selecting themselves */}
               </CardContent>
             </Card>
           )}
