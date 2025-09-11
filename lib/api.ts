@@ -1964,7 +1964,14 @@ export const paymentsApi = {
       }
     });
     
-    return apiRequest<PaginatedResponse<any>>(`/payments/commissions?${searchParams.toString()}`);
+    // The API can return either an array with pagination or data.commissions
+    return apiRequest<{
+      data?: {
+        commissions: any[];
+        pagination: { page: number; limit: number; total: number; pages: number };
+      };
+    } | (any[] & { pagination: { page: number; limit: number; total: number; pages: number } })>
+    (`/payments/commissions?${searchParams.toString()}`);
   },
 
   createCommissionPaymentIntent: (data: { commissionPaymentId: string }) =>

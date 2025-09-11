@@ -101,8 +101,17 @@ export default function ContractorCommissions() {
       if (statusFilter !== 'all') params.status = statusFilter
       
       const response = await paymentsApi.getCommissionPayments(params)
-      setCommissions(response.data.commissions || [])
-      setTotalPages(response.data.pagination?.pages || 1)
+      // Handle both response formats (data.commissions or direct array with pagination)
+      if (response.data && Array.isArray(response.data.commissions)) {
+        setCommissions(response.data.commissions)
+        setTotalPages(response.data.pagination?.pages || 1)
+      } else if (Array.isArray(response.data)) {
+        setCommissions(response.data)
+        setTotalPages(response.pagination?.pages || 1)
+      } else {
+        setCommissions([])
+        setTotalPages(1)
+      }
     } catch (error) {
       handleApiError(error, 'Failed to fetch commission payments')
       setCommissions([])
