@@ -123,13 +123,16 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
     try {
       setUpdating(true)
+      console.log(`🔍 Frontend - Calling completeJobWithAmount with jobId: ${job.id}, finalAmount: ${finalAmount}, type: ${typeof finalAmount}`)
       await jobsApi.completeJobWithAmount(job.id, Number(finalAmount))
+      console.log(`✅ Frontend - completeJobWithAmount call successful`)
       toast({
         title: "Job Marked Complete!",
         description: "The job has been marked as complete. Waiting for customer confirmation.",
       })
       onJobUpdate(job.id)
     } catch (error) {
+      console.error(`❌ Frontend - completeJobWithAmount call failed:`, error)
       handleApiError(error, 'Failed to mark job as complete')
     } finally {
       setUpdating(false)

@@ -401,7 +401,8 @@ const apiRequest = async <T>(
     endpoint, 
     hasToken: !!token, 
     tokenLength: token?.length,
-    method: options.method || 'GET'
+    method: options.method || 'GET',
+    body: options.body
   });
   
   const headers: Record<string, string> = {
