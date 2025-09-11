@@ -406,7 +406,7 @@ export default function JobLeadAccessDialog({
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [currentLeadPrice, setCurrentLeadPrice] = useState<number | null>(null)
   const [processingPayment, setProcessingPayment] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'CREDIT' | 'STRIPE' | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'CREDIT' | 'STRIPE' | 'SUBSCRIPTION' | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
 
   const [hasSubscription, setHasSubscription] = useState<boolean>(false)
@@ -426,11 +426,20 @@ export default function JobLeadAccessDialog({
       setContractor(contractorData)
       
       // Check subscription status
-      const hasActiveSubscription = contractorData?.subscription && 
-                                   contractorData.subscription.isActive && 
-                                   contractorData.subscription.status === 'active'
-      setHasSubscription(hasActiveSubscription)
-      setSubscriptionPlan(hasActiveSubscription ? contractorData.subscription.plan : null)
+      const subscription = contractorData?.subscription || null
+      const hasActiveSubscription = subscription && 
+                                   typeof subscription === 'object' &&
+                                   'isActive' in subscription &&
+                                   'status' in subscription &&
+                                   subscription.isActive === true && 
+                                   subscription.status === 'active'
+      setHasSubscription(!!hasActiveSubscription)
+      // Type assertion for subscription plan
+      if (hasActiveSubscription && subscription && 'plan' in subscription && subscription.plan) {
+        setSubscriptionPlan(String(subscription.plan))
+      } else {
+        setSubscriptionPlan(null)
+      }
       
       // Fetch current lead price to ensure we have the latest admin pricing
       try {

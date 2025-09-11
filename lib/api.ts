@@ -1887,7 +1887,7 @@ export const paymentsApi = {
 
   checkJobAccess: (jobId: string) => apiRequest<any>(`/payments/job-access/${jobId}`),
   
-  purchaseJobAccess: (data: { jobId: string; paymentMethod: 'CREDIT' | 'STRIPE'; stripePaymentIntentId?: string }) =>
+  purchaseJobAccess: (data: { jobId: string; paymentMethod: 'CREDIT' | 'STRIPE' | 'SUBSCRIPTION'; stripePaymentIntentId?: string }) =>
     apiRequest<any>('/payments/purchase-job-access', { method: 'POST', body: JSON.stringify(data) }),
     
   createPaymentIntent: (jobId: string) => 
@@ -1964,14 +1964,8 @@ export const paymentsApi = {
       }
     });
     
-    // The API can return either an array with pagination or data.commissions
-    return apiRequest<{
-      data?: {
-        commissions: any[];
-        pagination: { page: number; limit: number; total: number; pages: number };
-      };
-    } | (any[] & { pagination: { page: number; limit: number; total: number; pages: number } })>
-    (`/payments/commissions?${searchParams.toString()}`);
+    // Using any type to handle different response formats from the API
+    return apiRequest<any>(`/payments/commissions?${searchParams.toString()}`);
   },
 
   createCommissionPaymentIntent: (data: { commissionPaymentId: string }) =>

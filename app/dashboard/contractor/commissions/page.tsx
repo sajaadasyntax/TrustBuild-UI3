@@ -101,13 +101,25 @@ export default function ContractorCommissions() {
       if (statusFilter !== 'all') params.status = statusFilter
       
       const response = await paymentsApi.getCommissionPayments(params)
-      // Handle both response formats (data.commissions or direct array with pagination)
-      if (response.data && Array.isArray(response.data.commissions)) {
-        setCommissions(response.data.commissions)
-        setTotalPages(response.data.pagination?.pages || 1)
-      } else if (Array.isArray(response.data)) {
-        setCommissions(response.data)
+      // Handle both response formats
+      if (Array.isArray(response)) {
+        // Direct array response
+        setCommissions(response)
+        // @ts-ignore - pagination might be attached to the array
         setTotalPages(response.pagination?.pages || 1)
+      } else if (response && typeof response === 'object') {
+        // Object response with data property
+        if (response.data && Array.isArray(response.data.commissions)) {
+          setCommissions(response.data.commissions)
+          setTotalPages(response.data.pagination?.pages || 1)
+        } else if (Array.isArray(response.data)) {
+          setCommissions(response.data)
+          // @ts-ignore - pagination might be attached to the response
+          setTotalPages(response.pagination?.pages || 1)
+        } else {
+          setCommissions([])
+          setTotalPages(1)
+        }
       } else {
         setCommissions([])
         setTotalPages(1)
@@ -400,10 +412,16 @@ export default function ContractorCommissions() {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    />
+                    {page > 1 ? (
+                      <PaginationPrevious 
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                      />
+                    ) : (
+                      <PaginationPrevious 
+                        className="pointer-events-none opacity-50"
+                        onClick={() => {}}
+                      />
+                    )}
                   </PaginationItem>
                   
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
@@ -418,10 +436,16 @@ export default function ContractorCommissions() {
                   ))}
                   
                   <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                    />
+                    {page < totalPages ? (
+                      <PaginationNext 
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      />
+                    ) : (
+                      <PaginationNext 
+                        className="pointer-events-none opacity-50"
+                        onClick={() => {}}
+                      />
+                    )}
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
