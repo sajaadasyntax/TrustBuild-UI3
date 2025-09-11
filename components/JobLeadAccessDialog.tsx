@@ -482,19 +482,26 @@ export default function JobLeadAccessDialog({
         paymentMethod: 'CREDIT'
       })
 
-      // Refresh contractor data to get updated credit balance
-      await fetchContractor()
+      // Update the contractor data with the new credit balance from the response
+      if (contractor && result.data?.updatedCreditsBalance !== undefined) {
+        setContractor({
+          ...contractor,
+          creditsBalance: result.data.updatedCreditsBalance
+        })
+      }
 
       toast({
         title: "Access Granted!",
-        description: `Job details unlocked using 1 credit. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
+        description: `Job details unlocked using 1 credit. Credits remaining: ${result.data?.updatedCreditsBalance || 'unknown'}`,
       })
       
-      // Call the access granted callback (without passing the result)
-      if (onAccessGranted) onAccessGranted()
+      // Call the access granted callback
+      if (onAccessGranted) onAccessGranted(result.data?.customerContact)
       onClose()
     } catch (error) {
       handleApiError(error, 'Failed to purchase job access')
+      // Refresh contractor data in case of error to get accurate balance
+      await fetchContractor()
     } finally {
       setProcessingPayment(false)
     }

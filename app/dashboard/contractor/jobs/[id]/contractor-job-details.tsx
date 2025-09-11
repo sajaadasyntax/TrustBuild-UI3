@@ -99,21 +99,7 @@ export function ContractorJobDetails({ job, onJobUpdate }: { job: Job; onJobUpda
     }
   }
 
-  const handleMarkJobAsWon = async () => {
-    try {
-      setUpdating(true)
-      await jobsApi.contractorMarkJobAsWon(job.id)
-      toast({
-        title: "Job Marked as Won!",
-        description: "You have successfully marked this job as won. The customer will be notified.",
-      })
-      onJobUpdate(job.id)
-    } catch (error) {
-      handleApiError(error, 'Failed to mark job as won')
-    } finally {
-      setUpdating(false)
-    }
-  }
+  // Removed handleMarkJobAsWon function - contractors can no longer mark jobs as won
 
   return (
     <div className="container py-32">
