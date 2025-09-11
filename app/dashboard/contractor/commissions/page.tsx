@@ -103,26 +103,26 @@ export default function ContractorCommissions() {
       console.log('🔍 Fetching commissions with params:', params)
       const response = await paymentsApi.getCommissionPayments(params)
       console.log('📊 Commission API response:', response)
-      // Handle both response formats
-      if (Array.isArray(response)) {
-        // Direct array response
+      console.log('📊 Response data:', response.data)
+      console.log('📊 Commissions array:', response.data?.commissions)
+      
+      // Handle the actual backend response format: {status: 'success', data: {commissions: [...], pagination: {...}}}
+      if (response && response.data && Array.isArray(response.data.commissions)) {
+        console.log('✅ Found commissions:', response.data.commissions.length)
+        setCommissions(response.data.commissions)
+        setTotalPages(response.data.pagination?.pages || 1)
+      } else if (Array.isArray(response)) {
+        // Fallback: Direct array response
+        console.log('✅ Found direct array response:', response.length)
         setCommissions(response)
-        // @ts-ignore - pagination might be attached to the array
+        setTotalPages(1)
+      } else if (Array.isArray(response?.data)) {
+        // Fallback: data is direct array
+        console.log('✅ Found data array:', response.data.length)
+        setCommissions(response.data)
         setTotalPages(response.pagination?.pages || 1)
-      } else if (response && typeof response === 'object') {
-        // Object response with data property
-        if (response.data && Array.isArray(response.data.commissions)) {
-          setCommissions(response.data.commissions)
-          setTotalPages(response.data.pagination?.pages || 1)
-        } else if (Array.isArray(response.data)) {
-          setCommissions(response.data)
-          // @ts-ignore - pagination might be attached to the response
-          setTotalPages(response.pagination?.pages || 1)
-        } else {
-          setCommissions([])
-          setTotalPages(1)
-        }
       } else {
+        console.log('❌ No commissions found in response')
         setCommissions([])
         setTotalPages(1)
       }
