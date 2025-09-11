@@ -742,21 +742,35 @@ export default function JobDetailsPage() {
                     {job.status === 'IN_PROGRESS' && (
                       <Button 
                         onClick={async () => {
+                          // Get final amount from user
+                          const finalAmount = prompt('Enter the final job amount:')
+                          
+                          if (!finalAmount || isNaN(Number(finalAmount)) || Number(finalAmount) <= 0) {
+                            toast({
+                              title: "Invalid Amount",
+                              description: "Please enter a valid final amount.",
+                              variant: "destructive"
+                            })
+                            return
+                          }
+
                           try {
-                            await jobsApi.updateStatus(job.id, 'COMPLETED')
+                            console.log(`🔍 Jobs Page - Calling completeJobWithAmount with jobId: ${job.id}, finalAmount: ${finalAmount}`)
+                            await jobsApi.completeJobWithAmount(job.id, Number(finalAmount))
                             toast({
                               title: "Job completed!",
-                              description: "The job has been marked as completed.",
+                              description: "The job has been marked as completed with final amount.",
                             })
                             await fetchJob(job.id)
                           } catch (error) {
-                            handleApiError(error, 'Failed to update job status')
+                            console.error(`❌ Jobs Page - completeJobWithAmount failed:`, error)
+                            handleApiError(error, 'Failed to complete job')
                           }
                         }}
                         className="w-full"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Mark as Completed
+                        Complete Job with Amount
                       </Button>
                     )}
 
