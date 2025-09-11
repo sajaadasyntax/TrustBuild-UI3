@@ -273,7 +273,7 @@ export default function ContractorCommissions() {
             <AlertTitle>How it works</AlertTitle>
             <AlertDescription className="mt-2">
               <p className="mb-2">Your active subscription gives you 3 weekly credit points for free job access. 
-              After job completion and customer confirmation, a 5% commission is automatically calculated on the final job amount.</p>
+              You can also choose to pay the lead price instead. Commission only applies when using credits - 5% on the final job amount after completion.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div className="flex flex-col items-center text-center">

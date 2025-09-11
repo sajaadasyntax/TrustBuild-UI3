@@ -18,6 +18,7 @@ import {
   Briefcase,
   Eye,
   RefreshCw,
+  DollarSign,
   Target
 } from 'lucide-react'
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
@@ -663,8 +664,7 @@ export default function JobLeadAccessDialog({
                   <div>
                     <h4 className="font-medium text-green-800">Subscription Active: {subscriptionPlan}</h4>
                     <p className="text-sm text-green-700">
-                      Your subscription gives you free access to job details, but you still need to use a lead access point.
-                      A 5% commission will apply after job completion.
+                      Choose your payment method: Use credits (5% commission after completion) or pay lead price (no commission).
                     </p>
                   </div>
                 </div>
@@ -711,49 +711,75 @@ export default function JobLeadAccessDialog({
             </Elements>
           ) : hasSubscription ? (
             <>
-              {/* Subscription Access - Show immediate access button */}
+              {/* Subscription Access - Show both options */}
               <div className="space-y-4">
-                <h3 className="font-semibold">Access with Subscription</h3>
+                <h3 className="font-semibold">Choose Payment Method</h3>
                 
+                {/* Option 1: Use Credits */}
                 <div className="border border-green-500 bg-green-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="h-5 w-5 text-green-500" />
                       <div>
                         <div className="font-medium flex items-center gap-2">
-                          Subscription Access
+                          Use Credits
                           <Badge className="bg-green-100 text-green-800 text-xs">
-                            Free Lead Access
+                            Free Access
                           </Badge>
                         </div>
                         <div className="text-sm text-green-700">
-                          Free access with your active {subscriptionPlan || 'subscription'} plan - requires 1 lead access point
+                          Use 1 credit from your weekly allowance
                         </div>
                         <div className="text-xs text-green-600 mt-1">
-                          ✓ Unlimited lead access points with subscription ✓ 5% commission on completed jobs
+                          ✓ 5% commission on final job amount after completion
                         </div>
                       </div>
                     </div>
                     <div className="text-lg font-semibold text-green-600">FREE</div>
                   </div>
                 </div>
+
+                {/* Option 2: Pay Lead Price */}
+                <div className="border border-blue-500 bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <DollarSign className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <div className="font-medium flex items-center gap-2">
+                          Pay Lead Price
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">
+                            No Commission
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-blue-700">
+                          Pay the full lead price upfront
+                        </div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          ✓ No commission after job completion
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-blue-600">{formatCurrency(leadPrice)}</div>
+                  </div>
+                </div>
               </div>
               
-              {/* Action button for subscription users */}
+              {/* Action buttons for subscription users */}
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
                 <Button 
+                  variant="outline"
                   onClick={() => {
-                    // Use subscription access method
+                    // Pay lead price method (no commission)
                     paymentsApi.purchaseJobAccess({
                       jobId: job.id,
-                      paymentMethod: 'SUBSCRIPTION'
+                      paymentMethod: 'STRIPE'
                     }).then(() => {
                       toast({
                         title: "Access Granted!",
-                        description: `Job details unlocked with your subscription.`,
+                        description: `Job details unlocked. No commission will be charged.`,
                       });
                       if (onAccessGranted) onAccessGranted();
                       onClose();
@@ -763,7 +789,28 @@ export default function JobLeadAccessDialog({
                   }}
                   className="min-w-32"
                 >
-                  Access Now
+                  Pay {formatCurrency(leadPrice)}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // Use credits method (with commission)
+                    paymentsApi.purchaseJobAccess({
+                      jobId: job.id,
+                      paymentMethod: 'CREDIT'
+                    }).then(() => {
+                      toast({
+                        title: "Access Granted!",
+                        description: `Job details unlocked with credits. 5% commission will apply after completion.`,
+                      });
+                      if (onAccessGranted) onAccessGranted();
+                      onClose();
+                    }).catch(error => {
+                      handleApiError(error, 'Failed to access job details');
+                    });
+                  }}
+                  className="min-w-32"
+                >
+                  Use Credits
                 </Button>
               </div>
             </>
