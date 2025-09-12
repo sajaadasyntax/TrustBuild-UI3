@@ -18,6 +18,7 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
+  ArrowDownRight,
   Building,
   Calendar,
   Banknote,
