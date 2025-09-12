@@ -468,7 +468,7 @@ export default function ContractorDashboard() {
                             ))}
                           </div>
                           <span className="text-sm font-medium">
-                            {review.customer.user.name}
+                            {review.customer?.user?.name || review.customerName || 'Anonymous'}
                           </span>
                         </div>
                         <span className="text-xs text-muted-foreground">
@@ -657,7 +657,7 @@ export default function ContractorDashboard() {
                             ))}
                           </div>
                           <span className="font-medium">
-                            {review.customer.user.name}
+                            {review.customer?.user?.name || review.customerName || 'Anonymous'}
                           </span>
                           {review.isVerified && (
                             <Badge variant="secondary" className="text-xs">
@@ -670,7 +670,7 @@ export default function ContractorDashboard() {
                         </span>
                       </div>
                       
-                      <h4 className="font-medium mb-2">{review.job.title}</h4>
+                      <h4 className="font-medium mb-2">{review.job?.title || review.projectType || 'External Project'}</h4>
                       
                       {review.comment && (
                         <p className="text-muted-foreground">

@@ -274,8 +274,8 @@ export interface CreditTransaction {
 
 export interface Review {
   id: string;
-  jobId: string;
-  customerId: string;
+  jobId?: string;
+  customerId?: string;
   contractorId: string;
   rating: number;
   comment?: string;
@@ -289,8 +289,8 @@ export interface Review {
   responseDate?: string;
   createdAt: string;
   updatedAt: string;
-  job: Job;
-  customer: Customer;
+  job?: Job;
+  customer?: Customer;
   contractor: Contractor;
 }
 
