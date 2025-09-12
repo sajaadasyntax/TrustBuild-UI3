@@ -14,13 +14,10 @@ import {
   TrendingUp,
   Wallet,
   Search,
-  Download,
   RefreshCw,
   AlertCircle,
   CheckCircle,
   Clock,
-  ArrowUpRight,
-  ArrowDownRight,
   Building,
   Calendar,
   Banknote,
@@ -43,14 +40,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from '@/hooks/use-toast'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
   Table,
   TableBody,
   TableCell,
@@ -58,7 +47,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Label } from "@/components/ui/label"
 import { contractorsApi, paymentsApi, handleApiError } from '@/lib/api'
 
 interface ContractorEarnings {
@@ -110,10 +98,6 @@ export default function ContractorPayments() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
-  const [withdrawAmount, setWithdrawAmount] = useState('')
-  const [withdrawing, setWithdrawing] = useState(false)
-  const [exporting, setExporting] = useState(false)
   const [checkingCredits, setCheckingCredits] = useState(false)
 
   useEffect(() => {
@@ -254,49 +238,6 @@ export default function ContractorPayments() {
     }
   }
 
-  const handleWithdraw = async () => {
-    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid withdrawal amount',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    if (parseFloat(withdrawAmount) > (earnings?.availableBalance || 0)) {
-      toast({
-        title: 'Insufficient Balance',
-        description: 'Withdrawal amount exceeds available balance',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    try {
-      setWithdrawing(true)
-      // Mock withdrawal - replace with actual Stripe Connect API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast({
-        title: 'Withdrawal Initiated',
-        description: `£${withdrawAmount} withdrawal has been initiated. Funds will arrive in 1-2 business days.`,
-      })
-      
-      setWithdrawAmount('')
-      setShowWithdrawDialog(false)
-      fetchEarnings()
-      fetchTransactions()
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to process withdrawal',
-        variant: 'destructive',
-      })
-    } finally {
-      setWithdrawing(false)
-    }
-  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -304,26 +245,6 @@ export default function ContractorPayments() {
     fetchTransactions()
   }
 
-  const handleExport = async () => {
-    try {
-      setExporting(true)
-      // Mock export - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast({
-        title: 'Export Complete',
-        description: 'Transaction data has been exported to CSV',
-      })
-    } catch (error) {
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to export transaction data',
-        variant: 'destructive',
-      })
-    } finally {
-      setExporting(false)
-    }
-  }
 
   const formatCurrency = (amount: number, currency = 'GBP') => {
     if (currency === 'CREDITS') {
@@ -489,129 +410,7 @@ export default function ContractorPayments() {
         </Card>
       </div>
 
-      {/* Earnings Overview */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(earnings?.totalEarnings || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +12.5% from last month
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(earnings?.monthlyEarnings || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From {earnings?.jobsCompleted || 0} completed jobs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(earnings?.availableBalance || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Ready for withdrawal
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(earnings?.pendingPayments || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Processing payments
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-4 mb-8">
-        <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <ArrowDownRight className="mr-2 h-4 w-4" />
-              Withdraw Earnings
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Withdraw Earnings</DialogTitle>
-              <DialogDescription>
-                Enter the amount you&apos;d like to withdraw to your bank account
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="amount" className="text-right">
-                  Amount
-                </Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Available balance: {formatCurrency(earnings?.availableBalance || 0)}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowWithdrawDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleWithdraw} disabled={withdrawing}>
-                {withdrawing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                Withdraw
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Button variant="outline" onClick={handleExport} disabled={exporting}>
-          {exporting ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          Export Data
-        </Button>
-
-        <Button variant="outline" onClick={fetchTransactions}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
 
       {/* Subscription Manager */}
       <div className="mb-8">
@@ -620,12 +419,10 @@ export default function ContractorPayments() {
       </div>
 
       {/* Transactions */}
-      <Tabs defaultValue="transactions" className="space-y-6">
+      <Tabs defaultValue="credits" className="space-y-6">
         <TabsList>
           <TabsTrigger value="transactions">Recent Transactions</TabsTrigger>
           <TabsTrigger value="credits">Credit History</TabsTrigger>
-          <TabsTrigger value="earnings">Earnings Details</TabsTrigger>
-          <TabsTrigger value="subscriptions">Subscription History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -878,126 +675,7 @@ export default function ContractorPayments() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="earnings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Earnings Breakdown</CardTitle>
-              <CardDescription>
-                Detailed view of your earnings by job and period
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <DollarSign className="mx-auto h-12 w-12 opacity-50 mb-4" />
-                <p className="text-muted-foreground">Earnings breakdown will be displayed here</p>
-                <p className="text-sm text-muted-foreground">
-                  View earnings by job, month, and category
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
         
-        <TabsContent value="subscriptions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription History</CardTitle>
-              <CardDescription>
-                View your subscription payments and plan changes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  <span>Loading subscription history...</span>
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.filter(t => t.type === 'subscription').length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
-                            <div className="text-muted-foreground">
-                              <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                              <p>No subscription history found</p>
-                              <p className="text-sm">Your subscription payments will appear here</p>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        transactions
-                          .filter(t => t.type === 'subscription')
-                          .map((transaction) => (
-                            <TableRow key={transaction.id}>
-                              <TableCell className="text-sm">
-                                {formatDate(transaction.createdAt)}
-                              </TableCell>
-                              <TableCell>
-                                <Badge className="bg-blue-100 text-blue-800">
-                                  Subscription
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="max-w-xs">
-                                <div className="truncate">{transaction.description}</div>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <span className="text-red-600">
-                                  -{formatCurrency(transaction.amount, transaction.currency)}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(transaction.status)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem>
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      View Details
-                                    </DropdownMenuItem>
-                                    {transaction.isStripeTransaction && (
-                                      <>
-                                        <DropdownMenuItem>
-                                          <Download className="mr-2 h-4 w-4" />
-                                          Download Stripe Receipt
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem>
-                                          <CreditCard className="mr-2 h-4 w-4" />
-                                          View in Stripe Dashboard
-                                        </DropdownMenuItem>
-                                      </>
-                                    )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )
