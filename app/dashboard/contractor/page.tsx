@@ -36,8 +36,10 @@ export default function ContractorDashboard() {
     activeJobs: 0,
     completedJobs: 0,
     totalEarnings: 0,
+    monthlyEarnings: 0,
     averageRating: 0,
-    totalReviews: 0
+    totalReviews: 0,
+    earningsGrowth: 0
   })
 
   const [subscription, setSubscription] = useState<any>(null)
@@ -97,14 +99,18 @@ export default function ContractorDashboard() {
       const reviewsData = await reviewsApi.getMyReceived()
       setRecentReviews(reviewsData.slice(0, 5)) // Get latest 5 reviews
 
-      // Calculate stats
+      // Calculate stats using actual earnings data
+      const earningsData = await contractorsApi.getMyEarnings()
       setStats({
         totalApplications: applicationsData.length,
         activeJobs: activeJobsData.length,
         completedJobs: completedJobsData.length,
-        totalEarnings: completedJobsData.reduce((sum, job) => sum + (job.budget || 0), 0),
+        totalEarnings: earningsData.totalEarnings,
+        monthlyEarnings: earningsData.monthlyEarnings,
         averageRating: contractorData.averageRating || 0,
-        totalReviews: contractorData.reviewCount || 0
+        totalReviews: contractorData.reviewCount || 0,
+        earningsGrowth: earningsData.monthlyEarnings > 0 ? 
+          Math.round(((earningsData.monthlyEarnings - (earningsData.totalEarnings - earningsData.monthlyEarnings)) / (earningsData.totalEarnings - earningsData.monthlyEarnings)) * 100) : 0
       })
 
     } catch (error) {
@@ -145,6 +151,18 @@ export default function ContractorDashboard() {
       default:
         return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const getNextResetDate = () => {
+    if (!creditInfo?.nextCreditReset) return 'weekly'
+    
+    const resetDate = new Date(creditInfo.nextCreditReset)
+    const now = new Date()
+    const daysLeft = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (daysLeft <= 0) return 'Reset available now'
+    if (daysLeft === 1) return 'Tomorrow'
+    return `In ${daysLeft} days`
   }
 
   if (loading) {
@@ -200,13 +218,31 @@ export default function ContractorDashboard() {
 
       <div className="flex flex-col-reverse md:flex-row gap-6 mb-8">
         <div className="md:w-2/3 space-y-6">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Subscription Active</AlertTitle>
-            <AlertDescription>
-              Your monthly subscription is active. Next billing date: {contractor?.subscription?.nextBillingDate || 'Not available'}
-            </AlertDescription>
-          </Alert>
+          {subscription && subscription.status === 'active' ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Subscription Active</AlertTitle>
+              <AlertDescription>
+                Your {subscription.plan || 'monthly'} subscription is active. Next billing date: {subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : 'Not available'}
+              </AlertDescription>
+            </Alert>
+          ) : subscription && subscription.status !== 'active' ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Subscription Inactive</AlertTitle>
+              <AlertDescription>
+                Your subscription is {subscription.status}. Please update your payment method or contact support.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No Active Subscription</AlertTitle>
+              <AlertDescription>
+                Subscribe to unlock premium features and benefits for your contractor business.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="dashboard-card">
@@ -217,12 +253,14 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{formatCurrency(stats.totalEarnings)}</div>
-                <p className="text-sm text-muted-foreground">Last 30 days</p>
-                <div className="flex items-center mt-2 text-xs text-success">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  <span>12% from last month</span>
-                </div>
+                <div className="text-3xl font-bold text-primary">{formatCurrency(stats.monthlyEarnings)}</div>
+                <p className="text-sm text-muted-foreground">This month</p>
+                {stats.earningsGrowth !== 0 && (
+                  <div className={`flex items-center mt-2 text-xs ${stats.earningsGrowth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <TrendingUp className={`h-3 w-3 mr-1 ${stats.earningsGrowth < 0 ? 'rotate-180' : ''}`} />
+                    <span>{Math.abs(stats.earningsGrowth)}% from last month</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -238,7 +276,7 @@ export default function ContractorDashboard() {
                 <p className="text-sm text-muted-foreground">of {creditInfo?.weeklyCreditsLimit ?? contractor?.weeklyCreditsLimit ?? 3} remaining this week</p>
                 <div className="flex items-center mt-2 text-xs">
                   <Bell className="h-3 w-3 mr-1" />
-                  <span>Resets on Sunday</span>
+                  <span>Resets {getNextResetDate()}</span>
                 </div>
               </CardContent>
             </Card>
