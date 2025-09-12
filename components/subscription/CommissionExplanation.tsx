@@ -47,7 +47,7 @@ export function CommissionExplanation({ isSubscribed = false }: { isSubscribed?:
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
                 <span className="bg-primary/20 rounded-full w-5 h-5 flex items-center justify-center text-xs text-primary font-bold mt-0.5">3</span>
-                <p className="text-sm">A 5% commission on the final amount is calculated (plus VAT).</p>
+                <p className="text-sm">A 5% commission on the final amount is calculated (VAT included).</p>
               </div>
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
@@ -78,13 +78,13 @@ export function CommissionExplanation({ isSubscribed = false }: { isSubscribed?:
                 <span>£50.00</span>
               </div>
               <div className="flex justify-between">
-                <span>VAT (20%):</span>
-                <span>£10.00</span>
+                <span>VAT (included):</span>
+                <span>£0.00</span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
                 <span>Total Due:</span>
-                <span>£60.00</span>
+                <span>£50.00</span>
               </div>
             </div>
           </>

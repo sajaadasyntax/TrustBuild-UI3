@@ -349,8 +349,8 @@ export default function AdminInvoiceDetailPage() {
                         <TableCell className="text-right">{formatCurrency(Number(invoice.amount))}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>VAT ({Number(invoice.vatRate)}%)</TableCell>
-                        <TableCell className="text-right">{formatCurrency(Number(invoice.vatAmount))}</TableCell>
+                        <TableCell>VAT (included)</TableCell>
+                        <TableCell className="text-right">£0.00</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Total</TableCell>

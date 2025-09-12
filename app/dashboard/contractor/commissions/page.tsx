@@ -24,6 +24,7 @@ import {
 import { paymentsApi, handleApiError } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/hooks/use-toast'
+import CommissionPaymentForm from '@/components/payments/CommissionPaymentForm'
 import {
   Table,
   TableBody,
@@ -81,7 +82,6 @@ export default function ContractorCommissions() {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedCommission, setSelectedCommission] = useState<CommissionPayment | null>(null)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [payingCommission, setPayingCommission] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated && user && user.role === 'CONTRACTOR') {
@@ -134,49 +134,6 @@ export default function ContractorCommissions() {
     }
   }
 
-  const handlePaymentIntent = async () => {
-    if (!selectedCommission) return
-
-    try {
-      setPayingCommission(true)
-      // Create payment intent
-      const response = await paymentsApi.createCommissionPaymentIntent({
-        commissionPaymentId: selectedCommission.id
-      })
-
-      // Redirect to Stripe checkout
-      if (response.clientSecret) {
-        // In a production app, you would use Stripe Elements or redirect to Stripe hosted checkout
-        // For now, we'll simulate a successful payment
-        await handleCompletePayment(response.clientSecret)
-      }
-    } catch (error) {
-      handleApiError(error, 'Failed to create payment intent')
-    } finally {
-      setPayingCommission(false)
-    }
-  }
-
-  const handleCompletePayment = async (paymentIntentId: string) => {
-    if (!selectedCommission) return
-
-    try {
-      await paymentsApi.payCommission({
-        commissionPaymentId: selectedCommission.id,
-        stripePaymentIntentId: paymentIntentId
-      })
-      
-      toast({
-        title: "Payment Complete",
-        description: `Successfully paid commission for ${selectedCommission.job.title}`,
-      })
-      
-      setShowPaymentDialog(false)
-      await fetchCommissions()
-    } catch (error) {
-      handleApiError(error, 'Failed to complete payment')
-    }
-  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -506,8 +463,8 @@ export default function ContractorCommissions() {
                 </div>
                 
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">VAT (20%):</span>
-                  <span className="font-medium">{formatCurrency(selectedCommission.vatAmount)}</span>
+                  <span className="text-muted-foreground">VAT (included):</span>
+                  <span className="font-medium">£0.00</span>
                 </div>
                 
                 <div className="flex justify-between font-bold border-t pt-2">
@@ -531,34 +488,19 @@ export default function ContractorCommissions() {
                   Commission payments must be completed within 48 hours to maintain your account in good standing.
                 </AlertDescription>
               </Alert>
+
+              <CommissionPaymentForm
+                commissionPaymentId={selectedCommission.id}
+                amount={selectedCommission.totalAmount}
+                jobTitle={selectedCommission.job.title}
+                onSuccess={() => {
+                  setShowPaymentDialog(false)
+                  fetchCommissions()
+                }}
+                onCancel={() => setShowPaymentDialog(false)}
+              />
             </div>
           )}
-          
-          <DialogFooter className="sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setShowPaymentDialog(false)}
-              disabled={payingCommission}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePaymentIntent}
-              disabled={payingCommission}
-            >
-              {payingCommission ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Pay {selectedCommission && formatCurrency(selectedCommission.totalAmount)}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
