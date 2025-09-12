@@ -33,6 +33,14 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
   // Safely convert amount to number
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
   const formattedAmount = isNaN(numericAmount) ? '0.00' : numericAmount.toFixed(2)
+  
+  // Debug logging
+  console.log('🔍 CommissionPaymentForm - Amount data:', {
+    originalAmount: amount,
+    type: typeof amount,
+    numericAmount,
+    formattedAmount
+  })
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
