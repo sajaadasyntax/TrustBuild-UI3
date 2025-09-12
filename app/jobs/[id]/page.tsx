@@ -742,24 +742,24 @@ export default function JobDetailsPage() {
                     {job.status === 'IN_PROGRESS' && (
                       <Button 
                         onClick={async () => {
-                          // Get final amount from user
-                          const finalAmount = prompt('Enter the final job amount:')
+                          // Use job budget as final amount automatically
+                          const finalAmount = job.budget || 0
                           
-                          if (!finalAmount || isNaN(Number(finalAmount)) || Number(finalAmount) <= 0) {
+                          if (finalAmount <= 0) {
                             toast({
-                              title: "Invalid Amount",
-                              description: "Please enter a valid final amount.",
+                              title: "No Budget Set",
+                              description: "This job doesn't have a budget set. Please contact the customer.",
                               variant: "destructive"
                             })
                             return
                           }
 
                           try {
-                            console.log(`🔍 Jobs Page - Calling completeJobWithAmount with jobId: ${job.id}, finalAmount: ${finalAmount}`)
+                            console.log(`🔍 Jobs Page - Calling completeJobWithAmount with jobId: ${job.id}, using budget as finalAmount: ${finalAmount}`)
                             await jobsApi.completeJobWithAmount(job.id, Number(finalAmount))
                             toast({
                               title: "Job completed!",
-                              description: "The job has been marked as completed with final amount.",
+                              description: `Job completed with amount £${finalAmount} (from job budget). Waiting for customer confirmation.`,
                             })
                             await fetchJob(job.id)
                           } catch (error) {
@@ -770,7 +770,7 @@ export default function JobDetailsPage() {
                         className="w-full"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Complete Job with Amount
+                        Complete Job
                       </Button>
                     )}
 

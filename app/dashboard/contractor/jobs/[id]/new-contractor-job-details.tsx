@@ -108,14 +108,13 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   }
 
   const handleCompleteJob = async () => {
-    // For now, we need to get the final amount from the user
-    // In a real implementation, this would be a form or dialog
-    const finalAmount = prompt('Enter the final job amount:')
+    // Use job budget as final amount automatically
+    const finalAmount = job.budget || 0
     
-    if (!finalAmount || isNaN(Number(finalAmount)) || Number(finalAmount) <= 0) {
+    if (finalAmount <= 0) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid final amount.",
+        title: "No Budget Set",
+        description: "This job doesn't have a budget set. Please contact the customer.",
         variant: "destructive"
       })
       return
@@ -123,12 +122,12 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
     try {
       setUpdating(true)
-      console.log(`🔍 Frontend - Calling completeJobWithAmount with jobId: ${job.id}, finalAmount: ${finalAmount}, type: ${typeof finalAmount}`)
+      console.log(`🔍 Frontend - Calling completeJobWithAmount with jobId: ${job.id}, using budget as finalAmount: ${finalAmount}`)
       await jobsApi.completeJobWithAmount(job.id, Number(finalAmount))
       console.log(`✅ Frontend - completeJobWithAmount call successful`)
       toast({
         title: "Job Marked Complete!",
-        description: "The job has been marked as complete. Waiting for customer confirmation.",
+        description: `Job completed with amount £${finalAmount} (from job budget). Waiting for customer confirmation.`,
       })
       onJobUpdate(job.id)
     } catch (error) {
