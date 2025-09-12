@@ -135,11 +135,12 @@ export default function ContractorCommissions() {
   }
 
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP'
-    }).format(amount)
+    }).format(isNaN(numericAmount) ? 0 : numericAmount)
   }
 
   const getStatusBadge = (status: string) => {

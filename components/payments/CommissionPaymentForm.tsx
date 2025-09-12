@@ -18,7 +18,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 interface CommissionPaymentFormProps {
   commissionPaymentId: string
-  amount: number
+  amount: number | string
   jobTitle: string
   onSuccess: () => void
   onCancel: () => void
@@ -29,6 +29,10 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Safely convert amount to number
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  const formattedAmount = isNaN(numericAmount) ? '0.00' : numericAmount.toFixed(2)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -93,7 +97,7 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
 
         toast({
           title: "Payment Successful",
-          description: `Commission payment of £${amount.toFixed(2)} has been processed successfully.`,
+          description: `Commission payment of £${formattedAmount} has been processed successfully.`,
         })
 
         onSuccess()
@@ -143,7 +147,7 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
         <div className="bg-gray-50 p-4 rounded-md">
           <div className="flex justify-between text-sm">
             <span>Commission Amount:</span>
-            <span className="font-medium">£{amount.toFixed(2)}</span>
+            <span className="font-medium">£{formattedAmount}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600 mt-1">
             <span>Job:</span>
@@ -175,7 +179,7 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
           ) : (
             <>
               <CreditCard className="mr-2 h-4 w-4" />
-              Pay £{amount.toFixed(2)}
+              Pay £{formattedAmount}
             </>
           )}
         </Button>
