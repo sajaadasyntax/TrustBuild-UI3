@@ -390,7 +390,7 @@ export default function ClientDashboard() {
                           {new Date(review.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <h4 className="font-medium mb-2">{review.job.title}</h4>
+                      <h4 className="font-medium mb-2">{review.job?.title || review.projectType || 'External Project'}</h4>
                       {review.comment && (
                         <p className="text-sm text-muted-foreground">
                           &quot;{review.comment}&quot;
@@ -599,7 +599,7 @@ export default function ClientDashboard() {
                         </span>
                       </div>
                       
-                      <h4 className="font-medium mb-2">{review.job.title}</h4>
+                      <h4 className="font-medium mb-2">{review.job?.title || review.projectType || 'External Project'}</h4>
                       
                       {review.comment && (
                         <p className="text-muted-foreground">
