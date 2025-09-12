@@ -60,8 +60,6 @@ export function DashboardNavigation() {
         { label: "Post Job", href: "/post-job", icon: Briefcase },
         { label: "My Jobs", href: "/dashboard/client/current-jobs", icon: FileText },
         { label: "Reviews", href: "/dashboard/client/reviews", icon: Star },
-        { label: "Payments", href: "/dashboard/client/payments", icon: CreditCard },
-        { label: "Invoices", href: "/dashboard/client/invoices", icon: FileText },
       ]
     } else if (user?.role === "ADMIN") {
       return [
