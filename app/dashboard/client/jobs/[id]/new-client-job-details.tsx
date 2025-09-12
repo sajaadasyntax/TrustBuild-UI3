@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +10,7 @@ import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
 
 interface ClientJobDetailsProps {
   job: Job
@@ -22,14 +24,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
   const [showSelectionDialog, setShowSelectionDialog] = useState(false)
   const [contractorToSelect, setContractorToSelect] = useState<JobApplication | null>(null)
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
 
-  useEffect(() => {
-    if (job.id) {
-      fetchApplications()
-    }
-  }, [job.id])
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       const applicationsData = await jobsApi.getApplications(job.id)
       setApplications(applicationsData)
@@ -44,7 +41,13 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     } catch (error) {
       console.error('Failed to fetch applications:', error)
     }
-  }
+  }, [job.id, job.wonByContractorId])
+
+  useEffect(() => {
+    if (job.id) {
+      fetchApplications()
+    }
+  }, [job.id, fetchApplications])
 
   const handleSelectContractor = (application: JobApplication) => {
     setContractorToSelect(application)
@@ -129,6 +132,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       })
       
       onJobUpdate()
+      
+      // Show review dialog after successful completion
+      setShowReviewDialog(true)
     } catch (error) {
       handleApiError(error, 'Failed to complete job')
     } finally {
@@ -246,7 +252,20 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
               
               {selectedApplication && (
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Selected Contractor</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Selected Contractor</h4>
+                    {selectedApplication.contractor?.id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                      >
+                        <Link href={`/contractors/${selectedApplication.contractor.id}`} target="_blank">
+                          View Profile
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-500" />
@@ -327,6 +346,19 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                     </div>
                     
                     <div className="flex gap-2">
+                      {/* View Profile Button - Always available */}
+                      {application.contractor?.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <Link href={`/contractors/${application.contractor.id}`} target="_blank">
+                            View Profile
+                          </Link>
+                        </Button>
+                      )}
+                      
                       {/* Show application status */}
                       {application.status === 'ACCEPTED' && (
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -418,9 +450,22 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           )}
           
           {job.status === 'COMPLETED' && job.customerConfirmed && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-4 rounded-lg">
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Job completed and confirmed! Payment processed.</span>
+            <div className="flex items-center justify-between gap-4 text-green-600 bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">Job completed and confirmed! Payment processed.</span>
+              </div>
+              {job.wonByContractorId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowReviewDialog(true)}
+                  className="text-green-700 border-green-300 hover:bg-green-100"
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Write Review
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -452,22 +497,51 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
               </div>
             )}
             
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowSelectionDialog(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
+              {contractorToSelect?.contractor?.id && (
+                <Button
+                  variant="secondary"
+                  asChild
+                  className="w-full sm:w-auto"
+                >
+                  <Link href={`/contractors/${contractorToSelect.contractor.id}`} target="_blank">
+                    View Profile
+                  </Link>
+                </Button>
+              )}
               <Button
                 onClick={confirmContractorSelection}
                 disabled={updating}
+                className="w-full sm:w-auto"
               >
                 {updating ? 'Selecting...' : 'Confirm Selection'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        
+        {/* Review Dialog */}
+        {job.wonByContractorId && (
+          <WriteReviewDialog
+            isOpen={showReviewDialog}
+            onClose={() => setShowReviewDialog(false)}
+            onSuccess={() => {
+              setShowReviewDialog(false)
+              onJobUpdate()
+            }}
+            jobId={job.id}
+            contractorId={job.wonByContractorId}
+            contractorName={job.wonByContractor?.user?.name || 'Contractor'}
+            jobTitle={job.title}
+          />
+        )}
       </div>
     </div>
   )
