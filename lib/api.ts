@@ -44,6 +44,7 @@ export interface Contractor {
   operatingArea?: string;
   servicesProvided?: string;
   yearsExperience?: string;
+  logoUrl?: string;
   workSetup?: string;
   providesWarranty: boolean;
   warrantyPeriod?: string;

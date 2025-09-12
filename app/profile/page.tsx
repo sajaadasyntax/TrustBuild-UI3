@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { usersApi, contractorsApi, customersApi, handleApiError } from "@/lib/api"
+import { usersApi, contractorsApi, customersApi, uploadApi, handleApiError } from "@/lib/api"
 import { toast } from "@/hooks/use-toast"
 
 interface ProfileData {
@@ -33,6 +33,7 @@ interface ProfileData {
   operatingArea?: string
   servicesProvided?: string
   yearsExperience?: string
+  logoUrl?: string
 }
 
 export default function ProfilePage() {
@@ -71,6 +72,7 @@ export default function ProfilePage() {
               operatingArea: contractorData.operatingArea || "",
               servicesProvided: contractorData.servicesProvided || "",
               yearsExperience: contractorData.yearsExperience || "",
+              logoUrl: contractorData.logoUrl || "",
               city: contractorData.city || "",
               postcode: contractorData.postcode || ""
             }
@@ -117,6 +119,48 @@ export default function ProfilePage() {
       ...prev,
       [field]: value
     }))
+  }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (PNG, JPG, etc.)",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const uploadResult = await uploadApi.uploadFile(file)
+      handleInputChange('logoUrl', uploadResult.url)
+      
+      toast({
+        title: "Logo uploaded successfully",
+        description: "Your business logo has been uploaded."
+      })
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload logo. Please try again.",
+        variant: "destructive"
+      })
+    }
   }
 
   const handleSave = async () => {
@@ -316,6 +360,49 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       placeholder="e.g., 10 years"
                     />
+                  </div>
+                </div>
+
+                {/* Logo Upload Section */}
+                <div>
+                  <Label htmlFor="logo">Business Logo</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    {profileData.logoUrl && (
+                      <div className="relative">
+                        <Image
+                          src={profileData.logoUrl}
+                          alt="Business Logo"
+                          width={80}
+                          height={80}
+                          className="rounded-lg object-cover border"
+                        />
+                        {isEditing && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                            onClick={() => handleInputChange('logoUrl', '')}
+                          >
+                            ×
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {isEditing && (
+                      <div className="flex-1">
+                        <Input
+                          id="logo"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Upload a square logo (recommended: 200x200px or larger)
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 

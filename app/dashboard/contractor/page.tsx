@@ -315,9 +315,19 @@ export default function ContractorDashboard() {
             <CardContent className="space-y-4">
               <div className="flex items-center">
                 <div className="relative w-16 h-16 mr-4">
-                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
-                    <span className="text-xl font-bold text-primary">{contractor?.businessName?.slice(0,2).toUpperCase() || contractor?.user?.name?.slice(0,2).toUpperCase() || 'PC'}</span>
-                  </div>
+                  {contractor?.logoUrl ? (
+                    <Image
+                      src={contractor.logoUrl}
+                      alt="Business Logo"
+                      width={64}
+                      height={64}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-xl font-bold text-primary">{contractor?.businessName?.slice(0,2).toUpperCase() || contractor?.user?.name?.slice(0,2).toUpperCase() || 'PC'}</span>
+                    </div>
+                  )}
                   <div className="absolute -bottom-1 -right-1 bg-primary text-white text-xs px-1.5 py-0.5 rounded-full">
                     {contractor?.tier || 'Standard'}
                   </div>
@@ -347,6 +357,7 @@ export default function ContractorDashboard() {
                       contractor?.operatingArea,
                       contractor?.servicesProvided,
                       contractor?.yearsExperience,
+                      contractor?.logoUrl,
                     ];
                     const filled = fields.filter(Boolean).length;
                     const percent = Math.round((filled / fields.length) * 100);
@@ -365,6 +376,7 @@ export default function ContractorDashboard() {
                     contractor?.operatingArea,
                     contractor?.servicesProvided,
                     contractor?.yearsExperience,
+                    contractor?.logoUrl,
                   ];
                   const filled = fields.filter(Boolean).length;
                   return Math.round((filled / fields.length) * 100);
