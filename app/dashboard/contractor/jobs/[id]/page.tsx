@@ -22,7 +22,17 @@ export default function Page() {
   const fetchJob = async (jobId: string) => {
     try {
       setLoading(true)
+      console.log('🔄 Fetching job data for:', jobId)
       const jobData = await jobsApi.getById(jobId)
+      console.log('📋 Job data received:', {
+        id: jobData.id,
+        title: jobData.title,
+        hasCustomer: !!jobData.customer,
+        customerName: jobData.customer?.user?.name,
+        customerPhone: jobData.customer?.phone,
+        customerEmail: jobData.customer?.user?.email,
+        hasAccess: jobData.hasAccess
+      })
       
       // Check if contractor is assigned to this job (either accepted application or won the job)
       const contractor = await contractorsApi.getMyProfile()

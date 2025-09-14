@@ -61,7 +61,9 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const checkJobAccess = async () => {
     try {
       setCheckingAccess(true)
+      console.log('🔍 Checking job access for job:', job.id)
       const accessData = await jobsApi.checkAccess(job.id)
+      console.log('🔍 Access check result:', accessData)
       setHasAccess(accessData.hasAccess)
       
       // Check application status
@@ -81,12 +83,22 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   }
 
   const handleAccessGranted = async () => {
+    console.log('🔄 Access granted - refreshing data...')
+    
     // Refresh contractor data to get updated credits
     await fetchContractorData()
+    
     // Refresh job access status
     await checkJobAccess()
+    
+    // Add a small delay to ensure backend has processed the access
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
     // Refresh job data
-    onJobUpdate(job.id)
+    console.log('🔄 Refreshing job data...')
+    await onJobUpdate(job.id)
+    
+    console.log('✅ Data refresh completed')
   }
 
   const handleApplyForJob = async () => {
