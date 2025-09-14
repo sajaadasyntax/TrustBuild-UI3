@@ -27,7 +27,7 @@ export default function FinalPriceConfirmationsPage() {
     try {
       setLoading(true)
       const response = await jobsApi.getJobsAwaitingFinalPriceConfirmation()
-      setJobs(response.data.jobs)
+      setJobs(response.data as Job[])
     } catch (error) {
       console.error('Failed to fetch jobs:', error)
       handleApiError(error, 'Failed to load jobs awaiting final price confirmation')

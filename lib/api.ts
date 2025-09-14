@@ -1148,7 +1148,32 @@ export const jobsApi = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     
-    return apiRequest(`/admin/jobs/awaiting-final-price-confirmation?${searchParams.toString()}`);
+    const response = await apiRequest<{
+      data: {
+        jobs: Job[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(`/admin/jobs/awaiting-final-price-confirmation?${searchParams.toString()}`);
+    
+    // Transform the response to match the expected PaginatedResponse format
+    return {
+      status: 'success',
+      data: Object.assign(response.data.jobs, {
+        pagination: response.data.pagination
+      }) as Job[] & {
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      }
+    };
   },
 };
 
