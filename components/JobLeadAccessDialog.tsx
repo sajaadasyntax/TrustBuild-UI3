@@ -671,33 +671,49 @@ export default function JobLeadAccessDialog({
             </div>
           )}
 
-          {/* Credit Balance Display */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-blue-900">Your Credits</h4>
-                <p className="text-sm text-blue-700">
-                  You have {creditsBalance} {creditsBalance === 1 ? 'credit' : 'credits'} available
-                </p>
-                {contractor?.lastCreditReset && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Next reset: {new Date(new Date(contractor.lastCreditReset).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+          {/* Credit Balance Display - Only for subscribers */}
+          {hasSubscription ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-blue-900">Your Credits</h4>
+                  <p className="text-sm text-blue-700">
+                    You have {creditsBalance} {creditsBalance === 1 ? 'credit' : 'credits'} available
                   </p>
-                )}
+                  {contractor?.lastCreditReset && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      Next reset: {new Date(new Date(contractor.lastCreditReset).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 border border-blue-200">
+                  <span className="text-2xl font-bold text-blue-900">{creditsBalance}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 border border-blue-200">
-                <span className="text-2xl font-bold text-blue-900">{creditsBalance}</span>
+              {creditsBalance < 1 && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-100 rounded">
+                  <p className="text-sm text-yellow-700 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1 text-yellow-500" />
+                    You have no credits left. Credits reset weekly!
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <div className="mr-4 bg-orange-500 p-2 rounded-full">
+                  <AlertCircle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-orange-800">Credits Available for Subscribers</h4>
+                  <p className="text-sm text-orange-700">
+                    Subscribe to access credit features and get 3 free credits every week!
+                  </p>
+                </div>
               </div>
             </div>
-            {creditsBalance < 1 && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-100 rounded">
-                <p className="text-sm text-yellow-700 flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-1 text-yellow-500" />
-                  You have no credits left. Credits reset weekly, or you can subscribe for 3 free credits every week!
-                </p>
-              </div>
-            )}
-          </div>
+          )}
 
           {showStripeForm ? (
             <Elements stripe={stripePromise}>
@@ -820,41 +836,31 @@ export default function JobLeadAccessDialog({
               <div className="space-y-4">
                 <h3 className="font-semibold">Choose Payment Method</h3>
                 
-                {/* Credits Option */}
-                <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  paymentMethod === 'CREDIT' ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                } ${creditsBalance < 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => creditsBalance >= 1 && setPaymentMethod('CREDIT')}>
+                {/* Credits Option - Disabled for non-subscribers */}
+                <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 opacity-60">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <input
                         type="radio"
-                        checked={paymentMethod === 'CREDIT'}
-                        disabled={creditsBalance < 1}
-                        onChange={() => setPaymentMethod('CREDIT')}
-                        className="w-4 h-4 text-blue-600"
+                        disabled
+                        className="w-4 h-4 text-gray-400"
                       />
                       <div>
-                        <div className="font-medium flex items-center gap-2">
-                          Use Credit (Recommended)
-                          {creditsBalance >= 1 && (
-                            <Badge className="bg-green-100 text-green-800 text-xs">
-                              Best Value
-                            </Badge>
-                          )}
+                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                          Use Credit (Subscribers Only)
+                          <Badge className="bg-gray-100 text-gray-600 text-xs">
+                            Subscribe Required
+                          </Badge>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          Available credits: {creditsBalance}
-                          {creditsBalance < 1 && " (Insufficient credits)"}
+                        <div className="text-sm text-gray-500">
+                          Subscribe to access credit features
                         </div>
-                        {creditsBalance >= 1 && (
-                          <div className="text-xs text-green-600 mt-1">
-                            ✓ No additional cost • Instant access
-                          </div>
-                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          ✓ 5% commission after completion
+                        </div>
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-blue-600">1 Credit</div>
+                    <div className="text-lg font-semibold text-gray-400">1 Credit</div>
                   </div>
                 </div>
 
@@ -905,7 +911,7 @@ export default function JobLeadAccessDialog({
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                {paymentMethod === 'CREDIT' ? (
+                {hasSubscription && paymentMethod === 'CREDIT' ? (
                   <Button 
                     onClick={handleCreditPayment} 
                     disabled={processingPayment || creditsBalance < 1}

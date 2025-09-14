@@ -257,8 +257,8 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </Card>
         )}
 
-        {/* Credit Balance Display */}
-        {contractor && (
+        {/* Credit Balance Display - Only for subscribers */}
+        {contractor && subscription && subscription.status === 'active' && (
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -274,6 +274,23 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 >
                   Refresh Balance
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Subscription Required Notice for Credits */}
+        {contractor && (!subscription || subscription.status !== 'active') && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+                <div>
+                  <span className="font-medium text-orange-800">Credits Available for Subscribers</span>
+                  <p className="text-sm text-orange-700">
+                    Subscribe to access credit features and get 3 free credits every week!
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

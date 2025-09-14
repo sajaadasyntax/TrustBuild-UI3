@@ -272,12 +272,25 @@ export default function ContractorDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">{creditInfo?.creditsBalance ?? contractor?.creditsBalance ?? 0}</div>
-                <p className="text-sm text-muted-foreground">of {creditInfo?.weeklyCreditsLimit ?? contractor?.weeklyCreditsLimit ?? 3} remaining this week</p>
-                <div className="flex items-center mt-2 text-xs">
-                  <Bell className="h-3 w-3 mr-1" />
-                  <span>Resets {getNextResetDate()}</span>
-                </div>
+                {subscription && subscription.status === 'active' ? (
+                  <>
+                    <div className="text-3xl font-bold text-primary">{creditInfo?.creditsBalance ?? contractor?.creditsBalance ?? 0}</div>
+                    <p className="text-sm text-muted-foreground">of {creditInfo?.weeklyCreditsLimit ?? contractor?.weeklyCreditsLimit ?? 3} remaining this week</p>
+                    <div className="flex items-center mt-2 text-xs">
+                      <Bell className="h-3 w-3 mr-1" />
+                      <span>Resets {getNextResetDate()}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-muted-foreground">0</div>
+                    <p className="text-sm text-muted-foreground">Credits available for subscribers only</p>
+                    <div className="flex items-center mt-2 text-xs text-orange-600">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      <span>Subscribe to access credits</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
             

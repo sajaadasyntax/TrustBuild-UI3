@@ -706,6 +706,15 @@ export default function AdminContractors() {
                         >
                           <CreditCard className="h-3 w-3 mr-1" />
                           Credits: {contractor.creditsBalance || 0}
+                          {contractor.subscription?.status === 'active' ? (
+                            <Badge className="ml-1 bg-green-100 text-green-800 text-xs">
+                              Subscribed
+                            </Badge>
+                          ) : (
+                            <Badge className="ml-1 bg-gray-100 text-gray-600 text-xs">
+                              No Sub
+                            </Badge>
+                          )}
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

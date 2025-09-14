@@ -365,10 +365,21 @@ export default function ContractorPayments() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{earnings?.creditsBalance || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              of {earnings?.weeklyCreditsLimit || 3} weekly limit
-            </p>
+            {earnings?.subscriptionStatus === 'active' ? (
+              <>
+                <div className="text-2xl font-bold">{earnings?.creditsBalance || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  of {earnings?.weeklyCreditsLimit || 3} weekly limit
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-muted-foreground">0</div>
+                <p className="text-xs text-orange-600">
+                  Credits available for subscribers only
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
