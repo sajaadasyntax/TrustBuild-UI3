@@ -11,6 +11,7 @@ import { jobsApi, paymentsApi, handleApiError, Job, JobApplication } from '@/lib
 import { useAuth } from '@/contexts/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
+import { FinalPriceConfirmationDialog } from "@/components/jobs/FinalPriceConfirmationDialog"
 
 interface ClientJobDetailsProps {
   job: Job
@@ -25,6 +26,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const [showSelectionDialog, setShowSelectionDialog] = useState(false)
   const [contractorToSelect, setContractorToSelect] = useState<JobApplication | null>(null)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [showFinalPriceConfirmation, setShowFinalPriceConfirmation] = useState(false)
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -171,6 +173,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const selectedApplication = applications.find(app => app.contractorId === selectedContractor)
   const canComplete = job.status === 'IN_PROGRESS' && selectedContractor
   const canConfirmCompletion = job.status === 'COMPLETED' && selectedContractor && !job.customerConfirmed
+  const needsFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && job.contractorProposedAmount
   const contractorsWithAccess = job.jobAccess?.length || 0
 
   return (
@@ -429,6 +432,35 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           </Card>
         )}
 
+        {/* Final Price Confirmation Notice */}
+        {needsFinalPriceConfirmation && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Clock className="w-6 h-6 text-yellow-600" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800">Final Price Confirmation Required</h3>
+                  <p className="text-yellow-700">
+                    The contractor has proposed a final price of £{job.contractorProposedAmount?.toFixed(2)} for this job.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-yellow-600">
+                  <p>Proposed on: {job.finalPriceProposedAt ? new Date(job.finalPriceProposedAt).toLocaleDateString() : 'Unknown'}</p>
+                  <p>Response deadline: {job.finalPriceTimeoutAt ? new Date(job.finalPriceTimeoutAt).toLocaleDateString() : 'Unknown'}</p>
+                </div>
+                <Button 
+                  onClick={() => setShowFinalPriceConfirmation(true)}
+                  className="bg-yellow-600 hover:bg-yellow-700"
+                >
+                  Review & Confirm
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-4">
           {selectedContractor && job.status === 'POSTED' && (
@@ -540,6 +572,21 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             contractorId={job.wonByContractorId}
             contractorName={job.wonByContractor?.user?.name || 'Contractor'}
             jobTitle={job.title}
+          />
+        )}
+
+        {/* Final Price Confirmation Dialog */}
+        {needsFinalPriceConfirmation && job.contractorProposedAmount && job.finalPriceProposedAt && job.finalPriceTimeoutAt && (
+          <FinalPriceConfirmationDialog
+            jobId={job.id}
+            jobTitle={job.title}
+            contractorName={job.wonByContractor?.user?.name || 'Contractor'}
+            proposedAmount={job.contractorProposedAmount}
+            proposedAt={job.finalPriceProposedAt}
+            timeoutAt={job.finalPriceTimeoutAt}
+            isOpen={showFinalPriceConfirmation}
+            onClose={() => setShowFinalPriceConfirmation(false)}
+            onSuccess={() => onJobUpdate()}
           />
         )}
       </div>

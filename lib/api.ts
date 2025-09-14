@@ -129,7 +129,7 @@ export interface Job {
   phone?: string;
   email?: string;
   urgency?: string;
-  status: 'DRAFT' | 'POSTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'POSTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'AWAITING_FINAL_PRICE_CONFIRMATION';
   startDate?: string;
   completionDate?: string;
   isUrgent: boolean;
@@ -148,6 +148,16 @@ export interface Job {
       name: string;
     };
   };
+  
+  // Final price workflow fields
+  contractorProposedAmount?: number;
+  finalPriceProposedAt?: string;
+  finalPriceConfirmedAt?: string;
+  finalPriceRejectedAt?: string;
+  finalPriceRejectionReason?: string;
+  adminOverrideAt?: string;
+  adminOverrideBy?: string;
+  finalPriceTimeoutAt?: string;
   finalAmount?: number;
   customerConfirmed?: boolean;
   commissionPaid?: boolean;
@@ -1103,6 +1113,42 @@ export const jobsApi = {
       method: 'PATCH',
       body: JSON.stringify({ flagged, reason }),
     });
+  },
+
+  // Final price workflow methods
+  proposeFinalPrice: async (jobId: string, finalPrice: number): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/jobs/${jobId}/propose-final-price`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finalPrice }),
+    });
+    return response.data.job;
+  },
+
+  confirmFinalPrice: async (jobId: string, action: 'confirm' | 'reject', rejectionReason?: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/jobs/${jobId}/confirm-final-price`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, rejectionReason }),
+    });
+    return response.data.job;
+  },
+
+  adminOverrideFinalPrice: async (jobId: string, reason: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/jobs/${jobId}/admin-override-final-price`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+    return response.data.job;
+  },
+
+  getJobsAwaitingFinalPriceConfirmation: async (params: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<PaginatedResponse<Job>> => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    
+    return apiRequest(`/admin/jobs/awaiting-final-price-confirmation?${searchParams.toString()}`);
   },
 };
 

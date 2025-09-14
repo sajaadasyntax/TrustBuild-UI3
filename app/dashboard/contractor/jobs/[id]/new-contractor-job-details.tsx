@@ -10,6 +10,7 @@ import { jobsApi, paymentsApi, contractorsApi, reviewsApi, handleApiError, Job, 
 import { useAuth } from '@/contexts/AuthContext'
 import { Textarea } from "@/components/ui/textarea"
 import JobLeadAccessDialog from "@/components/JobLeadAccessDialog"
+import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDialog"
 
 interface ContractorJobDetailsProps {
   job: Job
@@ -27,6 +28,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [applicationStatus, setApplicationStatus] = useState<string>('none')
   const [reviewRequest, setReviewRequest] = useState('')
   const [showReviewRequest, setShowReviewRequest] = useState(false)
+  const [showFinalPriceDialog, setShowFinalPriceDialog] = useState(false)
 
   // Get the application for this contractor
   const myApplication = job.applications?.find(app => 
@@ -204,7 +206,9 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
   const isJobWinner = job.wonByContractorId === myApplication?.contractorId
   const canCompleteJob = job.status === 'IN_PROGRESS' && isJobWinner
+  const canProposeFinalPrice = job.status === 'IN_PROGRESS' && isJobWinner
   const canRequestReview = job.status === 'COMPLETED' && isJobWinner
+  const isAwaitingFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && isJobWinner
 
   if (checkingAccess) {
     return (
@@ -390,10 +394,26 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
             </Button>
           )}
 
-          {canCompleteJob && (
-            <Button onClick={handleCompleteJob} disabled={updating} className="flex-1">
-              {updating ? 'Updating...' : 'Mark Job Complete'}
+          {canProposeFinalPrice && (
+            <Button 
+              onClick={() => setShowFinalPriceDialog(true)} 
+              className="flex-1"
+            >
+              Propose Final Price
             </Button>
+          )}
+
+          {isAwaitingFinalPriceConfirmation && (
+            <div className="flex-1 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <Clock className="w-4 h-4" />
+                <span className="font-medium">Waiting for Customer Confirmation</span>
+              </div>
+              <p className="text-sm text-yellow-700 mt-1">
+                Final price of £{job.contractorProposedAmount?.toFixed(2)} proposed. 
+                Customer has 7 days to respond.
+              </p>
+            </div>
           )}
 
           {canRequestReview && (
@@ -441,6 +461,15 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           isOpen={showAccessDialog}
           onClose={() => setShowAccessDialog(false)}
           onAccessGranted={handleAccessGranted}
+        />
+
+        {/* Final Price Proposal Dialog */}
+        <FinalPriceProposalDialog
+          jobId={job.id}
+          jobTitle={job.title}
+          isOpen={showFinalPriceDialog}
+          onClose={() => setShowFinalPriceDialog(false)}
+          onSuccess={() => onJobUpdate(job.id)}
         />
       </div>
     </div>
