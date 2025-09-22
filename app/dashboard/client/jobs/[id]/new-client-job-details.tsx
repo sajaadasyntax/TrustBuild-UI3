@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, handleApiError, Job, JobApplication } from '@/lib/api'
@@ -264,7 +264,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                         asChild
                       >
                         <Link href={`/contractors/${selectedApplication.contractor.id}`} target="_blank">
-                          View Profile
+                          View Profile & Reviews
                         </Link>
                       </Button>
                     )}
@@ -295,6 +295,73 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             {/* Attachments would be displayed here if supported by the Job type */}
           </CardContent>
         </Card>
+
+        {/* Contractors with Access */}
+        {job.purchasedBy && job.purchasedBy.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Contractors with Access ({job.purchasedBy.length})</CardTitle>
+              <CardDescription>
+                These contractors have purchased access to view your job details
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {job.purchasedBy.map((contractor, index) => (
+                <div
+                  key={contractor.contractorId || index}
+                  className="p-4 border rounded-lg border-gray-200"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="font-semibold text-lg">
+                        {contractor.contractorName}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span>{contractor.averageRating?.toFixed(1) || 'No rating'}</span>
+                        <span className="text-gray-500">
+                          ({contractor.reviewCount || 0} reviews)
+                        </span>
+                        <span className="text-gray-500">
+                          • {contractor.jobsCompleted || 0} jobs completed
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">
+                        Purchased: {new Date(contractor.purchasedAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Amount: {formatCurrency(contractor.paidAmount || 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      {(contractor.jobsCompleted || 0) > 0 ? 'Experienced contractor' : 'New to platform'}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {/* View Profile Button */}
+                      {contractor.contractorId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <Link href={`/contractors/${contractor.contractorId}`} target="_blank">
+                            View Profile & Reviews
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Applications */}
         {applications.length > 0 && (
@@ -351,15 +418,17 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                     <div className="flex gap-2">
                       {/* View Profile Button - Always available */}
                       {application.contractor?.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <Link href={`/contractors/${application.contractor.id}`} target="_blank">
-                            View Profile
-                          </Link>
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <Link href={`/contractors/${application.contractor.id}`} target="_blank">
+                              View Profile & Reviews
+                            </Link>
+                          </Button>
+                        </>
                       )}
                       
                       {/* Show application status */}
@@ -544,7 +613,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                   className="w-full sm:w-auto"
                 >
                   <Link href={`/contractors/${contractorToSelect.contractor.id}`} target="_blank">
-                    View Profile
+                    View Profile & Reviews
                   </Link>
                 </Button>
               )}
