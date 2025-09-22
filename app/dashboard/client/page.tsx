@@ -75,7 +75,7 @@ export default function ClientDashboard() {
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Quote on request'
+    if (!amount) return '£0'
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
