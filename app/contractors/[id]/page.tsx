@@ -42,9 +42,15 @@ export default function ContractorProfilePage() {
   const fetchReviews = async () => {
     try {
       const response = await reviewsApi.getContractorReviews(id, { page: reviewsPage, limit: 5 })
-      setReviews(response.data)
-      setReviewsTotal(response.data.pagination.total)
-      setAverageRating(response.averageRating)
+      // API returns { status, data: { reviews, pagination } }
+      const reviewData = response.data || response
+      setReviews(reviewData.reviews || [])
+      setReviewsTotal(reviewData.pagination?.total || 0)
+      // Calculate average rating from reviews
+      if (reviewData.reviews && reviewData.reviews.length > 0) {
+        const avgRating = reviewData.reviews.reduce((sum: number, r: Review) => sum + r.rating, 0) / reviewData.reviews.length
+        setAverageRating(avgRating)
+      }
     } catch (error) {
       handleApiError(error, 'Failed to load reviews')
     }
