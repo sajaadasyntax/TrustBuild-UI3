@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw } from "lucide-react"
+import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -289,6 +289,81 @@ export default function AdminPage() {
             </Button>
             <Button variant="outline" className="w-full" asChild>
               <Link href="/admin/content">Content Moderation</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Platform Settings
+            </CardTitle>
+            <CardDescription>
+              Configure commission rates and pricing
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Commission Rate</span>
+              <Badge variant="outline">5%</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Subscription Plans</span>
+              <Badge variant="outline">Active</Badge>
+            </div>
+            <Button className="w-full" asChild>
+              <Link href="/admin/settings">Manage Settings</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              KYC Review
+            </CardTitle>
+            <CardDescription>
+              Review contractor identity verification
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Pending Review</span>
+              <Badge variant="destructive">Check</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Approved</span>
+              <Badge variant="default">View</Badge>
+            </div>
+            <Button className="w-full" asChild>
+              <Link href="/admin/kyc">Review KYC</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Security & Logs
+            </CardTitle>
+            <CardDescription>
+              Monitor admin activity and login attempts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Login Activities</span>
+              <Badge variant="outline">View</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Activity Logs</span>
+              <Badge variant="outline">View</Badge>
+            </div>
+            <Button className="w-full" asChild>
+              <Link href="/admin/security/logins">View Logs</Link>
             </Button>
           </CardContent>
         </Card>
