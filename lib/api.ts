@@ -1182,7 +1182,18 @@ export const reviewsApi = {
   getContractorReviews: async (contractorId: string, params: {
     page?: number;
     limit?: number;
-  } = {}): Promise<PaginatedResponse<Review> & { averageRating: number }> => {
+  } = {}): Promise<{
+    status: 'success';
+    data: {
+      reviews: Review[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    };
+  }> => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
