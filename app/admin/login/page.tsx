@@ -39,9 +39,12 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
       
-      const response = await fetch(`${API_URL}/api/admin-auth/login`, {
+      // Don't add /api prefix if API_URL already includes it
+      const baseUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`
+      
+      const response = await fetch(`${baseUrl}/admin-auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
