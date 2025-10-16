@@ -68,7 +68,7 @@ export default function SecurityLoginsPage() {
     setLoading(true);
     try {
       if (activeTab === 'logins') {
-        const response = await fetch('/api/admin/logins', {
+        const response = await fetch('/api/admin/activity/logins', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
@@ -79,7 +79,7 @@ export default function SecurityLoginsPage() {
         const data = await response.json();
         setLoginActivities(data.data || []);
       } else {
-        const response = await fetch('/api/admin/activity', {
+        const response = await fetch('/api/admin/activity/logs', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
