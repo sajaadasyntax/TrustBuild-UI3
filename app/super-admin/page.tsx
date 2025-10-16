@@ -229,6 +229,30 @@ export default function SuperAdminPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Admin Management
+            </CardTitle>
+            <CardDescription>
+              Create and manage admin users with permissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Admin Users</span>
+              <Badge variant="secondary">Manage</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Permission Control</span>
+              <Badge variant="outline">Granular</Badge>
+            </div>
+            <Link href="/super-admin/admins">
+              <Button className="w-full">Manage Admins</Button>
+            </Link>
+          </CardContent>
+        </Card>
 
       </div>
     </div>

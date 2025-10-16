@@ -572,6 +572,17 @@ export const usersApi = {
     });
   },
 
+  changePassword: async (passwordData: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<void> => {
+    await apiRequest('/users/change-password', {
+      method: 'PATCH',
+      body: JSON.stringify(passwordData),
+    });
+  },
+
   getAllUsers: async (params: {
     page?: number;
     limit?: number;
