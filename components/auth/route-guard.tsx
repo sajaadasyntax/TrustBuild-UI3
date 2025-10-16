@@ -18,6 +18,28 @@ export function RouteGuard({ children }: RouteGuardProps) {
     // Don't redirect while still loading auth state
     if (loading) return
 
+    // Define public routes that don't require authentication
+    const publicRoutes = [
+      '/login',
+      '/register',
+      '/admin/login', // Admin login should be accessible without auth
+      '/forgot-password',
+      '/',
+      '/about',
+      '/contact',
+      '/how-it-works',
+      '/for-contractors',
+      '/contractors',
+      '/jobs',
+      '/pricing',
+      '/faq',
+      '/terms',
+      '/privacy'
+    ]
+
+    // Check if current route is public
+    const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
+
     // Define protected routes
     const protectedRoutes = [
       '/dashboard',
@@ -28,16 +50,21 @@ export function RouteGuard({ children }: RouteGuardProps) {
       '/post-job'
     ]
 
-    // Check if current route is protected
+    // Check if current route is protected (but NOT if it's a public route like /admin/login)
     const isProtectedRoute = protectedRoutes.some(route => 
       pathname.startsWith(route)
-    )
+    ) && !isPublicRoute
 
     // If on a protected route but not authenticated, redirect to login
     if (isProtectedRoute && !user) {
       // console.log("🚫 Accessing protected route without auth, redirecting to login")
       setIsRedirecting(true)
-      router.push('/login')
+      // If trying to access admin routes, redirect to admin login
+      if (pathname.startsWith('/admin')) {
+        router.push('/admin/login')
+      } else {
+        router.push('/login')
+      }
       return
     }
 
@@ -117,6 +144,27 @@ export function RouteGuard({ children }: RouteGuardProps) {
     )
   }
 
+  // Define public routes again for the render check
+  const publicRoutes = [
+    '/login',
+    '/register',
+    '/admin/login', // Admin login should be accessible without auth
+    '/forgot-password',
+    '/',
+    '/about',
+    '/contact',
+    '/how-it-works',
+    '/for-contractors',
+    '/contractors',
+    '/jobs',
+    '/pricing',
+    '/faq',
+    '/terms',
+    '/privacy'
+  ]
+
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
+
   // Define protected routes again for the render check
   const protectedRoutes = [
     '/dashboard',
@@ -129,7 +177,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname.startsWith(route)
-  )
+  ) && !isPublicRoute
 
   // Don't render protected content if user is not authenticated
   if (isProtectedRoute && !user) {
