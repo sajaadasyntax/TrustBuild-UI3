@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
-import { useAuth } from "@/contexts/AuthContext"
-import { adminApi, handleApiError } from "@/lib/api"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import adminApi from "@/lib/adminApi"
 import { useToast } from "@/hooks/use-toast"
 
 // Helper function to check admin permissions
@@ -36,43 +36,25 @@ interface DashboardStats {
 }
 
 export default function AdminPage() {
-  const { user, logout } = useAuth()
+  const { admin, logout } = useAdminAuth()
   const { toast } = useToast()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [permissions, setPermissions] = useState<string[]>([])
   
   // SUPER_ADMIN has all permissions by default
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
   
   // Debug function to test logout
   const handleDebugLogout = async () => {
     console.log("🔴 Admin Debug Logout - Starting...")
-    console.log("🔴 Current user:", user)
-    console.log("🔴 User role:", user?.role)
+    console.log("🔴 Current admin:", admin)
+    console.log("🔴 Admin role:", admin?.role)
     try {
       await logout()
       console.log("🔴 Logout successful")
     } catch (error) {
       console.error("🔴 Logout error:", error)
-    }
-  }
-
-  const fetchAdminPermissions = async () => {
-    try {
-      // For regular admins, fetch their permissions
-      const response = await fetch('/api/admin-auth/me', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setPermissions(data.data.admin.permissions || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch admin permissions:', error)
     }
   }
 
@@ -82,18 +64,22 @@ export default function AdminPage() {
       const dashboardData = await adminApi.getDashboardStats()
       setStats(dashboardData)
     } catch (error) {
-      handleApiError(error, 'Failed to fetch dashboard statistics')
+      console.error('Failed to fetch dashboard stats:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard statistics",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchDashboardStats()
-    if (!isSuperAdmin) {
-      fetchAdminPermissions()
+    if (admin) {
+      fetchDashboardStats()
     }
-  }, [isSuperAdmin])
+  }, [admin])
 
   if (loading) {
     return (
@@ -406,7 +392,7 @@ export default function AdminPage() {
         )}
 
         {/* Security & Logs - SUPER_ADMIN only */}
-        {user?.role === 'SUPER_ADMIN' && (
+        {admin?.role === 'SUPER_ADMIN' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

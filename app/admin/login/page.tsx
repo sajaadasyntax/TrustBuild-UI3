@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/hooks/use-toast"
 import { Eye, EyeOff, Shield } from "lucide-react"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -24,6 +25,7 @@ type FormData = z.infer<typeof formSchema>
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { login } = useAdminAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   
@@ -39,32 +41,11 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
-      
-      // Don't add /api prefix if API_URL already includes it
-      const baseUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`
-      
-      const response = await fetch(`${baseUrl}/admin-auth/login`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Login failed')
-      }
+      const result = await login(data.email, data.password)
 
       // Check if 2FA is required
-      if (result.data.requires2FA) {
-        // Store temp token and show 2FA verification page
-        localStorage.setItem('admin_temp_token', result.data.tempToken)
+      if (result.requires2FA) {
+        localStorage.setItem('admin_temp_token', result.tempToken!)
         toast({
           title: "2FA Required",
           description: "Please enter your authenticator code",
@@ -73,13 +54,9 @@ export default function AdminLoginPage() {
         return
       }
 
-      // Store admin token
-      localStorage.setItem('admin_token', result.data.token)
-      localStorage.setItem('admin_user', JSON.stringify(result.data.admin))
-
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${result.data.admin.name}`,
+        description: "Successfully logged in to admin portal",
       })
 
       // Redirect to admin dashboard
