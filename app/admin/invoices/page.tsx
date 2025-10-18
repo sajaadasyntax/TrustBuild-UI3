@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,15 +31,43 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Download, FileText, Search, Calendar } from "lucide-react"
-import { invoicesApi, adminApi, handleApiError, Invoice } from '@/lib/api'
-import { useAuth } from '@/contexts/AuthContext'
+import { adminApi } from '@/lib/adminApi'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useToast } from "@/hooks/use-toast"
+
+interface Invoice {
+  id: string
+  invoiceNumber: string
+  contractorId: string
+  jobId: string
+  amount: number
+  status: string
+  dueDate: string
+  paidDate?: string
+  createdAt: string
+  issuedAt: string
+  paidAt?: string
+  dueAt?: string
+  totalAmount: number | string
+  recipientName: string
+  contractor: {
+    businessName: string
+  }
+  job: {
+    title: string
+  }
+  payments?: Array<{
+    type: string
+  }>
+}
+
+// Moved handleApiError inside component to use toast
 import { Skeleton } from "@/components/ui/skeleton"
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { DateRange } from "react-day-picker"
 
 export default function AdminInvoicesPage() {
-  const { user } = useAuth()
+  const { admin } = useAdminAuth()
   const { toast } = useToast()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,20 +82,16 @@ export default function AdminInvoicesPage() {
     pages: 1
   })
 
-  useEffect(() => {
-    if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
+  const fetchInvoices = useCallback(async () => {
+    if (!admin) {
       toast({
         title: "Access Denied",
-        description: "You don't have permission to view this page.",
+        description: "You must be logged in to view this page.",
         variant: "destructive",
       })
       return
     }
-    
-    fetchInvoices()
-  }, [pagination.page, pagination.limit, status, type, dateRange])
 
-  const fetchInvoices = async () => {
     try {
       setLoading(true)
       
@@ -95,24 +119,24 @@ export default function AdminInvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [admin, pagination.page, pagination.limit, status, type, dateRange, searchTerm, toast])
+
+  useEffect(() => {
+    fetchInvoices()
+  }, [fetchInvoices])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     fetchInvoices()
   }
 
-  const handleDownload = async (invoiceId: string) => {
+  const handleDownload = (invoiceId: string) => {
     try {
-      const blob = await invoicesApi.downloadInvoice(invoiceId)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = `invoice-${invoiceId}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
+      adminApi.downloadInvoice(invoiceId)
+      toast({
+        title: "Success",
+        description: "Invoice download started",
+      })
     } catch (error) {
       toast({
         title: "Error",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -81,8 +81,28 @@ interface Contractor {
   completionRate: number
   isApproved: boolean
   isActive: boolean
+  profileApproved: boolean
+  status?: string
+  tier?: string
   subscriptionStatus: string
   createdAt: string
+  creditsBalance?: number
+  weeklyCreditsLimit?: number
+  user?: {
+    name?: string
+    email?: string
+  }
+  city?: string
+  postcode?: string
+  jobsCompleted?: number
+  averageRating?: number
+  reviewCount?: number
+  yearsExperience?: string
+  servicesProvided?: string
+  description?: string
+  subscription?: {
+    status?: string
+  }
 }
 
 const handleApiError = (error: any, defaultMessage: string) => {
@@ -144,32 +164,15 @@ export default function AdminContractors() {
 
   // Authentication check
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      console.log('User not authenticated, redirecting...')
-      return
-    }
-
-    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
-      toast({
-        title: 'Access Denied',
-        description: 'You do not have permission to access this page.',
-        variant: 'destructive',
-      })
+    if (!admin) {
+      console.log('Admin not authenticated')
       return
     }
 
     console.log('Admin authenticated, loading data...')
-  }, [isAuthenticated, user])
+  }, [admin])
 
-  useEffect(() => {
-    if (isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
-      fetchContractors()
-      fetchPendingContractors()
-      fetchStats()
-    }
-  }, [page, searchTerm, statusFilter, tierFilter, approvalFilter, isAuthenticated, user])
-
-  const fetchContractors = async () => {
+  const fetchContractors = useCallback(async () => {
     try {
       setLoading(true)
       const params: any = {
@@ -194,9 +197,9 @@ export default function AdminContractors() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, searchTerm, statusFilter, approvalFilter])
 
-  const fetchPendingContractors = async () => {
+  const fetchPendingContractors = useCallback(async () => {
     try {
       const response = await adminApi.getPendingContractors({ limit: 10 })
       console.log('Pending contractors response:', response)
@@ -206,9 +209,9 @@ export default function AdminContractors() {
       handleApiError(error, 'Failed to fetch pending contractors')
       setPendingContractors([])
     }
-  }
+  }, [])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setStatsLoading(true)
       const response = await adminApi.getContractorStats()
@@ -220,7 +223,15 @@ export default function AdminContractors() {
     } finally {
       setStatsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (admin) {
+      fetchContractors()
+      fetchPendingContractors()
+      fetchStats()
+    }
+  }, [page, searchTerm, statusFilter, tierFilter, approvalFilter, admin, fetchContractors, fetchPendingContractors, fetchStats])
 
   const handleApproval = async (contractorId: string, approved: boolean, reason?: string) => {
     try {
@@ -272,7 +283,7 @@ export default function AdminContractors() {
       const action = creditData.type === 'ADDITION' ? 'added' : 'removed'
       toast({
         title: 'Credits Updated',
-        description: `Successfully ${action} ${creditData.amount} credit${creditData.amount !== 1 ? 's' : ''} ${creditData.type === 'ADDITION' ? 'to' : 'from'} ${selectedContractor.user.name}`,
+        description: `Successfully ${action} ${creditData.amount} credit${creditData.amount !== 1 ? 's' : ''} ${creditData.type === 'ADDITION' ? 'to' : 'from'} ${selectedContractor.businessName}`,
       })
       
       fetchContractors()
@@ -376,7 +387,7 @@ export default function AdminContractors() {
     }
   }
 
-  const getTierBadge = (tier: string) => {
+  const getTierBadge = (tier?: string) => {
     switch (tier?.toLowerCase()) {
       case 'premium':
         return <Badge className="bg-purple-100 text-purple-800">Premium</Badge>
@@ -413,16 +424,18 @@ export default function AdminContractors() {
 
     try {
       setProcessing(true)
+      const combinedReason = approvalData.notes 
+        ? `${approvalData.reason}\nNotes: ${approvalData.notes}`
+        : approvalData.reason
       await adminApi.approveContractor(
         selectedContractor.id,
         approvalData.approved,
-        approvalData.reason,
-        approvalData.notes
+        combinedReason
       )
       
       toast({
         title: approvalData.approved ? "Contractor Approved" : "Contractor Rejected",
-        description: `${selectedContractor.businessName || selectedContractor.user.name} has been ${approvalData.approved ? 'approved' : 'rejected'}`,
+        description: `${selectedContractor.businessName} has been ${approvalData.approved ? 'approved' : 'rejected'}`,
       })
       
       setShowApprovalDialog(false)
@@ -449,31 +462,14 @@ export default function AdminContractors() {
     }
   }
 
-  // Show loading state if not authenticated or user data not loaded
-  if (!isAuthenticated || !user) {
+  // Show loading state if admin data not loaded
+  if (!admin) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-6 w-6 animate-spin mr-2" />
           <span>Loading...</span>
         </div>
-      </div>
-    )
-  }
-
-  // Show access denied if not admin
-  if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
-    return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="text-center py-12">
-            <Shield className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
-            <p className="text-muted-foreground">
-              You do not have permission to access this page.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -509,7 +505,7 @@ export default function AdminContractors() {
           Manage contractor profiles, approvals, and verification status
         </p>
         <div className="text-xs text-muted-foreground mt-1">
-          Debug: User role: {user?.role}, Authenticated: {isAuthenticated ? 'Yes' : 'No'}
+          Admin: {admin?.name} ({admin?.role})
         </div>
       </div>
 
@@ -946,8 +942,8 @@ export default function AdminContractors() {
             </DialogTitle>
             <DialogDescription>
               {approvalData.approved 
-                ? `Approve ${selectedContractor?.businessName || selectedContractor?.user.name} as a verified contractor`
-                : `Reject ${selectedContractor?.businessName || selectedContractor?.user.name}'s application`
+                ? `Approve ${selectedContractor?.businessName} as a verified contractor`
+                : `Reject ${selectedContractor?.businessName}'s application`
               }
             </DialogDescription>
           </DialogHeader>
@@ -958,7 +954,7 @@ export default function AdminContractors() {
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{selectedContractor.user.email}</span>
+                  <span>{selectedContractor.email}</span>
                 </div>
                 {selectedContractor.phone && (
                   <div className="flex items-center gap-2">
@@ -1042,7 +1038,7 @@ export default function AdminContractors() {
           <DialogHeader>
             <DialogTitle>Change Contractor Status</DialogTitle>
             <DialogDescription>
-              Change the status of {selectedContractor?.businessName || selectedContractor?.user.name}
+              Change the status of {selectedContractor?.businessName}
             </DialogDescription>
           </DialogHeader>
           
@@ -1100,7 +1096,7 @@ export default function AdminContractors() {
             <DialogTitle>Manage Contractor Credits</DialogTitle>
             <DialogDescription>
               {selectedContractor ? 
-                `Adjust credits for ${selectedContractor.businessName || selectedContractor.user.name}` :
+                `Adjust credits for ${selectedContractor.businessName}` :
                 'Adjust contractor credits'
               }
             </DialogDescription>
@@ -1189,7 +1185,7 @@ export default function AdminContractors() {
                   <p className="text-sm font-medium mb-1">Preview:</p>
                   <p className="text-sm text-muted-foreground">
                     {creditData.type === 'ADDITION' ? 'Add' : 'Remove'} {creditData.amount} credit{creditData.amount !== 1 ? 's' : ''}
-                    {creditData.type === 'ADDITION' ? ' to' : ' from'} {selectedContractor.businessName || selectedContractor.user.name}
+                    {creditData.type === 'ADDITION' ? ' to' : ' from'} {selectedContractor.businessName}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     New balance: {

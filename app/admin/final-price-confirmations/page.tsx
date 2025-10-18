@@ -9,7 +9,36 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Clock, User, MapPin, DollarSign, AlertTriangle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { jobsApi, handleApiError, Job } from '@/lib/api'
+import { adminApi } from '@/lib/adminApi'
+
+interface Job {
+  id: string
+  title: string
+  description: string
+  budget: string
+  location: string
+  status: string
+  contractorProposedAmount: number
+  finalPriceProposedAt: string
+  finalPriceTimeoutAt?: string
+  contractor: {
+    businessName: string
+  }
+  customer: {
+    user: {
+      name: string
+    }
+  }
+}
+
+const handleApiError = (error: any, defaultMessage: string) => {
+  console.error('API Error:', error)
+  toast({
+    title: "Error",
+    description: error.message || defaultMessage,
+    variant: "destructive",
+  })
+}
 
 export default function FinalPriceConfirmationsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
@@ -26,7 +55,7 @@ export default function FinalPriceConfirmationsPage() {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await jobsApi.getJobsAwaitingFinalPriceConfirmation()
+      const response = await adminApi.getJobsAwaitingFinalPriceConfirmation()
       setJobs(response.data as Job[])
     } catch (error) {
       console.error('Failed to fetch jobs:', error)
@@ -48,7 +77,7 @@ export default function FinalPriceConfirmationsPage() {
 
     try {
       setProcessing(true)
-      await jobsApi.adminOverrideFinalPrice(selectedJob.id, overrideReason)
+      await adminApi.adminOverrideFinalPrice(selectedJob.id, 0, overrideReason)
       
       toast({
         title: "Final Price Overridden",
@@ -150,7 +179,7 @@ export default function FinalPriceConfirmationsPage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <User className="w-4 h-4" />
-                        <span>{job.wonByContractor?.user?.name || 'Unknown Contractor'}</span>
+                        <span>{job.contractor?.businessName || 'Unknown Contractor'}</span>
                       </div>
                       
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -203,7 +232,7 @@ export default function FinalPriceConfirmationsPage() {
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-medium">{selectedJob.title}</h4>
                   <p className="text-sm text-gray-600">
-                    Contractor: {selectedJob.wonByContractor?.user?.name || 'Unknown'}
+                    Contractor: {selectedJob.contractor?.businessName || 'Unknown'}
                   </p>
                   <p className="text-sm text-gray-600">
                     Proposed Amount: {formatCurrency(selectedJob.contractorProposedAmount!)}

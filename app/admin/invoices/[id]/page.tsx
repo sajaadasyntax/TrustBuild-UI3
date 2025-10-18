@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,36 +33,60 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { invoicesApi, adminApi, handleApiError, Invoice } from '@/lib/api'
+import { adminApi } from '@/lib/adminApi'
 import { useToast } from "@/hooks/use-toast"
+
+interface Invoice {
+  id: string
+  invoiceNumber: string
+  contractorId: string
+  jobId: string
+  amount: number
+  totalAmount: number
+  status: string
+  description: string
+  issuedAt: string
+  dueAt: string
+  paidAt?: string
+  createdAt: string
+  recipientName: string
+  recipientEmail: string
+  recipientAddress?: string
+  contractor: {
+    businessName: string
+    email: string
+    phone: string
+  }
+  job: {
+    title: string
+    description: string
+  }
+  payments?: Array<{
+    id: string
+    type: string
+    stripePaymentId?: string
+  }>
+  lineItems?: Array<{
+    description: string
+    amount: number
+  }>
+}
+
+// Moved handleApiError inside component to use toast
 import { Skeleton } from "@/components/ui/skeleton"
-import { useAuth } from '@/contexts/AuthContext'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 export default function AdminInvoiceDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { admin } = useAdminAuth()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
-  useEffect(() => {
-    if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to view this page.",
-        variant: "destructive",
-      })
-      return
-    }
-    
-    const invoiceId = params.id as string
-    fetchInvoiceDetails(invoiceId)
-  }, [params.id, user])
-
-  const fetchInvoiceDetails = async (invoiceId: string) => {
+  const fetchInvoiceDetails = useCallback(async (invoiceId: string) => {
     try {
       setLoading(true)
       const data = await adminApi.getInvoiceById(invoiceId)
@@ -77,21 +101,24 @@ export default function AdminInvoiceDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
-  const handleDownload = async () => {
+  useEffect(() => {
+    if (!admin) return
+    
+    const invoiceId = params.id as string
+    fetchInvoiceDetails(invoiceId)
+  }, [params.id, admin, fetchInvoiceDetails])
+
+  const handleDownload = () => {
     if (!invoice) return
     
     try {
-      const blob = await invoicesApi.downloadInvoice(invoice.id)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = `invoice-${invoice.invoiceNumber}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
+      adminApi.downloadInvoice(invoice.id)
+      toast({
+        title: "Success",
+        description: "Invoice download started",
+      })
     } catch (error) {
       toast({
         title: "Error",
@@ -106,7 +133,7 @@ export default function AdminInvoiceDetailPage() {
     
     try {
       setIsSendingEmail(true)
-      await invoicesApi.sendInvoiceEmail(invoice.id)
+      await adminApi.sendInvoiceEmail(invoice.id)
       toast({
         title: "Success",
         description: "Invoice email sent successfully.",
@@ -423,7 +450,7 @@ export default function AdminInvoiceDetailPage() {
           <CardHeader>
             <CardTitle>Invoice Not Found</CardTitle>
             <CardDescription>
-              The requested invoice could not be found or you don't have permission to view it.
+              The requested invoice could not be found or you don&apos;t have permission to view it.
             </CardDescription>
           </CardHeader>
           <CardContent>

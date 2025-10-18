@@ -8,7 +8,35 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { adminApi, handleApiError, Review } from '@/lib/api'
+import { adminApi } from '@/lib/adminApi'
+import { toast } from '@/hooks/use-toast'
+
+interface Review {
+  id: string
+  rating: number
+  comment: string
+  createdAt: string
+  job: {
+    title: string
+  }
+  customer: {
+    user: {
+      name: string
+    }
+  }
+  contractor: {
+    businessName: string
+  }
+}
+
+const handleApiError = (error: any, defaultMessage: string) => {
+  console.error('API Error:', error)
+  toast({
+    title: "Error",
+    description: error.message || defaultMessage,
+    variant: "destructive",
+  })
+}
 
 export default function ReviewManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")

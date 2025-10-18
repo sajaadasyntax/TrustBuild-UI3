@@ -39,8 +39,53 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { servicesApi, adminApi, handleApiError, Service, Contractor, CreditTransaction } from '@/lib/api'
+import { adminApi } from '@/lib/adminApi'
 import { toast } from '@/hooks/use-toast'
+
+interface Service {
+  id: string
+  name: string
+  category: string
+  description: string
+  leadPrice: number
+  estimatedDuration: string
+  isActive: boolean
+  smallJobPrice: number
+  mediumJobPrice: number
+  largeJobPrice: number
+}
+
+interface Contractor {
+  id: string
+  businessName: string
+  credits: number
+  subscriptionStatus: string
+  tier: string
+  creditsBalance: number
+  weeklyCreditsLimit: number
+  user: {
+    name: string
+    email: string
+  }
+}
+
+interface CreditTransaction {
+  id: string
+  contractorId: string
+  amount: number
+  type: string
+  description: string
+  createdAt: string
+}
+
+const handleApiError = (error: any, defaultMessage: string) => {
+  console.error('API Error:', error)
+  toast({
+    title: "Error",
+    description: error.message || defaultMessage,
+    variant: "destructive",
+  })
+}
 
 export default function AdminPricingPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -70,7 +115,7 @@ export default function AdminPricingPage() {
     try {
       setLoading(true)
       const [servicesData, contractorsData] = await Promise.all([
-        servicesApi.getAll(),
+        adminApi.getAll(),
         adminApi.getAllContractors({ limit: 100 })
       ])
       

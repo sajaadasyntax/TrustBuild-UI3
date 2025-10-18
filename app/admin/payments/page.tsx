@@ -30,8 +30,8 @@ import {
   Calendar,
   Banknote
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
-import { adminApi } from '@/lib/api'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
+import { adminApi } from '@/lib/adminApi'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +93,7 @@ interface Transaction {
 }
 
 export default function AdminPayments() {
-  const { user, isAuthenticated } = useAuth()
+  const { admin } = useAdminAuth()
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -109,11 +109,11 @@ export default function AdminPayments() {
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
-    if (isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
+    if (admin) {
       fetchPaymentStats()
       fetchTransactions()
     }
-  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, isAuthenticated, user])
+  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, admin])
 
   const fetchPaymentStats = async () => {
     try {
@@ -254,7 +254,7 @@ export default function AdminPayments() {
   }
 
   // Authentication check
-  if (!isAuthenticated || !user) {
+  if (!admin) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -265,7 +265,7 @@ export default function AdminPayments() {
     )
   }
 
-  if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+  if (admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN') {
     return (
       <div className="container mx-auto p-6">
         <Card>
