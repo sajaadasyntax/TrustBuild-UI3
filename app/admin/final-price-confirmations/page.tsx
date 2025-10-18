@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Clock, User, MapPin, DollarSign, AlertTriangle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { adminApi } from '@/lib/adminApi'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 interface Job {
   id: string
