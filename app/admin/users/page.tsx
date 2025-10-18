@@ -71,7 +71,9 @@ export default function AdminUsersPage() {
   const [newAdmin, setNewAdmin] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'SUPPORT_ADMIN' as 'SUPER_ADMIN' | 'FINANCE_ADMIN' | 'SUPPORT_ADMIN',
+    permissions: [] as string[]
   })
   const [creatingAdmin, setCreatingAdmin] = useState(false)
 
@@ -108,10 +110,24 @@ export default function AdminUsersPage() {
 
     try {
       setCreatingAdmin(true)
-      await adminApi.createAdmin({
-        ...newAdmin,
-        role: 'ADMIN'
-      })
+      
+      // Prepare admin data with permissions for non-SUPER_ADMIN roles
+      const adminData: any = {
+        name: newAdmin.name,
+        email: newAdmin.email,
+        password: newAdmin.password,
+        role: newAdmin.role
+      }
+      
+      // Add default permissions for non-SUPER_ADMIN roles
+      if (newAdmin.role !== 'SUPER_ADMIN') {
+        const defaultPermissions = newAdmin.role === 'FINANCE_ADMIN' 
+          ? ['manage_payments', 'manage_subscriptions', 'view_reports']
+          : ['manage_support', 'manage_reviews', 'view_users']
+        adminData.permissions = defaultPermissions
+      }
+      
+      await adminApi.createAdmin(adminData)
       
       toast({
         title: "Admin Created",
@@ -119,7 +135,13 @@ export default function AdminUsersPage() {
       })
       
       setShowCreateAdmin(false)
-      setNewAdmin({ name: '', email: '', password: '' })
+      setNewAdmin({ 
+        name: '', 
+        email: '', 
+        password: '',
+        role: 'SUPPORT_ADMIN',
+        permissions: []
+      })
       fetchUsers()
     } catch (error) {
       handleApiError(error, 'Failed to create admin')
@@ -189,7 +211,7 @@ export default function AdminUsersPage() {
               <DialogHeader>
                 <DialogTitle>Create New Admin</DialogTitle>
                 <DialogDescription>
-                  Create a new administrator account with full system access.
+                  Create a new administrator account with specified role and permissions.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -211,6 +233,27 @@ export default function AdminUsersPage() {
                     onChange={(e) => setNewAdmin(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Enter admin email"
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="role">Admin Role</Label>
+                  <Select
+                    value={newAdmin.role}
+                    onValueChange={(value: any) => setNewAdmin(prev => ({ ...prev, role: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select admin role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SUPER_ADMIN">Super Admin (Full Access)</SelectItem>
+                      <SelectItem value="FINANCE_ADMIN">Finance Admin (Payments & Subscriptions)</SelectItem>
+                      <SelectItem value="SUPPORT_ADMIN">Support Admin (User Support & Reviews)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {newAdmin.role === 'SUPER_ADMIN' && 'Full system access with all permissions'}
+                    {newAdmin.role === 'FINANCE_ADMIN' && 'Can manage payments, subscriptions, and financial reports'}
+                    {newAdmin.role === 'SUPPORT_ADMIN' && 'Can manage user support, reviews, and user accounts'}
+                  </p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password</Label>
