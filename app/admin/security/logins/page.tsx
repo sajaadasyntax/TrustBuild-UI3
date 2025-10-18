@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Monitor, Calendar, User, CheckCircle, XCircle } from 'lucide-react';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import {
   Table,
   TableBody,
@@ -53,6 +54,7 @@ interface ActivityLog {
 }
 
 export default function SecurityLoginsPage() {
+  const { loading: authLoading } = useAdminAuth();
   const [loginActivities, setLoginActivities] = useState<LoginActivity[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,13 +62,17 @@ export default function SecurityLoginsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('admin_token');
+      
       if (activeTab === 'logins') {
-        const response = await fetch('/api/admin/activity/logins', {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/logins`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -75,9 +81,9 @@ export default function SecurityLoginsPage() {
         const data = await response.json();
         setLoginActivities(data.data || []);
       } else {
-        const response = await fetch('/api/admin/activity/logs', {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/logs`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -96,11 +102,14 @@ export default function SecurityLoginsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, toast]);
+  }, [activeTab, toast, API_BASE_URL]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading) {
+      fetchData();
+    }
+  }, [fetchData, authLoading]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
