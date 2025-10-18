@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { adminApi } from '@/lib/adminApi'
 import { toast } from '@/hooks/use-toast'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 
 interface Review {
   id: string
@@ -51,6 +52,7 @@ const handleApiError = (error: any, defaultMessage: string) => {
 }
 
 export default function ReviewManagementPage() {
+  const { loading: authLoading } = useAdminAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
@@ -90,8 +92,11 @@ export default function ReviewManagementPage() {
   }, [searchQuery, statusFilter, ratingFilter, page])
 
   useEffect(() => {
-    fetchReviews()
-  }, [fetchReviews])
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading) {
+      fetchReviews()
+    }
+  }, [fetchReviews, authLoading])
 
   const filteredReviews = reviews.filter((review) => {
     const customerName = review.customer?.user?.name || ''

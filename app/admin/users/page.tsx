@@ -57,7 +57,7 @@ const handleApiError = (error: any, defaultMessage: string) => {
 }
 
 export default function AdminUsersPage() {
-  const { admin } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [totalUsers, setTotalUsers] = useState(0)
@@ -95,8 +95,11 @@ export default function AdminUsersPage() {
   }, [currentPage, filters])
 
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading) {
+      fetchUsers()
+    }
+  }, [fetchUsers, authLoading])
 
   const handleCreateAdmin = async () => {
     if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {

@@ -93,7 +93,7 @@ interface Transaction {
 }
 
 export default function AdminPayments() {
-  const { admin } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -153,11 +153,12 @@ export default function AdminPayments() {
   }, [page, statusFilter, typeFilter, searchTerm, dateFilter])
 
   useEffect(() => {
-    if (admin) {
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading && admin) {
       fetchPaymentStats()
       fetchTransactions()
     }
-  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, admin, fetchPaymentStats, fetchTransactions])
+  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, admin, authLoading, fetchPaymentStats, fetchTransactions])
 
   const exportTransactions = async () => {
     try {

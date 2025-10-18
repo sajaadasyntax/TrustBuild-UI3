@@ -129,7 +129,7 @@ interface ContractorStats {
 }
 
 export default function AdminContractors() {
-  const { admin } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [pendingContractors, setPendingContractors] = useState<Contractor[]>([])
   const [stats, setStats] = useState<ContractorStats | null>(null)
@@ -164,13 +164,17 @@ export default function AdminContractors() {
 
   // Authentication check
   useEffect(() => {
+    if (authLoading) {
+      console.log('Waiting for authentication...')
+      return
+    }
     if (!admin) {
       console.log('Admin not authenticated')
       return
     }
 
     console.log('Admin authenticated, loading data...')
-  }, [admin])
+  }, [admin, authLoading])
 
   const fetchContractors = useCallback(async () => {
     try {
@@ -226,12 +230,13 @@ export default function AdminContractors() {
   }, [])
 
   useEffect(() => {
-    if (admin) {
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading && admin) {
       fetchContractors()
       fetchPendingContractors()
       fetchStats()
     }
-  }, [page, searchTerm, statusFilter, tierFilter, approvalFilter, admin, fetchContractors, fetchPendingContractors, fetchStats])
+  }, [page, searchTerm, statusFilter, tierFilter, approvalFilter, admin, authLoading, fetchContractors, fetchPendingContractors, fetchStats])
 
   const handleApproval = async (contractorId: string, approved: boolean, reason?: string) => {
     try {
