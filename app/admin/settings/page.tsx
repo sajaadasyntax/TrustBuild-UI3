@@ -47,20 +47,37 @@ export default function AdminSettingsPage() {
       if (!response.ok) throw new Error('Failed to fetch settings');
 
       const data = await response.json();
-      setSettings(data.data || []);
+      
+      // Backend returns data.settings as an object, not an array
+      const settingsObject = data.data?.settings || {};
+      
+      // Convert object to array for state
+      const settingsArray = Object.entries(settingsObject).map(([key, value]: [string, any]) => ({
+        key,
+        value: value.value,
+        updatedAt: value.updatedAt,
+        description: value.description
+      }));
+      
+      setSettings(settingsArray);
 
       // Populate form fields with existing values
-      data.data?.forEach((setting: Setting) => {
-        if (setting.key === 'COMMISSION_RATE') {
-          setCommissionRate(setting.value?.rate?.toString() || '5.0');
-        } else if (setting.key === 'SUBSCRIPTION_PRICING') {
-          setMonthlyPrice(setting.value?.monthly?.toString() || '99');
-          setSixMonthPrice(setting.value?.sixMonths?.toString() || '499');
-          setYearlyPrice(setting.value?.yearly?.toString() || '899');
-        } else if (setting.key === 'FREE_JOB_ALLOCATION') {
-          setFreeJobAllocation(setting.value?.defaultAllocation?.toString() || '0');
-        }
-      });
+      if (settingsObject['COMMISSION_RATE']) {
+        const commissionValue = settingsObject['COMMISSION_RATE'].value;
+        setCommissionRate(commissionValue?.rate?.toString() || '5.0');
+      }
+      
+      if (settingsObject['SUBSCRIPTION_PRICING']) {
+        const pricingValue = settingsObject['SUBSCRIPTION_PRICING'].value;
+        setMonthlyPrice(pricingValue?.monthly?.toString() || '99');
+        setSixMonthPrice(pricingValue?.sixMonths?.toString() || '499');
+        setYearlyPrice(pricingValue?.yearly?.toString() || '899');
+      }
+      
+      if (settingsObject['FREE_JOB_ALLOCATION']) {
+        const allocationValue = settingsObject['FREE_JOB_ALLOCATION'].value;
+        setFreeJobAllocation(allocationValue?.defaultAllocation?.toString() || '0');
+      }
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
@@ -83,7 +100,7 @@ export default function AdminSettingsPage() {
     setSaving(true);
     try {
       const response = await fetch(`${API_BASE_URL}/admin/settings/${key}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
