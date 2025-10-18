@@ -238,9 +238,11 @@ export default function FeaturedContractorsPage() {
                         onCheckedChange={() => handleToggleFeatured(contractor.id)}
                       />
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Profile
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/contractors/${contractor.id}`} target="_blank" rel="noopener noreferrer">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Profile
+                      </a>
                     </Button>
                   </div>
                 </div>
@@ -281,14 +283,6 @@ export default function FeaturedContractorsPage() {
                   <p className="text-xs text-muted-foreground">
                     Member since: {new Date(contractor.createdAt).toLocaleDateString('en-GB')}
                   </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      View Analytics
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Send Message
-                    </Button>
-                  </div>
                 </div>
               </CardContent>
             </Card>
