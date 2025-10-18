@@ -24,6 +24,38 @@ export const metadata: Metadata = {
   description: 'Find trusted contractors for your construction and renovation projects',
 };
 
+'use client'
+
+import { usePathname } from 'next/navigation'
+
+function RootLayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname()
+  const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/super-admin')
+
+  return (
+    <AuthProvider>
+      <RouteGuard>
+        <ThemeProvider attribute="class" defaultTheme="light">
+          <SplashProvider>
+            <ConditionalNavigation />
+            <main className="flex-1">
+              {children}
+            </main>
+            {!isAdminRoute && <SiteFooter />}
+            <Toaster />
+            {/* Add ResetSplash button for testing */}
+            <ResetSplash />
+          </SplashProvider>
+        </ThemeProvider>
+      </RouteGuard>
+    </AuthProvider>
+  )
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -32,22 +64,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans min-h-screen flex flex-col`} suppressHydrationWarning>
-        <AuthProvider>
-          <RouteGuard>
-            <ThemeProvider attribute="class" defaultTheme="light">
-              <SplashProvider>
-                <ConditionalNavigation />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <SiteFooter />
-                <Toaster />
-                {/* Add ResetSplash button for testing */}
-                <ResetSplash />
-              </SplashProvider>
-            </ThemeProvider>
-          </RouteGuard>
-        </AuthProvider>
+        <RootLayoutClient>
+          {children}
+        </RootLayoutClient>
       </body>
     </html>
   );

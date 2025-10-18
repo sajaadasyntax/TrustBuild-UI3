@@ -9,6 +9,13 @@ export function ConditionalNavigation() {
   const { user, loading } = useAuth()
   const pathname = usePathname()
 
+  // Admin and Super Admin routes should not show any navigation
+  // They have their own navigation/layout
+  const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/super-admin')
+  if (isAdminRoute) {
+    return null
+  }
+
   // Auth pages that should always show home navigation
   const authRoutes = ['/login', '/register', '/forgot-password']
   const isAuthRoute = authRoutes.includes(pathname)
