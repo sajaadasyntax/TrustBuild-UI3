@@ -79,7 +79,7 @@ export default function SecurityLoginsPage() {
         if (!response.ok) throw new Error('Failed to fetch login activities');
 
         const data = await response.json();
-        setLoginActivities(data.data || []);
+        setLoginActivities(data.data?.activities || []);
       } else {
         const response = await fetch(`${API_BASE_URL}/admin/activity/logs`, {
           headers: {
@@ -90,7 +90,7 @@ export default function SecurityLoginsPage() {
         if (!response.ok) throw new Error('Failed to fetch activity logs');
 
         const data = await response.json();
-        setActivityLogs(data.data || []);
+        setActivityLogs(data.data?.logs || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
