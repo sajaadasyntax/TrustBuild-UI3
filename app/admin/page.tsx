@@ -43,9 +43,13 @@ export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (only after auth check is complete)
   useEffect(() => {
-    if (!authLoading && !admin) {
+    // Don't redirect while still loading auth state
+    if (authLoading) return
+    
+    // Only redirect if we're sure there's no admin and no token
+    if (!admin && !localStorage.getItem('admin_token')) {
       router.push('/admin/login')
     }
   }, [admin, authLoading, router])
