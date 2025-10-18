@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,10 +37,18 @@ interface DashboardStats {
 }
 
 export default function AdminPage() {
-  const { admin, logout } = useAdminAuth()
+  const { admin, logout, loading: authLoading } = useAdminAuth()
   const { toast } = useToast()
+  const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !admin) {
+      router.push('/admin/login')
+    }
+  }, [admin, authLoading, router])
   
   // SUPER_ADMIN has all permissions by default
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
@@ -81,7 +90,8 @@ export default function AdminPage() {
     }
   }, [admin])
 
-  if (loading) {
+  // Show loading while checking authentication
+  if (authLoading || loading) {
     return (
       <div className="container py-32">
         <div className="flex items-center justify-center py-20">
@@ -90,6 +100,11 @@ export default function AdminPage() {
         </div>
       </div>
     )
+  }
+
+  // Don't render dashboard if not authenticated
+  if (!admin) {
+    return null
   }
 
   return (
