@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Star, Search, Eye, Award, TrendingUp } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,95 +12,123 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 
-// Mock data
-const mockContractors = [
-  {
-    id: "1",
-    name: "Smith & Sons Builders",
-    email: "contact@smithsons.co.uk",
-    rating: 4.9,
-    completedJobs: 156,
-    specialties: ["Kitchen Renovation", "Home Extensions"],
-    location: "London, UK",
-    isFeatured: true,
-    joinedDate: "2022-01-15",
-    revenue: 89500,
-  },
-  {
-    id: "2",
-    name: "Modern Interiors Ltd",
-    email: "info@moderninteriors.com",
-    rating: 4.8,
-    completedJobs: 143,
-    specialties: ["Bathroom Remodeling", "Interior Design"],
-    location: "Manchester, UK",
-    isFeatured: true,
-    joinedDate: "2022-03-20",
-    revenue: 76200,
-  },
-  {
-    id: "3",
-    name: "Elite Construction Co",
-    email: "hello@eliteconstruction.com",
-    rating: 4.8,
-    completedJobs: 134,
-    specialties: ["General Construction", "Commercial Work"],
-    location: "Birmingham, UK",
-    isFeatured: false,
-    joinedDate: "2021-11-10",
-    revenue: 92100,
-  },
-  {
-    id: "4",
-    name: "Premium Home Solutions",
-    email: "contact@premiumhome.co.uk",
-    rating: 4.7,
-    completedJobs: 128,
-    specialties: ["Luxury Renovations", "Custom Builds"],
-    location: "Leeds, UK",
-    isFeatured: true,
-    joinedDate: "2022-06-05",
-    revenue: 71800,
-  },
-  {
-    id: "5",
-    name: "Expert Renovations",
-    email: "info@expertrenovations.com",
-    rating: 4.7,
-    completedJobs: 122,
-    specialties: ["Home Renovations", "Restoration"],
-    location: "Bristol, UK",
-    isFeatured: false,
-    joinedDate: "2022-02-28",
-    revenue: 68900,
-  },
-]
+interface Contractor {
+  id: string
+  user: {
+    name: string
+    email: string
+  }
+  businessName?: string
+  averageRating: number
+  jobsCompleted: number
+  services?: Array<{ name: string }>
+  city?: string
+  featuredContractor: boolean
+  createdAt: string
+}
 
 export default function FeaturedContractorsPage() {
+  const { loading: authLoading } = useAdminAuth()
+  const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
-  const [contractors, setContractors] = useState(mockContractors)
+  const [contractors, setContractors] = useState<Contractor[]>([])
   const [filterFeatured, setFilterFeatured] = useState("all")
+  const [loading, setLoading] = useState(true)
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
+
+  const fetchContractors = useCallback(async () => {
+    if (authLoading) return
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/contractors`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+        },
+      })
+
+      if (!response.ok) throw new Error('Failed to fetch contractors')
+
+      const data = await response.json()
+      setContractors(data.data?.contractors || [])
+    } catch (error) {
+      console.error('Error fetching contractors:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load contractors',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [authLoading, API_BASE_URL, toast])
+
+  useEffect(() => {
+    fetchContractors()
+  }, [fetchContractors])
 
   const filteredContractors = contractors.filter((contractor) => {
-    const matchesSearch = contractor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contractor.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()))
+    const contractorName = contractor.businessName || contractor.user.name
+    const matchesSearch = contractorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contractor.services?.some(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
     const matchesFeatured = filterFeatured === "all" || 
-      (filterFeatured === "featured" && contractor.isFeatured) ||
-      (filterFeatured === "not_featured" && !contractor.isFeatured)
+      (filterFeatured === "featured" && contractor.featuredContractor) ||
+      (filterFeatured === "not_featured" && !contractor.featuredContractor)
     return matchesSearch && matchesFeatured
   })
 
-  const handleToggleFeatured = (contractorId: string) => {
-    setContractors(prev => 
-      prev.map(contractor => 
-        contractor.id === contractorId 
-          ? { ...contractor, isFeatured: !contractor.isFeatured }
-          : contractor
+  const handleToggleFeatured = async (contractorId: string) => {
+    const contractor = contractors.find(c => c.id === contractorId)
+    if (!contractor) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/contractors/${contractorId}/featured`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+        },
+        body: JSON.stringify({
+          featuredContractor: !contractor.featuredContractor
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update featured status')
+
+      // Update local state
+      setContractors(prev => 
+        prev.map(c => 
+          c.id === contractorId 
+            ? { ...c, featuredContractor: !c.featuredContractor }
+            : c
+        )
       )
-    )
+
+      toast({
+        title: 'Success',
+        description: `Contractor ${!contractor.featuredContractor ? 'featured' : 'unfeatured'} successfully`,
+      })
+    } catch (error) {
+      console.error('Error toggling featured status:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update featured status',
+        variant: 'destructive',
+      })
+    }
   }
 
-  const featuredCount = contractors.filter(c => c.isFeatured).length
+  const featuredCount = contractors.filter(c => c.featuredContractor).length
+
+  if (loading) {
+    return (
+      <div className="container py-32">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container py-32">
@@ -133,7 +163,7 @@ export default function FeaturedContractorsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-yellow-600">
-              {contractors.filter(c => c.rating >= 4.8).length}
+              {contractors.filter(c => c.averageRating >= 4.8).length}
             </div>
             <p className="text-sm text-muted-foreground">Top Rated (4.8+)</p>
           </CardContent>
@@ -141,7 +171,7 @@ export default function FeaturedContractorsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {contractors.filter(c => c.completedJobs >= 100).length}
+              {contractors.filter(c => c.jobsCompleted >= 100).length}
             </div>
             <p className="text-sm text-muted-foreground">High Volume (100+ jobs)</p>
           </CardContent>
@@ -175,88 +205,95 @@ export default function FeaturedContractorsPage() {
 
       {/* Contractors List */}
       <div className="space-y-4">
-        {filteredContractors.map((contractor) => (
-          <Card key={contractor.id} className={contractor.isFeatured ? "border-yellow-200 bg-yellow-50/30" : ""}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={`https://avatar.vercel.sh/${contractor.name}`} />
-                    <AvatarFallback>{contractor.name.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
+        {filteredContractors.map((contractor) => {
+          const contractorName = contractor.businessName || contractor.user.name
+          const contractorEmail = contractor.user.email
+          return (
+            <Card key={contractor.id} className={contractor.featuredContractor ? "border-yellow-200 bg-yellow-50/30" : ""}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={`https://avatar.vercel.sh/${contractorName}`} />
+                      <AvatarFallback>{contractorName.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        {contractorName}
+                        {contractor.featuredContractor && (
+                          <Badge variant="default" className="bg-yellow-500">
+                            <Star className="h-3 w-3 mr-1" />
+                            Featured
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription>{contractorEmail}</CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Featured</span>
+                      <Switch
+                        checked={contractor.featuredContractor}
+                        onCheckedChange={() => handleToggleFeatured(contractor.id)}
+                      />
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Profile
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {contractor.name}
-                      {contractor.isFeatured && (
-                        <Badge variant="default" className="bg-yellow-500">
-                          <Star className="h-3 w-3 mr-1" />
-                          Featured
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <CardDescription>{contractor.email}</CardDescription>
+                    <p className="text-sm font-medium">Rating</p>
+                    <p className="text-sm text-muted-foreground">⭐ {contractor.averageRating.toFixed(1)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Completed Jobs</p>
+                    <p className="text-sm text-muted-foreground">{contractor.jobsCompleted}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Location</p>
+                    <p className="text-sm text-muted-foreground">{contractor.city || 'Not specified'}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Featured</span>
-                    <Switch
-                      checked={contractor.isFeatured}
-                      onCheckedChange={() => handleToggleFeatured(contractor.id)}
-                    />
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium mb-2">Services</p>
+                  <div className="flex flex-wrap gap-2">
+                    {contractor.services && contractor.services.length > 0 ? (
+                      contractor.services.slice(0, 3).map((service) => (
+                        <Badge key={service.name} variant="outline">{service.name}</Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No services specified</span>
+                    )}
+                    {contractor.services && contractor.services.length > 3 && (
+                      <Badge variant="outline">+{contractor.services.length - 3} more</Badge>
+                    )}
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    View Profile
-                  </Button>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <p className="text-sm font-medium">Rating</p>
-                  <p className="text-sm text-muted-foreground">⭐ {contractor.rating}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Completed Jobs</p>
-                  <p className="text-sm text-muted-foreground">{contractor.completedJobs}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Revenue</p>
-                  <p className="text-sm text-muted-foreground">£{contractor.revenue.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Location</p>
-                  <p className="text-sm text-muted-foreground">{contractor.location}</p>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Specialties</p>
-                <div className="flex flex-wrap gap-2">
-                  {contractor.specialties.map((specialty) => (
-                    <Badge key={specialty} variant="outline">{specialty}</Badge>
-                  ))}
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Member since: {contractor.joinedDate}
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    View Analytics
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Send Message
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Member since: {new Date(contractor.createdAt).toLocaleDateString('en-GB')}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      View Analytics
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      Send Message
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {filteredContractors.length === 0 && (

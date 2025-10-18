@@ -18,7 +18,8 @@ import {
   FileText,
   Users,
   BarChart3,
-  CreditCard
+  CreditCard,
+  Award
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,6 +58,7 @@ export function DashboardNavigation() {
     } else if (user?.role === "CUSTOMER") {
       return [
         ...baseItems,
+        { label: "Featured Contractors", href: "/dashboard/featured-contractors", icon: Award },
         { label: "Post Job", href: "/post-job", icon: Briefcase },
         { label: "My Jobs", href: "/dashboard/client/current-jobs", icon: FileText },
         { label: "Reviews", href: "/dashboard/client/reviews", icon: Star },
