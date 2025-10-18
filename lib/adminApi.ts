@@ -178,6 +178,65 @@ export const adminApi = {
     });
     return response;
   },
+
+  // Get all contractors with filters
+  getAllContractors: async (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const response = await adminApiRequest<any>(`/admin/contractors?${queryParams}`);
+    return response;
+  },
+
+  // Get pending contractors
+  getPendingContractors: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    const response = await adminApiRequest<any>(`/admin/contractors/pending?${queryParams}`);
+    return response;
+  },
+
+  // Get contractor statistics
+  getContractorStats: async () => {
+    const response = await adminApiRequest<any>('/admin/contractors/stats');
+    return response;
+  },
+
+  // Approve/reject contractor
+  approveContractor: async (contractorId: string, approved: boolean, reason?: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/approve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ approved, reason }),
+    });
+    return response;
+  },
+
+  // Update contractor status
+  updateContractorStatus: async (contractorId: string, status: string, reason?: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, reason }),
+    });
+    return response;
+  },
+
+  // Adjust contractor credits
+  adjustContractorCredits: async (contractorId: string, amount: number, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/credits`, {
+      method: 'PATCH',
+      body: JSON.stringify({ amount, reason }),
+    });
+    return response;
+  },
 };
 
 export default adminApi;

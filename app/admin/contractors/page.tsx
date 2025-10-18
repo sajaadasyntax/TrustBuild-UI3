@@ -36,8 +36,6 @@ import {
   Minus,
   History
 } from 'lucide-react'
-import { contractorsApi, adminApi, handleApiError, Contractor } from '@/lib/api'
-import { useAuth } from '@/contexts/AuthContext'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { toast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -65,6 +62,37 @@ import {
 } from "@/components/ui/table"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { adminApi } from '@/lib/adminApi'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
+import { toast } from '@/hooks/use-toast'
+
+interface Contractor {
+  id: string
+  userId: string
+  businessName: string
+  contactName: string
+  email: string
+  phone: string
+  serviceArea: string
+  specialties: string[]
+  rating: number
+  totalJobs: number
+  activeJobs: number
+  completionRate: number
+  isApproved: boolean
+  isActive: boolean
+  subscriptionStatus: string
+  createdAt: string
+}
+
+const handleApiError = (error: any, defaultMessage: string) => {
+  console.error('API Error:', error)
+  toast({
+    title: "Error",
+    description: error.message || defaultMessage,
+    variant: "destructive",
+  })
+}
 
 interface ContractorStats {
   totalContractors: number;
@@ -81,7 +109,7 @@ interface ContractorStats {
 }
 
 export default function AdminContractors() {
-  const { user, isAuthenticated } = useAuth()
+  const { admin } = useAdminAuth()
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [pendingContractors, setPendingContractors] = useState<Contractor[]>([])
   const [stats, setStats] = useState<ContractorStats | null>(null)
