@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -67,7 +67,7 @@ export default function AdminPage() {
     }
   }
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     try {
       setLoading(true)
       const dashboardData = await adminApi.getDashboardStats()
@@ -82,13 +82,13 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
   useEffect(() => {
     if (admin) {
       fetchDashboardStats()
     }
-  }, [admin])
+  }, [admin, fetchDashboardStats])
 
   // Show loading while checking authentication
   if (authLoading || loading) {
