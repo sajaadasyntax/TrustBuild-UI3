@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Search, Star, Eye, AlertTriangle, CheckCircle, X, Flag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,11 +49,7 @@ export default function ReviewManagementPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [moderatingReviews, setModeratingReviews] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    fetchReviews()
-  }, [searchQuery, statusFilter, ratingFilter, page])
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
       const params: any = {
@@ -74,7 +70,11 @@ export default function ReviewManagementPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, statusFilter, ratingFilter, page])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const filteredReviews = reviews.filter((review) => {
     const customerName = review.customer?.user?.name || ''

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -60,11 +60,7 @@ export default function SecurityLoginsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === 'logins') {
@@ -100,7 +96,11 @@ export default function SecurityLoginsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
