@@ -15,6 +15,12 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
+    // Admin and Super Admin routes have their own auth handling via AdminAuthContext
+    // Skip RouteGuard checks for these routes entirely
+    if (pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
+      return
+    }
+
     // Don't redirect while still loading auth state
     if (loading) return
 
@@ -130,6 +136,11 @@ export function RouteGuard({ children }: RouteGuardProps) {
     setIsRedirecting(false)
   }, [user, loading, pathname, router])
 
+  // Admin routes bypass RouteGuard - let them render immediately
+  if (pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
+    return <>{children}</>
+  }
+
   // Show loading while checking auth or redirecting
   if (loading || isRedirecting) {
     return (
@@ -148,7 +159,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const publicRoutes = [
     '/login',
     '/register',
-    '/admin/login', // Admin login should be accessible without auth
     '/forgot-password',
     '/',
     '/about',
@@ -170,8 +180,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
     '/dashboard',
     '/dashboard/contractor',
     '/dashboard/client',
-    '/admin',
-    '/super-admin',
     '/post-job'
   ]
 
@@ -185,7 +193,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting to login...</p>
+          <p className="text-muted-foreground">User not authenticated, redirecting...</p>
         </div>
       </div>
     )
