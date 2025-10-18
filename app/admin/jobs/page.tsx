@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
 
 interface JobStats {
   totalJobs: number;
@@ -26,6 +27,7 @@ interface JobStats {
 }
 
 export default function JobOversightPage() {
+  const { loading: authLoading } = useAdminAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [stats, setStats] = useState<JobStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,12 +98,19 @@ export default function JobOversightPage() {
   }
 
   useEffect(() => {
-    fetchJobs()
-  }, [fetchJobs])
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading) {
+      fetchJobs()
+    }
+  }, [fetchJobs, authLoading])
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    // Wait for authentication to be ready before fetching stats
+    if (!authLoading) {
+      fetchStats()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading])
 
   const handleStatusUpdate = async (jobId: string, newStatus: string) => {
     try {
