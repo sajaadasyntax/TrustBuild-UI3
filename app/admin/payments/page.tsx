@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -108,14 +108,7 @@ export default function AdminPayments() {
   const [showTransactionDialog, setShowTransactionDialog] = useState(false)
   const [exporting, setExporting] = useState(false)
 
-  useEffect(() => {
-    if (admin) {
-      fetchPaymentStats()
-      fetchTransactions()
-    }
-  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, admin])
-
-  const fetchPaymentStats = async () => {
+  const fetchPaymentStats = useCallback(async () => {
     try {
       setStatsLoading(true)
       // Use real API to fetch payment statistics
@@ -131,9 +124,9 @@ export default function AdminPayments() {
     } finally {
       setStatsLoading(false)
     }
-  }
+  }, [])
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true)
       // Use real API to fetch payment transactions
@@ -157,7 +150,14 @@ export default function AdminPayments() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, statusFilter, typeFilter, searchTerm, dateFilter])
+
+  useEffect(() => {
+    if (admin) {
+      fetchPaymentStats()
+      fetchTransactions()
+    }
+  }, [page, searchTerm, statusFilter, typeFilter, dateFilter, admin, fetchPaymentStats, fetchTransactions])
 
   const exportTransactions = async () => {
     try {
@@ -265,7 +265,7 @@ export default function AdminPayments() {
     )
   }
 
-  if (admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN') {
+  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE_ADMIN') {
     return (
       <div className="container mx-auto p-6">
         <Card>

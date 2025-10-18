@@ -57,7 +57,7 @@ export default function JobOversightPage() {
   const [assigning, setAssigning] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState<string>('')
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true)
       const params: any = {
@@ -84,7 +84,7 @@ export default function JobOversightPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, statusFilter, categoryFilter, flaggedFilter, searchQuery])
 
   const fetchStats = async () => {
     try {
@@ -97,7 +97,7 @@ export default function JobOversightPage() {
 
   useEffect(() => {
     fetchJobs()
-  }, [currentPage, statusFilter, categoryFilter, flaggedFilter, searchQuery])
+  }, [fetchJobs])
 
   useEffect(() => {
     fetchStats()

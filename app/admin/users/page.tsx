@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -75,11 +75,7 @@ export default function AdminUsersPage() {
   })
   const [creatingAdmin, setCreatingAdmin] = useState(false)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [currentPage, filters])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
       const response = await adminApi.getAllUsers({
@@ -94,7 +90,11 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, filters])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleCreateAdmin = async () => {
     if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {
@@ -108,7 +108,10 @@ export default function AdminUsersPage() {
 
     try {
       setCreatingAdmin(true)
-      await adminApi.createAdmin(newAdmin)
+      await adminApi.createAdmin({
+        ...newAdmin,
+        role: 'ADMIN'
+      })
       
       toast({
         title: "Admin Created",

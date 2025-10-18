@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,11 +50,7 @@ export default function AdminKYCPage() {
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchKYCRecords();
-  }, []);
-
-  const fetchKYCRecords = async () => {
+  const fetchKYCRecords = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/kyc', {
         headers: {
@@ -76,7 +72,11 @@ export default function AdminKYCPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchKYCRecords();
+  }, [fetchKYCRecords]);
 
   const handleReview = (kyc: KYCRecord, action: 'approve' | 'reject') => {
     setSelectedKYC(kyc);

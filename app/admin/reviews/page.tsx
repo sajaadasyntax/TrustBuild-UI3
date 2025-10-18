@@ -16,6 +16,7 @@ interface Review {
   rating: number
   comment: string
   createdAt: string
+  isVerified: boolean
   job: {
     title: string
   }
@@ -77,7 +78,7 @@ export default function ReviewManagementPage() {
 
   const filteredReviews = reviews.filter((review) => {
     const customerName = review.customer?.user?.name || ''
-    const contractorName = review.contractor?.user?.name || ''
+    const contractorName = review.contractor?.businessName || ''
     const comment = review.comment || ''
     const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contractorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -252,7 +253,7 @@ export default function ReviewManagementPage() {
       <div className="space-y-4">
         {filteredReviews.map((review) => {
           const customerName = review.customer?.user?.name || 'Unknown Customer'
-          const contractorName = review.contractor?.user?.name || 'Unknown Contractor'
+          const contractorName = review.contractor?.businessName || 'Unknown Contractor'
           const jobTitle = review.job?.title || 'Unknown Job'
           const date = review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''
           return (
