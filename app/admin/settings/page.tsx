@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface Setting {
@@ -16,10 +17,13 @@ interface Setting {
 }
 
 export default function AdminSettingsPage() {
+  const { loading: authLoading } = useAdminAuth();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
 
   // Commission settings
   const [commissionRate, setCommissionRate] = useState('5.0');
@@ -34,9 +38,9 @@ export default function AdminSettingsPage() {
 
   const fetchSettings = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/settings', {
+      const response = await fetch(`${API_BASE_URL}/admin/settings`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
       });
 
@@ -67,20 +71,22 @@ export default function AdminSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, API_BASE_URL]);
 
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    if (!authLoading) {
+      fetchSettings();
+    }
+  }, [fetchSettings, authLoading]);
 
   const updateSetting = async (key: string, value: any) => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/admin/settings/${key}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/settings/${key}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
         body: JSON.stringify({ value }),
       });
