@@ -42,6 +42,7 @@ const handleApiError = (error: any, defaultMessage: string) => {
 }
 
 export default function FinalPriceConfirmationsPage() {
+  const { loading: authLoading } = useAdminAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -50,8 +51,12 @@ export default function FinalPriceConfirmationsPage() {
   const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
-    fetchJobs()
-  }, [])
+    // Wait for authentication to be ready before fetching data
+    if (!authLoading) {
+      fetchJobs()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading])
 
   const fetchJobs = async () => {
     try {

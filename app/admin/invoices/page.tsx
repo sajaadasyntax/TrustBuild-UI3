@@ -67,7 +67,7 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { DateRange } from "react-day-picker"
 
 export default function AdminInvoicesPage() {
-  const { admin } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
   const { toast } = useToast()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,6 +83,11 @@ export default function AdminInvoicesPage() {
   })
 
   const fetchInvoices = useCallback(async () => {
+    // Don't make API calls while authentication is loading
+    if (authLoading) {
+      return
+    }
+    
     if (!admin) {
       toast({
         title: "Access Denied",
@@ -119,7 +124,7 @@ export default function AdminInvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }, [admin, pagination.page, pagination.limit, status, type, dateRange, searchTerm, toast])
+  }, [admin, authLoading, pagination.page, pagination.limit, status, type, dateRange, searchTerm, toast])
 
   useEffect(() => {
     fetchInvoices()
