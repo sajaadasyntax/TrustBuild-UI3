@@ -33,12 +33,31 @@ import {
   UserPlus, Search, Filter, Eye, Shield, UserCheck, UserX, Trash2, 
   RefreshCw, Users, Crown
 } from "lucide-react"
-import { adminApi, handleApiError, User } from '@/lib/api'
+import { adminApi } from '@/lib/adminApi'
 import { toast } from '@/hooks/use-toast'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
+
+// Type definitions
+interface User {
+  id: string
+  name: string
+  email: string
+  role: 'CUSTOMER' | 'CONTRACTOR' | 'ADMIN' | 'SUPER_ADMIN'
+  isActive: boolean
+  createdAt: string
+}
+
+const handleApiError = (error: any, defaultMessage: string) => {
+  console.error('API Error:', error)
+  toast({
+    title: "Error",
+    description: error.message || defaultMessage,
+    variant: "destructive",
+  })
+}
 
 export default function AdminUsersPage() {
-  const { user } = useAuth()
+  const { admin } = useAdminAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [totalUsers, setTotalUsers] = useState(0)
@@ -155,7 +174,7 @@ export default function AdminUsersPage() {
             </p>
           </div>
           
-          {user?.role === 'SUPER_ADMIN' && (
+          {admin?.role === 'SUPER_ADMIN' && (
             <Dialog open={showCreateAdmin} onOpenChange={setShowCreateAdmin}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">

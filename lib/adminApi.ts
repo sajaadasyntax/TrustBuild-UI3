@@ -151,6 +151,33 @@ export const adminApi = {
     const response = await adminApiRequest<any>(`/admin-activity/login-activities?${queryParams}`);
     return response.data;
   },
+
+  // Get all users with filters and pagination
+  getAllUsers: async (params?: { 
+    page?: number; 
+    limit?: number; 
+    role?: string;
+    status?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.role) queryParams.append('role', params.role);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const response = await adminApiRequest<any>(`/admin/users?${queryParams}`);
+    return response;
+  },
+
+  // Manage user (activate, deactivate, delete)
+  manageUser: async (userId: string, action: 'activate' | 'deactivate' | 'delete') => {
+    const response = await adminApiRequest<any>(`/admin/users/${userId}/${action}`, {
+      method: action === 'delete' ? 'DELETE' : 'PATCH',
+    });
+    return response;
+  },
 };
 
 export default adminApi;
