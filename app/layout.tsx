@@ -1,5 +1,6 @@
+'use client'
+
 import './globals.css';
-import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,6 +10,7 @@ import { ConditionalNavigation } from '@/components/layout/conditional-navigatio
 import { SiteFooter } from '@/components/layout/site-footer';
 import dynamic from 'next/dynamic';
 import { RouteGuard } from "@/components/auth/route-guard"
+import { usePathname } from 'next/navigation'
 
 // Import ResetSplash component with no SSR to avoid hydration issues
 const ResetSplash = dynamic(() => import('@/components/ResetSplash'), { ssr: false });
@@ -18,15 +20,6 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
 });
-
-export const metadata: Metadata = {
-  title: 'TrustBuild - Connect with Professional Contractors',
-  description: 'Find trusted contractors for your construction and renovation projects',
-};
-
-'use client'
-
-import { usePathname } from 'next/navigation'
 
 function RootLayoutClient({
   children,
