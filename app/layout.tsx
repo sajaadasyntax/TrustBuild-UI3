@@ -21,7 +21,7 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
-function RootLayoutClient({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -30,36 +30,24 @@ function RootLayoutClient({
   const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/super-admin')
 
   return (
-    <AuthProvider>
-      <RouteGuard>
-        <ThemeProvider attribute="class" defaultTheme="light">
-          <SplashProvider>
-            <ConditionalNavigation />
-            <main className="flex-1">
-              {children}
-            </main>
-            {!isAdminRoute && <SiteFooter />}
-            <Toaster />
-            {/* Add ResetSplash button for testing */}
-            <ResetSplash />
-          </SplashProvider>
-        </ThemeProvider>
-      </RouteGuard>
-    </AuthProvider>
-  )
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans min-h-screen flex flex-col`} suppressHydrationWarning>
-        <RootLayoutClient>
-          {children}
-        </RootLayoutClient>
+        <AuthProvider>
+          <RouteGuard>
+            <ThemeProvider attribute="class" defaultTheme="light">
+              <SplashProvider>
+                <ConditionalNavigation />
+                <main className="flex-1">
+                  {children}
+                </main>
+                {!isAdminRoute && <SiteFooter />}
+                <Toaster />
+                {/* Add ResetSplash button for testing */}
+                <ResetSplash />
+              </SplashProvider>
+            </ThemeProvider>
+          </RouteGuard>
+        </AuthProvider>
       </body>
     </html>
   );
