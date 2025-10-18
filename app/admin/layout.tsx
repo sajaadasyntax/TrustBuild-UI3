@@ -1,6 +1,7 @@
 "use client"
 
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
+import { AdminNavigation } from '@/components/layout/admin-navigation'
 
 export default function AdminLayout({
   children,
@@ -9,6 +10,7 @@ export default function AdminLayout({
 }) {
   return (
     <AdminAuthProvider>
+      <AdminNavigation />
       {children}
     </AdminAuthProvider>
   )

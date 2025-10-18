@@ -17,6 +17,8 @@ async function adminApiRequest<T>(
 ): Promise<T> {
   const token = getAdminToken();
   
+  console.log(`🌐 AdminAPI: Request to ${endpoint}`, { hasToken: !!token });
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -24,18 +26,27 @@ async function adminApiRequest<T>(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.warn('🌐 AdminAPI: No token available for request');
   }
 
   const url = `${BASE_URL}${endpoint}`;
+  
+  console.log(`🌐 AdminAPI: Fetching ${url}`);
   
   const response = await fetch(url, {
     ...options,
     headers,
   });
 
+  console.log(`🌐 AdminAPI: Response status ${response.status} for ${endpoint}`);
+
   const data = await response.json();
+  
+  console.log(`🌐 AdminAPI: Response data for ${endpoint}:`, data);
 
   if (!response.ok) {
+    console.error(`🌐 AdminAPI: Error response:`, data);
     throw new Error(data.message || 'API request failed');
   }
 

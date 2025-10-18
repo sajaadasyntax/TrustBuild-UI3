@@ -73,26 +73,33 @@ export default function AdminPage() {
 
   const fetchDashboardStats = useCallback(async () => {
     try {
+      console.log('📊 Dashboard: Fetching stats...')
       setLoading(true)
       const dashboardData = await adminApi.getDashboardStats()
+      console.log('📊 Dashboard: Stats received:', dashboardData)
       setStats(dashboardData)
     } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error)
+      console.error('📊 Dashboard: Failed to fetch stats:', error)
       toast({
         title: "Error",
-        description: "Failed to fetch dashboard statistics",
+        description: error instanceof Error ? error.message : "Failed to fetch dashboard statistics",
         variant: "destructive",
       })
     } finally {
       setLoading(false)
+      console.log('📊 Dashboard: Fetch complete')
     }
   }, [toast])
 
   useEffect(() => {
+    console.log('📊 Dashboard: useEffect triggered', { admin: !!admin, authLoading })
     if (admin) {
+      console.log('📊 Dashboard: Admin exists, fetching stats')
       fetchDashboardStats()
+    } else {
+      console.log('📊 Dashboard: No admin yet')
     }
-  }, [admin, fetchDashboardStats])
+  }, [admin, fetchDashboardStats, authLoading])
 
   // Show loading while checking authentication OR if we have a token but no admin yet
   if (authLoading || (loading && localStorage.getItem('admin_token'))) {

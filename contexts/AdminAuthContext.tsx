@@ -61,7 +61,10 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
     const initializeAuth = async () => {
       const token = getStoredToken();
       
+      console.log('🔐 AdminAuth: Initializing...', { hasToken: !!token });
+      
       if (!token) {
+        console.log('🔐 AdminAuth: No token found');
         setLoading(false);
         return;
       }
@@ -69,25 +72,34 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
         const baseUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`;
+        const url = `${baseUrl}/admin-auth/me`;
+        
+        console.log('🔐 AdminAuth: Fetching admin data from:', url);
 
-        const response = await fetch(`${baseUrl}/admin-auth/me`, {
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
 
+        console.log('🔐 AdminAuth: Response status:', response.status);
+
         if (!response.ok) {
-          throw new Error('Authentication failed');
+          const errorData = await response.json();
+          console.error('🔐 AdminAuth: Response not OK:', errorData);
+          throw new Error(errorData.message || 'Authentication failed');
         }
 
         const data = await response.json();
+        console.log('🔐 AdminAuth: Success! Admin data:', data.data.admin);
         setAdmin(data.data.admin);
       } catch (error) {
-        console.error('Admin auth initialization error:', error);
+        console.error('🔐 AdminAuth: Initialization error:', error);
         clearAllTokens();
         setAdmin(null);
       } finally {
         setLoading(false);
+        console.log('🔐 AdminAuth: Initialization complete');
       }
     };
 
