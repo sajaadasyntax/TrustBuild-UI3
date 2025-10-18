@@ -52,9 +52,11 @@ export default function AdminKYCPage() {
   const [processing, setProcessing] = useState(false);
   const { toast } = useToast();
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
+
   const fetchKYCRecords = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/kyc/queue', {
+      const response = await fetch(`${API_BASE_URL}/admin/kyc/queue`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
@@ -74,7 +76,7 @@ export default function AdminKYCPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, API_BASE_URL]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -95,8 +97,8 @@ export default function AdminKYCPage() {
     setProcessing(true);
     try {
       const endpoint = reviewAction === 'approve' 
-        ? `/api/admin/kyc/${selectedKYC.id}/approve`
-        : `/api/admin/kyc/${selectedKYC.id}/reject`;
+        ? `${API_BASE_URL}/admin/kyc/${selectedKYC.id}/approve`
+        : `${API_BASE_URL}/admin/kyc/${selectedKYC.id}/reject`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
