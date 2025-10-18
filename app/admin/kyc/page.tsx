@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, Eye } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +42,7 @@ interface KYCRecord {
 }
 
 export default function AdminKYCPage() {
+  const { loading: authLoading } = useAdminAuth();
   const [kycRecords, setKycRecords] = useState<KYCRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedKYC, setSelectedKYC] = useState<KYCRecord | null>(null);
@@ -52,16 +54,16 @@ export default function AdminKYCPage() {
 
   const fetchKYCRecords = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/kyc', {
+      const response = await fetch('/api/admin/kyc/queue', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
       });
 
       if (!response.ok) throw new Error('Failed to fetch KYC records');
 
       const data = await response.json();
-      setKycRecords(data.data || []);
+      setKycRecords(data.data?.kycRecords || []);
     } catch (error) {
       console.error('Error fetching KYC records:', error);
       toast({
@@ -75,8 +77,10 @@ export default function AdminKYCPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchKYCRecords();
-  }, [fetchKYCRecords]);
+    if (!authLoading) {
+      fetchKYCRecords();
+    }
+  }, [fetchKYCRecords, authLoading]);
 
   const handleReview = (kyc: KYCRecord, action: 'approve' | 'reject') => {
     setSelectedKYC(kyc);
@@ -98,7 +102,7 @@ export default function AdminKYCPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
         body: JSON.stringify({ notes: reviewNotes }),
       });
