@@ -245,6 +245,12 @@ export const adminApi = {
     return response;
   },
 
+  // Get job by ID
+  getJobById: async (jobId: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}`);
+    return response;
+  },
+
   // Get job statistics
   getJobStats: async () => {
     const response = await adminApiRequest<any>('/admin/jobs/stats');
@@ -332,6 +338,15 @@ export const adminApi = {
     const response = await adminApiRequest<any>(`/admin/content/${type}/${id}/moderate`, {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+    return response;
+  },
+
+  // Flag content
+  flagContent: async (type: string, id: string, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/content/${type}/${id}/flag`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
     return response;
   },

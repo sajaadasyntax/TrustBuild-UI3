@@ -8,6 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { adminApi } from '@/lib/adminApi'
 import { toast } from '@/hooks/use-toast'
 
@@ -18,6 +28,7 @@ interface Review {
   createdAt: string
   isVerified: boolean
   job: {
+    id: string
     title: string
   }
   customer: {
@@ -48,6 +59,12 @@ export default function ReviewManagementPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [moderatingReviews, setModeratingReviews] = useState<Set<string>>(new Set())
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
+  const [jobDetails, setJobDetails] = useState<any>(null)
+  const [loadingJobDetails, setLoadingJobDetails] = useState(false)
+  const [showFlagDialog, setShowFlagDialog] = useState(false)
+  const [reviewToFlag, setReviewToFlag] = useState<string | null>(null)
+  const [flagReason, setFlagReason] = useState("")
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -136,6 +153,59 @@ export default function ReviewManagementPage() {
         newSet.delete(reviewId)
         return newSet
       })
+    }
+  }
+
+  const handleViewJobDetails = async (jobId: string) => {
+    setSelectedJobId(jobId)
+    setLoadingJobDetails(true)
+    
+    try {
+      const response = await adminApi.getJobById(jobId)
+      setJobDetails(response.data)
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch job details')
+      setSelectedJobId(null)
+    } finally {
+      setLoadingJobDetails(false)
+    }
+  }
+
+  const closeJobDialog = () => {
+    setSelectedJobId(null)
+    setJobDetails(null)
+  }
+
+  const handleOpenFlagDialog = (reviewId: string) => {
+    setReviewToFlag(reviewId)
+    setShowFlagDialog(true)
+    setFlagReason("")
+  }
+
+  const handleFlagReview = async () => {
+    if (!reviewToFlag || !flagReason.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a reason for flagging this review",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await adminApi.flagContent('review', reviewToFlag, flagReason)
+      
+      toast({
+        title: "Review Flagged",
+        description: "The review has been flagged successfully",
+      })
+      
+      setShowFlagDialog(false)
+      setReviewToFlag(null)
+      setFlagReason("")
+      fetchReviews()
+    } catch (error) {
+      handleApiError(error, 'Failed to flag review')
     }
   }
 
@@ -285,10 +355,23 @@ export default function ReviewManagementPage() {
               <CardContent>
                 <p className="text-sm mb-4">{review.comment}</p>
                 {/* No flagged reason block, as Review type has no flagReason */}
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewJobDetails(review.job.id)}
+                  >
                     <Eye className="h-4 w-4 mr-1" />
                     View Job Details
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleOpenFlagDialog(review.id)}
+                    className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
+                  >
+                    <Flag className="h-4 w-4 mr-1" />
+                    Flag Review
                   </Button>
                   {!review.isVerified && (
                     <>
@@ -324,6 +407,99 @@ export default function ReviewManagementPage() {
           <p className="text-muted-foreground">No reviews found matching your criteria.</p>
         </div>
       )}
+
+      {/* Flag Review Dialog */}
+      <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Flag Review</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for flagging this review. This will help other admins understand the issue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="flagReason">Reason for Flagging</Label>
+              <Textarea
+                id="flagReason"
+                placeholder="e.g., Inappropriate language, spam, fake review, etc."
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowFlagDialog(false)
+                setFlagReason("")
+                setReviewToFlag(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleFlagReview}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Flag Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Job Details Dialog */}
+      <Dialog open={!!selectedJobId} onOpenChange={(open) => !open && closeJobDialog()}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Job Details</DialogTitle>
+            <DialogDescription>
+              View complete job information
+            </DialogDescription>
+          </DialogHeader>
+          {loadingJobDetails ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : jobDetails ? (
+            <div className="space-y-4">
+              <div>
+                <Label>Job Title</Label>
+                <p className="text-sm font-medium">{jobDetails.title}</p>
+              </div>
+              <div>
+                <Label>Description</Label>
+                <p className="text-sm">{jobDetails.description || 'No description provided'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <p className="text-sm">
+                    <Badge>{jobDetails.status}</Badge>
+                  </p>
+                </div>
+                <div>
+                  <Label>Budget</Label>
+                  <p className="text-sm">${jobDetails.budget}</p>
+                </div>
+              </div>
+              <div>
+                <Label>Location</Label>
+                <p className="text-sm">{jobDetails.location || 'Not specified'}</p>
+              </div>
+              <div>
+                <Label>Created</Label>
+                <p className="text-sm">{jobDetails.createdAt ? new Date(jobDetails.createdAt).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No job details available</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
