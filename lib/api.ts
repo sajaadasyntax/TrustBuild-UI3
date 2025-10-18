@@ -386,7 +386,8 @@ export class ApiError extends Error {
 // Token management
 const getStoredToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+  // Check for admin token first (for admin routes), then fall back to regular auth token
+  return localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
 };
 
 const setStoredToken = (token: string): void => {
