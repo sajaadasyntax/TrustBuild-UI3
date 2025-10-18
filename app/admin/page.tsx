@@ -94,8 +94,8 @@ export default function AdminPage() {
     }
   }, [admin, fetchDashboardStats])
 
-  // Show loading while checking authentication
-  if (authLoading || loading) {
+  // Show loading while checking authentication OR if we have a token but no admin yet
+  if (authLoading || (loading && localStorage.getItem('admin_token'))) {
     return (
       <div className="container py-32">
         <div className="flex items-center justify-center py-20">
@@ -106,8 +106,8 @@ export default function AdminPage() {
     )
   }
 
-  // Don't render dashboard if not authenticated
-  if (!admin) {
+  // Don't render dashboard if not authenticated (but only if auth check is complete)
+  if (!admin && !authLoading) {
     return null
   }
 

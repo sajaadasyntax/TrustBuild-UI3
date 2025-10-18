@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -25,9 +25,16 @@ type FormData = z.infer<typeof formSchema>
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { login } = useAdminAuth()
+  const { login, admin, loading: authLoading } = useAdminAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!authLoading && admin) {
+      router.push('/admin')
+    }
+  }, [admin, authLoading, router])
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -59,9 +66,9 @@ export default function AdminLoginPage() {
         description: "Successfully logged in to admin portal",
       })
 
-      // Redirect to admin dashboard
-      router.push('/admin')
-      router.refresh()
+      // Use window.location to force a full page reload with new auth state
+      // This ensures the AdminAuthContext re-initializes with the new token
+      window.location.href = '/admin'
 
     } catch (error) {
       console.error('Admin login error:', error)
