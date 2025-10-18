@@ -58,7 +58,8 @@ export const adminApi = {
   // Get dashboard stats
   getDashboardStats: async () => {
     const response = await adminApiRequest<any>('/admin/dashboard');
-    return response.data || response;
+    console.log('🎯 getDashboardStats: Returning', response.data?.stats || response.data || response);
+    return response.data?.stats || response.data || response;
   },
 
   // Get admin profile
