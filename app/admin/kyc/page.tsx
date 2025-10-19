@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,11 +70,7 @@ export default function AdminKycPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionNotes, setRejectionNotes] = useState('');
 
-  useEffect(() => {
-    fetchKycs();
-  }, [activeTab]);
-
-  const fetchKycs = async () => {
+  const fetchKycs = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -99,7 +95,11 @@ export default function AdminKycPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchKycs();
+  }, [fetchKycs]);
 
   const handleApprove = async () => {
     if (!selectedKyc) return;
