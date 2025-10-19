@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { adminApi, handleApiError } from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
 
 interface FlaggedItem {
   id: string
@@ -35,6 +36,7 @@ interface FlaggedItem {
 
 export default function FlaggedContentPage() {
   const { toast } = useToast()
+  const { admin, loading: authLoading } = useAdminAuth()
   const [loading, setLoading] = useState(true)
   const [content, setContent] = useState<FlaggedItem[]>([])
   const [filteredContent, setFilteredContent] = useState<FlaggedItem[]>([])
@@ -43,8 +45,11 @@ export default function FlaggedContentPage() {
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    fetchFlaggedContent()
-  }, [])
+    // Only fetch when admin auth is complete and admin is authenticated
+    if (!authLoading && admin) {
+      fetchFlaggedContent()
+    }
+  }, [authLoading, admin])
 
   useEffect(() => {
     filterContent()
@@ -55,7 +60,11 @@ export default function FlaggedContentPage() {
       setLoading(true)
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
       const baseUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('admin_token') // Use correct token name from AdminAuthContext
+
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
 
       const response = await fetch(`${baseUrl}/admin/content/flagged`, {
         headers: {
@@ -103,7 +112,11 @@ export default function FlaggedContentPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
       const baseUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`
-      const token = localStorage.getItem('adminToken')
+      const token = localStorage.getItem('admin_token') // Use correct token name from AdminAuthContext
+
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
 
       const response = await fetch(`${baseUrl}/admin/content/${itemType}/${itemId}/moderate`, {
         method: 'PATCH',
@@ -156,13 +169,29 @@ export default function FlaggedContentPage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container py-32">
         <div className="flex items-center justify-center py-20">
           <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading flagged content...</span>
+          <span className="ml-2">{authLoading ? 'Authenticating...' : 'Loading flagged content...'}</span>
         </div>
+      </div>
+    )
+  }
+
+  if (!admin) {
+    return (
+      <div className="container py-32">
+        <Card>
+          <CardContent className="py-20 text-center">
+            <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
+            <p className="text-muted-foreground">
+              You must be logged in as an admin to view this page.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
