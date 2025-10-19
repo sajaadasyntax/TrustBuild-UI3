@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -129,6 +130,7 @@ interface ContractorStats {
 }
 
 export default function AdminContractors() {
+  const router = useRouter()
   const { admin, loading: authLoading } = useAdminAuth()
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [pendingContractors, setPendingContractors] = useState<Contractor[]>([])
@@ -753,7 +755,9 @@ export default function AdminContractors() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/admin/contractors/${contractor.id}`)}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Profile
                             </DropdownMenuItem>
@@ -776,7 +780,7 @@ export default function AdminContractors() {
                               </>
                             )}
 
-                            {contractor.profileApproved && contractor.status === 'VERIFIED' && (
+                            {contractor.profileApproved && (contractor.status === 'VERIFIED' || contractor.status === 'ACTIVE') && (
                               <DropdownMenuItem
                                 onClick={() => openStatusDialog(contractor, 'SUSPENDED')}
                               >
@@ -787,7 +791,7 @@ export default function AdminContractors() {
 
                             {contractor.status === 'SUSPENDED' && (
                               <DropdownMenuItem
-                                onClick={() => openStatusDialog(contractor, 'VERIFIED')}
+                                onClick={() => openStatusDialog(contractor, 'ACTIVE')}
                               >
                                 <Activity className="mr-2 h-4 w-4" />
                                 Reactivate
@@ -1055,9 +1059,9 @@ export default function AdminContractors() {
                   <SelectValue placeholder="Select new status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="VERIFIED">Verified</SelectItem>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
                   <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
