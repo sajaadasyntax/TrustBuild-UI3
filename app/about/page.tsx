@@ -1,7 +1,71 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Shield, Star, MapPin, Wrench, MessageCircle } from "lucide-react"
+import { Users, Shield, Star, MapPin, Wrench, MessageCircle, Loader2 } from "lucide-react"
+import { contentApi } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
+
+// Default content as fallback
+const DEFAULT_CONTENT = {
+  mission: "To connect homeowners with trusted, verified contractors for seamless home improvement projects.",
+  vision: "Building trust in the home improvement industry through transparency and quality assurance.",
+  values: "Integrity, Quality, Transparency, Customer Satisfaction",
+}
 
 export default function AboutPage() {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+  const [content, setContent] = useState(DEFAULT_CONTENT)
+  const [contentLoading, setContentLoading] = useState(true)
+
+  // Redirect logged-in users to their dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'CONTRACTOR') {
+        router.push('/dashboard/contractor')
+      } else if (user.role === 'CUSTOMER') {
+        router.push('/dashboard/client')
+      } else if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        router.push('/admin')
+      }
+    }
+  }, [user, authLoading, router])
+
+  useEffect(() => {
+    fetchContent()
+  }, [])
+
+  const fetchContent = async () => {
+    try {
+      setContentLoading(true)
+      const platformContent = await contentApi.getPlatformContent()
+      if (platformContent.about) {
+        setContent(platformContent.about)
+      }
+    } catch (error) {
+      console.error('Failed to load about content, using defaults:', error)
+      // Use default content on error
+    } finally {
+      setContentLoading(false)
+    }
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Don't render if redirecting
+  if (user) {
+    return null
+  }
+
   return (
     <div className="container py-32">
       <div className="text-center mb-16">
@@ -12,13 +76,51 @@ export default function AboutPage() {
       </div>
 
       <div className="max-w-4xl mx-auto mb-16">
-        <div className="prose prose-lg mx-auto text-center">
-          <p className="text-lg text-muted-foreground mb-8">
-            Our mission is to simplify the hiring process and promote honest, high-quality workmanship through verified profiles, reviews, and transparent communication.
-          </p>
-          <p className="text-lg text-muted-foreground">
-            We&apos;re proudly founded by people in the trade – for the trade.
-          </p>
+        <div className="grid md:grid-cols-3 gap-8">
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle className="text-lg">Mission</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {contentLoading ? (
+                  <span className="animate-pulse">Loading...</span>
+                ) : (
+                  content.mission
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle className="text-lg">Vision</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {contentLoading ? (
+                  <span className="animate-pulse">Loading...</span>
+                ) : (
+                  content.vision
+                )}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle className="text-lg">Values</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {contentLoading ? (
+                  <span className="animate-pulse">Loading...</span>
+                ) : (
+                  content.values
+                )}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -26,11 +128,11 @@ export default function AboutPage() {
         <Card>
           <CardHeader>
             <Users className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Verified Professionals</CardTitle>
+            <CardTitle>Customer Focused</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              All contractors go through our verification process to ensure they have proven experience and credentials.
+              Our platform prioritizes homeowners by offering an easy-to-use system for finding qualified contractors.
             </p>
           </CardContent>
         </Card>
@@ -38,11 +140,11 @@ export default function AboutPage() {
         <Card>
           <CardHeader>
             <Shield className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Trust & Security</CardTitle>
+            <CardTitle>Verified Professionals</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Safe and secure platform with payment protection and dispute resolution services.
+              All contractors are vetted and verified to ensure peace of mind for every project.
             </p>
           </CardContent>
         </Card>
@@ -50,11 +152,11 @@ export default function AboutPage() {
         <Card>
           <CardHeader>
             <Star className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Quality Assurance</CardTitle>
+            <CardTitle>Quality & Trust</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Comprehensive review system and quality checks to ensure you get the best service.
+              We promote honesty and high standards through ratings, reviews, and transparent processes.
             </p>
           </CardContent>
         </Card>
@@ -62,11 +164,11 @@ export default function AboutPage() {
         <Card>
           <CardHeader>
             <MapPin className="h-8 w-8 text-primary mb-2" />
-            <CardTitle>Local Expertise</CardTitle>
+            <CardTitle>Nationwide Coverage</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
-              Find contractors based on your location who understand local requirements and regulations.
+              Find trusted contractors across the UK for any type of renovation or construction project.
             </p>
           </CardContent>
         </Card>
@@ -111,4 +213,4 @@ export default function AboutPage() {
       </div>
     </div>
   )
-} 
+}

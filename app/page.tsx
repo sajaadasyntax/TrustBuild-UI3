@@ -1,11 +1,13 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp } from "lucide-react"
+import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { contractorsApi, contentApi, handleApiError, Contractor } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Default content as fallback
 const DEFAULT_CONTENT = {
@@ -75,10 +77,25 @@ const DEFAULT_CONTENT = {
 }
 
 export default function Home() {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [featuredContractors, setFeaturedContractors] = useState<Contractor[]>([])
   const [loading, setLoading] = useState(true)
   const [content, setContent] = useState(DEFAULT_CONTENT)
   const [contentLoading, setContentLoading] = useState(true)
+
+  // Redirect logged-in users to their dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'CONTRACTOR') {
+        router.push('/dashboard/contractor')
+      } else if (user.role === 'CUSTOMER') {
+        router.push('/dashboard/client')
+      } else if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        router.push('/admin')
+      }
+    }
+  }, [user, authLoading, router])
 
   useEffect(() => {
     fetchFeaturedContractors()
@@ -129,6 +146,20 @@ export default function Home() {
       default:
         return null
     }
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Don't render if redirecting
+  if (user) {
+    return null
   }
 
   return (
