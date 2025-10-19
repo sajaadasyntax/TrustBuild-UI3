@@ -260,7 +260,7 @@ export default function FeaturedContractorsPage() {
                       />
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                      <a href={`/contractors/${contractor.id}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`/contractors/${contractor.id}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         View Profile
                       </a>
