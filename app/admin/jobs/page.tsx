@@ -55,6 +55,8 @@ export default function JobOversightPage() {
     reason: ''
   });
   const [showContractorLimitDialog, setShowContractorLimitDialog] = useState(false);
+  const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
   const [contractors, setContractors] = useState<any[]>([])
   const [assigning, setAssigning] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState<string>('')
@@ -125,13 +127,21 @@ export default function JobOversightPage() {
     }
   }
 
-  const handleFlagToggle = async (jobId: string, flagged: boolean) => {
+  const openFlagDialog = (job: Job) => {
+    setSelectedJob(job)
+    setFlagReason('')
+    setShowFlagDialog(true)
+  }
+
+  const handleFlagToggle = async (jobId: string, flagged: boolean, reason?: string) => {
     try {
-      await adminApi.toggleJobFlag(jobId, flagged)
+      await adminApi.toggleJobFlag(jobId, flagged, reason)
       toast({
         title: "Success",
         description: flagged ? "Job flagged successfully" : "Job flag removed successfully",
       })
+      setShowFlagDialog(false)
+      setFlagReason('')
       fetchJobs() // Refresh the list
     } catch (error) {
       handleApiError(error, 'Failed to toggle job flag')
@@ -450,6 +460,12 @@ export default function JobOversightPage() {
                     {job.title}
                     {getStatusBadge(job.status)}
                     {job.isUrgent && <AlertTriangle className="h-4 w-4 text-orange-500" />}
+                    {job.isFlagged && (
+                      <Badge variant="destructive" className="bg-red-600">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        Flagged
+                      </Badge>
+                    )}
                   </CardTitle>
                   <CardDescription>
                     {job.service?.name} • {job.location}
@@ -483,14 +499,26 @@ export default function JobOversightPage() {
                       <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleFlagToggle(job.id, true)}
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-1" />
-                    Flag
-                  </Button>
+                  {job.isFlagged ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleFlagToggle(job.id, false)}
+                      className="border-red-500 text-red-500 hover:bg-red-50"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      Unflag
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openFlagDialog(job)}
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      Flag
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -644,6 +672,25 @@ export default function JobOversightPage() {
                 <strong>Description:</strong>
                 <div className="text-muted-foreground whitespace-pre-line mt-1">{selectedJob.description}</div>
               </div>
+              {selectedJob.isFlagged && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-700 mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <strong>Job Flagged for Review</strong>
+                  </div>
+                  {selectedJob.flagReason && (
+                    <div>
+                      <p className="text-sm font-medium text-red-700">Reason:</p>
+                      <p className="text-sm text-red-600 mt-1">{selectedJob.flagReason}</p>
+                    </div>
+                  )}
+                  {selectedJob.flaggedAt && (
+                    <p className="text-xs text-red-500 mt-2">
+                      Flagged on {new Date(selectedJob.flaggedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
               <div>
                 <strong>Applications:</strong>
                 <ul className="list-disc ml-6">
@@ -858,6 +905,54 @@ export default function JobOversightPage() {
                 disabled={isContractorLimitUpdateDisabled()}
               >
                 Update Limit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Flag Job Dialog */}
+      <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Flag Job for Review</DialogTitle>
+            <DialogDescription>
+              Flag &ldquo;{selectedJob?.title}&rdquo; for admin review
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="flagReason">Reason for Flagging</Label>
+              <Textarea
+                id="flagReason"
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="Explain why this job needs to be flagged for review..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Provide details about any suspicious activity, policy violations, or issues
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowFlagDialog(false)
+                  setFlagReason('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => selectedJob && handleFlagToggle(selectedJob.id, true, flagReason)}
+                disabled={!flagReason.trim()}
+                variant="destructive"
+              >
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                Flag Job
               </Button>
             </div>
           </div>

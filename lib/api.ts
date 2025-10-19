@@ -162,6 +162,12 @@ export interface Job {
   customerConfirmed?: boolean;
   commissionPaid?: boolean;
   
+  // Admin flagging fields
+  isFlagged?: boolean;
+  flaggedAt?: string;
+  flaggedBy?: string;
+  flagReason?: string;
+  
   createdAt: string;
   updatedAt: string;
   customer: Customer;
