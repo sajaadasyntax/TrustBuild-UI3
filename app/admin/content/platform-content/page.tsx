@@ -1,94 +1,213 @@
 "use client"
 
-import { useState } from "react"
-import { FileText, Edit, Save, Eye, Globe, Image } from "lucide-react"
+import { useState, useEffect } from "react"
+import { FileText, Edit, Save, Eye, Globe, Loader2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { adminApi } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 export default function PlatformContentPage() {
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState({
     hero: false,
     features: false,
+    howItWorks: false,
     testimonials: false,
     about: false,
+    stats: false,
   })
 
   const [content, setContent] = useState({
     hero: {
-      title: "Find Trusted Contractors for Your Home Projects",
-      subtitle: "Connect with verified professionals for kitchen renovations, bathroom remodeling, and home improvements.",
-      ctaText: "Get Started Today",
+      title: "",
+      subtitle: "",
+      ctaText: "",
+      ctaSecondaryText: "",
     },
-    features: [
-      {
-        title: "Verified Contractors",
-        description: "All contractors are thoroughly vetted and verified for your peace of mind.",
-        icon: "shield",
-      },
-      {
-        title: "Quality Guarantee",
-        description: "We guarantee the quality of work and provide dispute resolution.",
-        icon: "star",
-      },
-      {
-        title: "Transparent Pricing",
-        description: "Get clear, upfront pricing with no hidden fees or surprises.",
-        icon: "dollar",
-      },
-    ],
-    testimonials: [
-      {
-        name: "Sarah Johnson",
-        comment: "TrustBuild helped me find an amazing contractor for my kitchen renovation. The process was smooth and professional.",
-        rating: 5,
-        project: "Kitchen Renovation",
-      },
-      {
-        name: "Mike Davis",
-        comment: "Excellent service! The contractor was reliable and delivered exactly what was promised.",
-        rating: 5,
-        project: "Bathroom Remodeling",
-      },
-    ],
+    features: [] as Array<{
+      title: string
+      description: string
+      icon: string
+    }>,
+    howItWorks: [] as Array<{
+      step: number
+      title: string
+      description: string
+      icon: string
+    }>,
+    testimonials: [] as Array<{
+      name: string
+      comment: string
+      rating: number
+      project: string
+    }>,
     about: {
-      mission: "To connect homeowners with trusted, verified contractors for seamless home improvement projects.",
-      vision: "Building trust in the home improvement industry through transparency and quality assurance.",
-      values: "Integrity, Quality, Transparency, Customer Satisfaction",
+      mission: "",
+      vision: "",
+      values: "",
+    },
+    stats: {
+      projectsCompleted: "",
+      verifiedContractors: "",
+      customerSatisfaction: "",
+      averageRating: "",
     },
   })
 
-  const handleSave = (section: string) => {
-    setIsEditing(prev => ({ ...prev, [section]: false }))
-    // Here you would typically save to your backend
-    console.log(`Saving ${section} content...`)
+  useEffect(() => {
+    fetchContent()
+  }, [])
+
+  const fetchContent = async () => {
+    try {
+      setLoading(true)
+      const platformContent = await adminApi.getPlatformContent()
+      setContent(platformContent)
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch platform content",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleEdit = (section: string) => {
+  const handleSave = async (section: keyof typeof content) => {
+    try {
+      setSaving(true)
+      await adminApi.updateContentSection(section, content[section])
+      setIsEditing(prev => ({ ...prev, [section]: false }))
+      toast({
+        title: "Success",
+        description: `${section.charAt(0).toUpperCase() + section.slice(1)} section updated successfully`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update content",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveAll = async () => {
+    try {
+      setSaving(true)
+      await adminApi.updatePlatformContent(content)
+      setIsEditing({
+        hero: false,
+        features: false,
+        howItWorks: false,
+        testimonials: false,
+        about: false,
+        stats: false,
+      })
+      toast({
+        title: "Success",
+        description: "All content updated successfully",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update content",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReset = async () => {
+    if (!confirm("Are you sure you want to reset all content to defaults? This cannot be undone.")) {
+      return
+    }
+
+    try {
+      setSaving(true)
+      const defaultContent = await adminApi.resetPlatformContent()
+      setContent(defaultContent)
+      toast({
+        title: "Success",
+        description: "Content reset to defaults successfully",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset content",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEdit = (section: keyof typeof isEditing) => {
     setIsEditing(prev => ({ ...prev, [section]: true }))
+  }
+
+  if (loading) {
+    return (
+      <div className="container py-32 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
     <div className="container py-32">
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Globe className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Platform Content Management</h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Globe className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">Platform Content Management</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={saving}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset to Defaults
+            </Button>
+            <Button onClick={handleSaveAll} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save All Changes
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         <p className="text-muted-foreground">
-          Edit and manage content displayed across the TrustBuild platform
+          Edit and manage content displayed across the TrustBuild platform. Changes will be reflected on the live site immediately.
         </p>
       </div>
 
       <Tabs defaultValue="homepage" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="homepage">Homepage</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
           <TabsTrigger value="about">About Us</TabsTrigger>
+          <TabsTrigger value="stats">Stats</TabsTrigger>
         </TabsList>
 
         <TabsContent value="homepage">
@@ -103,17 +222,13 @@ export default function PlatformContentPage() {
                   <CardDescription>Main homepage hero section content</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Preview
-                  </Button>
                   {!isEditing.hero ? (
                     <Button size="sm" onClick={() => handleEdit('hero')}>
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
                   ) : (
-                    <Button size="sm" onClick={() => handleSave('hero')}>
+                    <Button size="sm" onClick={() => handleSave('hero')} disabled={saving}>
                       <Save className="h-4 w-4 mr-1" />
                       Save
                     </Button>
@@ -147,25 +262,73 @@ export default function PlatformContentPage() {
                       hero: { ...prev.hero, subtitle: e.target.value }
                     }))}
                     className="mt-1"
+                    rows={3}
                   />
                 ) : (
                   <p className="mt-1 p-2 bg-muted rounded">{content.hero.subtitle}</p>
                 )}
               </div>
-              <div>
-                <label className="text-sm font-medium">CTA Button Text</label>
-                {isEditing.hero ? (
-                  <Input
-                    value={content.hero.ctaText}
-                    onChange={(e) => setContent(prev => ({
-                      ...prev,
-                      hero: { ...prev.hero, ctaText: e.target.value }
-                    }))}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 p-2 bg-muted rounded">{content.hero.ctaText}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Primary CTA Button Text</label>
+                  {isEditing.hero ? (
+                    <Input
+                      value={content.hero.ctaText}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        hero: { ...prev.hero, ctaText: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.hero.ctaText}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Secondary CTA Button Text</label>
+                  {isEditing.hero ? (
+                    <Input
+                      value={content.hero.ctaSecondaryText}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        hero: { ...prev.hero, ctaSecondaryText: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.hero.ctaSecondaryText}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* How It Works Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>How It Works Steps</CardTitle>
+              <CardDescription>Steps displayed on the homepage</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {content.howItWorks.map((step, index) => (
+                  <div key={index} className="p-4 border rounded-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Title</label>
+                        <p className="mt-1 p-2 bg-muted rounded text-sm">{step.title}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Icon</label>
+                        <p className="mt-1 p-2 bg-muted rounded text-sm">{step.icon}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-sm font-medium">Description</label>
+                      <p className="mt-1 p-2 bg-muted rounded text-sm">{step.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -176,20 +339,8 @@ export default function PlatformContentPage() {
             {content.features.map((feature, index) => (
               <Card key={index}>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        Feature {index + 1}
-                      </CardTitle>
-                      <CardDescription>Feature section content</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
+                  <CardTitle>Feature {index + 1}</CardTitle>
+                  <CardDescription>{feature.title}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -202,7 +353,7 @@ export default function PlatformContentPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium">Icon</label>
-                    <Badge variant="outline" className="mt-1">{feature.icon}</Badge>
+                    <p className="mt-1 p-2 bg-muted rounded text-sm">{feature.icon}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -215,52 +366,33 @@ export default function PlatformContentPage() {
             {content.testimonials.map((testimonial, index) => (
               <Card key={index}>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        Testimonial {index + 1}
-                      </CardTitle>
-                      <CardDescription>Customer testimonial content</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button variant="destructive" size="sm">
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
+                  <CardTitle>Testimonial {index + 1}</CardTitle>
+                  <CardDescription>{testimonial.name}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Customer Name</label>
-                    <p className="mt-1 p-2 bg-muted rounded">{testimonial.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Comment</label>
-                    <p className="mt-1 p-2 bg-muted rounded">{testimonial.comment}</p>
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Rating</label>
-                      <p className="mt-1 p-2 bg-muted rounded">
-                        {"⭐".repeat(testimonial.rating)} ({testimonial.rating}/5)
-                      </p>
+                      <label className="text-sm font-medium">Customer Name</label>
+                      <p className="mt-1 p-2 bg-muted rounded">{testimonial.name}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Project Type</label>
                       <p className="mt-1 p-2 bg-muted rounded">{testimonial.project}</p>
                     </div>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium">Comment</label>
+                    <p className="mt-1 p-2 bg-muted rounded">{testimonial.comment}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Rating</label>
+                    <p className="mt-1 p-2 bg-muted rounded">
+                      {"⭐".repeat(testimonial.rating)} ({testimonial.rating}/5)
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
-            <Button className="w-full">
-              <FileText className="h-4 w-4 mr-2" />
-              Add New Testimonial
-            </Button>
           </div>
         </TabsContent>
 
@@ -276,62 +408,169 @@ export default function PlatformContentPage() {
                   <CardDescription>Company information and values</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Preview
-                  </Button>
-                  <Button size="sm">
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+                  {!isEditing.about ? (
+                    <Button size="sm" onClick={() => handleEdit('about')}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => handleSave('about')} disabled={saving}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Mission Statement</label>
-                <p className="mt-1 p-3 bg-muted rounded">{content.about.mission}</p>
+                {isEditing.about ? (
+                  <Textarea
+                    value={content.about.mission}
+                    onChange={(e) => setContent(prev => ({
+                      ...prev,
+                      about: { ...prev.about, mission: e.target.value }
+                    }))}
+                    className="mt-1"
+                    rows={3}
+                  />
+                ) : (
+                  <p className="mt-1 p-3 bg-muted rounded">{content.about.mission}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium">Vision</label>
-                <p className="mt-1 p-3 bg-muted rounded">{content.about.vision}</p>
+                {isEditing.about ? (
+                  <Textarea
+                    value={content.about.vision}
+                    onChange={(e) => setContent(prev => ({
+                      ...prev,
+                      about: { ...prev.about, vision: e.target.value }
+                    }))}
+                    className="mt-1"
+                    rows={3}
+                  />
+                ) : (
+                  <p className="mt-1 p-3 bg-muted rounded">{content.about.vision}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium">Core Values</label>
-                <p className="mt-1 p-3 bg-muted rounded">{content.about.values}</p>
+                {isEditing.about ? (
+                  <Textarea
+                    value={content.about.values}
+                    onChange={(e) => setContent(prev => ({
+                      ...prev,
+                      about: { ...prev.about, values: e.target.value }
+                    }))}
+                    className="mt-1"
+                    rows={2}
+                  />
+                ) : (
+                  <p className="mt-1 p-3 bg-muted rounded">{content.about.values}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stats">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Platform Statistics</CardTitle>
+                  <CardDescription>Stats displayed on the homepage</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {!isEditing.stats ? (
+                    <Button size="sm" onClick={() => handleEdit('stats')}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => handleSave('stats')} disabled={saving}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Projects Completed</label>
+                  {isEditing.stats ? (
+                    <Input
+                      value={content.stats.projectsCompleted}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        stats: { ...prev.stats, projectsCompleted: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.stats.projectsCompleted}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Verified Contractors</label>
+                  {isEditing.stats ? (
+                    <Input
+                      value={content.stats.verifiedContractors}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        stats: { ...prev.stats, verifiedContractors: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.stats.verifiedContractors}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Customer Satisfaction</label>
+                  {isEditing.stats ? (
+                    <Input
+                      value={content.stats.customerSatisfaction}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        stats: { ...prev.stats, customerSatisfaction: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.stats.customerSatisfaction}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Average Rating</label>
+                  {isEditing.stats ? (
+                    <Input
+                      value={content.stats.averageRating}
+                      onChange={(e) => setContent(prev => ({
+                        ...prev,
+                        stats: { ...prev.stats, averageRating: e.target.value }
+                      }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 p-2 bg-muted rounded">{content.stats.averageRating}</p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Content Statistics */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Content Performance</CardTitle>
-          <CardDescription>Analytics for platform content engagement</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">12,450</div>
-              <p className="text-sm text-muted-foreground">Homepage Views</p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-green-600">3,240</div>
-              <p className="text-sm text-muted-foreground">CTA Clicks</p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">26%</div>
-              <p className="text-sm text-muted-foreground">Conversion Rate</p>
-            </div>
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">4.2s</div>
-              <p className="text-sm text-muted-foreground">Avg. Time on Page</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Alert className="mt-8">
+        <AlertDescription>
+          <strong>Note:</strong> Changes made here will be immediately visible on the live website after saving. Make sure to preview your changes before saving.
+        </AlertDescription>
+      </Alert>
     </div>
   )
-} 
+}

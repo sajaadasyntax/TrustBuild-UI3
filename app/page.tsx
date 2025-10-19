@@ -5,13 +5,53 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { contractorsApi, handleApiError, Contractor } from "@/lib/api"
+import { contractorsApi, contentApi, handleApiError, Contractor } from "@/lib/api"
+
+// Default content as fallback
+const DEFAULT_CONTENT = {
+  hero: {
+    title: "Find Trusted Contractors For Your Next Project",
+    subtitle: "TrustBuild connects you with verified professionals for all your construction and renovation needs.",
+    ctaText: "Post a Job",
+    ctaSecondaryText: "Join as a Contractor"
+  },
+  howItWorks: [
+    {
+      step: 1,
+      title: "Post Your Project",
+      description: "Describe your project, budget, and timeline, and we'll match you with the right professionals.",
+      icon: "building"
+    },
+    {
+      step: 2,
+      title: "Compare Contractors",
+      description: "Review profiles, ratings, and previous work to find the perfect match for your needs.",
+      icon: "wrench"
+    },
+    {
+      step: 3,
+      title: "Get It Done",
+      description: "Hire your chosen contractor and track progress every step of the way.",
+      icon: "checkCircle"
+    }
+  ],
+  stats: {
+    projectsCompleted: "1000+",
+    verifiedContractors: "500+",
+    customerSatisfaction: "98%",
+    averageRating: "4.8"
+  }
+}
+
 export default function Home() {
   const [featuredContractors, setFeaturedContractors] = useState<Contractor[]>([])
   const [loading, setLoading] = useState(true)
+  const [content, setContent] = useState(DEFAULT_CONTENT)
+  const [contentLoading, setContentLoading] = useState(true)
 
   useEffect(() => {
     fetchFeaturedContractors()
+    fetchContent()
   }, [])
 
   const fetchFeaturedContractors = async () => {
@@ -27,6 +67,23 @@ export default function Home() {
       handleApiError(error, 'Failed to fetch featured contractors')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchContent = async () => {
+    try {
+      setContentLoading(true)
+      const platformContent = await contentApi.getPlatformContent()
+      setContent({
+        hero: platformContent.hero || DEFAULT_CONTENT.hero,
+        howItWorks: platformContent.howItWorks || DEFAULT_CONTENT.howItWorks,
+        stats: platformContent.stats || DEFAULT_CONTENT.stats,
+      })
+    } catch (error) {
+      console.error('Failed to load platform content, using defaults:', error)
+      // Use default content on error
+    } finally {
+      setContentLoading(false)
     }
   }
 
@@ -48,17 +105,17 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="mb-6 animate-fade-in">
-              Find Trusted Contractors For Your Next Project
+              {content.hero.title}
             </h1>
             <p className="text-lg md:text-xl mb-8 text-gray-100 animate-slide-up" style={{ animationDelay: "200ms" }}>
-              TrustBuild connects you with verified professionals for all your construction and renovation needs.
+              {content.hero.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 animate-slide-up" style={{ animationDelay: "400ms" }}>
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-                <Link href="/post-job">Post a Job</Link>
+                <Link href="/post-job">{content.hero.ctaText}</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="bg-white/20 hover:bg-white/30 border-white">
-                <Link href="/register?role=contractor">Join as a Contractor</Link>
+                <Link href="/register?role=contractor">{content.hero.ctaSecondaryText}</Link>
               </Button>
             </div>
           </div>
@@ -76,35 +133,20 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            <div className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Building className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl mb-2">1. Post Your Project</h3>
-              <p className="text-muted-foreground">
-                Describe your project, budget, and timeline, and we&apos;ll match you with the right professionals.
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Wrench className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl mb-2">2. Compare Contractors</h3>
-              <p className="text-muted-foreground">
-                Review profiles, ratings, and previous work to find the perfect match for your needs.
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl mb-2">3. Hire With Confidence</h3>
-              <p className="text-muted-foreground">
-                Choose your contractor and manage your project through our secure platform.
-              </p>
-            </div>
+            {content.howItWorks.map((step, index) => {
+              const IconComponent = step.icon === 'building' ? Building : step.icon === 'wrench' ? Wrench : CheckCircle
+              return (
+                <div key={index} className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl mb-2">{step.step}. {step.title}</h3>
+                  <p className="text-muted-foreground">
+                    {step.description}
+                  </p>
+                </div>
+              )
+            })}
           </div>
           
           <div className="text-center mt-12">

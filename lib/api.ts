@@ -1900,6 +1900,35 @@ export const adminApi = {
   searchContractors: (query: string, page = 1, limit = 10) => 
     apiRequest<any>(`/admin/contractors-search?query=${query}&page=${page}&limit=${limit}`),
 
+  // Content Management
+  getPlatformContent: async (): Promise<any> => {
+    const response = await apiRequest<{ data: any }>('/content/platform');
+    return response.data.content;
+  },
+
+  updatePlatformContent: async (content: any): Promise<any> => {
+    const response = await apiRequest<{ data: any }>('/content/platform', {
+      method: 'PATCH',
+      body: JSON.stringify({ content }),
+    });
+    return response.data.content;
+  },
+
+  updateContentSection: async (section: string, data: any): Promise<any> => {
+    const response = await apiRequest<{ data: any }>(`/content/platform/${section}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ data }),
+    });
+    return response.data;
+  },
+
+  resetPlatformContent: async (): Promise<any> => {
+    const response = await apiRequest<{ data: any }>('/content/platform/reset', {
+      method: 'POST',
+    });
+    return response.data.content;
+  },
+
   // Review Management
   getAllReviews: async (params: {
     page?: number;
@@ -1943,6 +1972,27 @@ export const adminApi = {
 };
 
 // Payment API
+// Public Content API (no authentication required)
+export const contentApi = {
+  getPlatformContent: async (): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/content/platform`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch platform content');
+    }
+    const data = await response.json();
+    return data.data.content;
+  },
+
+  getContentSection: async (section: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/content/platform/${section}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch content section: ${section}`);
+    }
+    const data = await response.json();
+    return data.data;
+  },
+};
+
 export const paymentsApi = {
   getMyPayments: async (params: {
     page?: number;
