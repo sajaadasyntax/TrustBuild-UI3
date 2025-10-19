@@ -230,10 +230,10 @@ export const adminApi = {
   },
 
   // Adjust contractor credits
-  adjustContractorCredits: async (contractorId: string, amount: number, reason: string) => {
-    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/credits`, {
-      method: 'PATCH',
-      body: JSON.stringify({ amount, reason }),
+  adjustContractorCredits: async (contractorId: string, amount: number, reason: string, type: 'ADDITION' | 'DEDUCTION') => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/adjust-credits`, {
+      method: 'POST',
+      body: JSON.stringify({ amount, reason, type }),
     });
     return response;
   },

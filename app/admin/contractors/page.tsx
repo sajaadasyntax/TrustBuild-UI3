@@ -277,12 +277,12 @@ export default function AdminContractors() {
 
     try {
       setProcessing(true)
-      // Handle credit amount based on type (positive for addition, negative for deduction)
-      const adjustmentAmount = creditData.type === 'DEDUCTION' ? -creditData.amount : creditData.amount
+      // Pass the amount as positive and let the backend handle the type
       await adminApi.adjustContractorCredits(
         selectedContractor.id,
-        adjustmentAmount,
-        creditData.reason
+        creditData.amount,
+        creditData.reason,
+        creditData.type
       )
       
       const action = creditData.type === 'ADDITION' ? 'added' : 'removed'
