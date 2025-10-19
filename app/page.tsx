@@ -309,15 +309,6 @@ export default function Home() {
               })}
             </div>
           )}
-          
-          <div className="text-center mt-10">
-            <Button asChild variant="outline">
-              <Link href="/contractors">
-                View All Contractors
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
 
