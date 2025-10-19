@@ -322,7 +322,7 @@ export default function AdminKycPage() {
           <DialogHeader>
             <DialogTitle>Approve KYC Verification</DialogTitle>
             <DialogDescription>
-              This will approve the contractor's KYC verification and fully activate their account.
+              This will approve the contractor&apos;s KYC verification and fully activate their account.
             </DialogDescription>
           </DialogHeader>
 
@@ -373,7 +373,7 @@ export default function AdminKycPage() {
           <DialogHeader>
             <DialogTitle>Reject KYC Verification</DialogTitle>
             <DialogDescription>
-              This will reject the contractor's KYC submission and pause their account.
+              This will reject the contractor&apos;s KYC submission and pause their account.
             </DialogDescription>
           </DialogHeader>
 
