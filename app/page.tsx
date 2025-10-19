@@ -35,6 +35,37 @@ const DEFAULT_CONTENT = {
       icon: "checkCircle"
     }
   ],
+  features: [
+    {
+      title: "Verified Contractors",
+      description: "All contractors are thoroughly vetted and verified for your peace of mind.",
+      icon: "shield",
+    },
+    {
+      title: "Quality Guarantee",
+      description: "We guarantee the quality of work and provide dispute resolution.",
+      icon: "star",
+    },
+    {
+      title: "Transparent Pricing",
+      description: "Get clear, upfront pricing with no hidden fees or surprises.",
+      icon: "dollar",
+    },
+  ],
+  testimonials: [
+    {
+      name: "Sarah Johnson",
+      comment: "TrustBuild helped me find an amazing contractor for my kitchen renovation. The process was smooth and professional.",
+      rating: 5,
+      project: "Kitchen Renovation",
+    },
+    {
+      name: "Mike Davis",
+      comment: "Excellent service! The contractor was reliable and delivered exactly what was promised.",
+      rating: 5,
+      project: "Bathroom Remodeling",
+    },
+  ],
   stats: {
     projectsCompleted: "1000+",
     verifiedContractors: "500+",
@@ -77,6 +108,8 @@ export default function Home() {
       setContent({
         hero: platformContent.hero || DEFAULT_CONTENT.hero,
         howItWorks: platformContent.howItWorks || DEFAULT_CONTENT.howItWorks,
+        features: platformContent.features || DEFAULT_CONTENT.features,
+        testimonials: platformContent.testimonials || DEFAULT_CONTENT.testimonials,
         stats: platformContent.stats || DEFAULT_CONTENT.stats,
       })
     } catch (error) {
@@ -268,34 +301,15 @@ export default function Home() {
               </p>
               
               <ul className="space-y-4">
-                <li className="flex">
-                  <CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Verified Contractors</h4>
-                    <p className="text-muted-foreground">Every contractor is thoroughly vetted and verified before joining our platform.</p>
-                  </div>
-                </li>
-                <li className="flex">
-                  <CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Secure Transactions</h4>
-                    <p className="text-muted-foreground">Our platform ensures secure payment processing for all transactions.</p>
-                  </div>
-                </li>
-                <li className="flex">
-                  <CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Honest Reviews</h4>
-                    <p className="text-muted-foreground">Verified reviews from real customers help you make informed decisions.</p>
-                  </div>
-                </li>
-                <li className="flex">
-                  <CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Dedicated Support</h4>
-                    <p className="text-muted-foreground">Our team is available to assist you throughout your project journey.</p>
-                  </div>
-                </li>
+                {content.features?.map((feature, index) => (
+                  <li key={index} className="flex">
+                    <CheckCircle className="h-6 w-6 text-primary mr-3 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-medium">{feature.title}</h4>
+                      <p className="text-muted-foreground">{feature.description}</p>
+                    </div>
+                  </li>
+                ))}
               </ul>
               
               <Button asChild className="mt-8">
@@ -325,73 +339,42 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-card rounded-lg shadow review-card">
-              <div className="flex items-center mb-4">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent stroke-accent" />
-                  ))}
+          <div className={`grid grid-cols-1 ${content.testimonials?.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-8`}>
+            {content.testimonials?.map((testimonial, index) => {
+              const initials = testimonial.name
+                .split(' ')
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2)
+              
+              return (
+                <div key={index} className="p-6 bg-card rounded-lg shadow review-card">
+                  <div className="flex items-center mb-4">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-4 w-4 ${i < testimonial.rating ? 'fill-accent stroke-accent' : 'fill-none stroke-accent'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="italic text-muted-foreground mb-4">
+                    &quot;{testimonial.comment}&quot;
+                  </p>
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
+                      <span className="font-medium text-primary">{initials}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{testimonial.project}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <p className="italic text-muted-foreground mb-4">
-                &quot;TrustBuild made finding a reliable contractor so easy. I was able to compare multiple quotes and choose the best fit for my kitchen renovation.&quot;
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
-                  <span className="font-medium text-primary">JD</span>
-                </div>
-                <div>
-                  <p className="font-medium">Jane Doe</p>
-                  <p className="text-sm text-muted-foreground">Kitchen Renovation</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 bg-card rounded-lg shadow review-card">
-              <div className="flex items-center mb-4">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent stroke-accent" />
-                  ))}
-                </div>
-              </div>
-              <p className="italic text-muted-foreground mb-4">
-                &quot;As a contractor, TrustBuild has helped grow my business significantly. The platform connects me with serious clients looking for quality work.&quot;
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
-                  <span className="font-medium text-primary">MS</span>
-                </div>
-                <div>
-                  <p className="font-medium">Mike Smith</p>
-                  <p className="text-sm text-muted-foreground">Premier Builders</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 bg-card rounded-lg shadow review-card">
-              <div className="flex items-center mb-4">
-                <div className="flex">
-                  {[...Array(4)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent stroke-accent" />
-                  ))}
-                  <Star className="h-4 w-4 fill-none stroke-accent" />
-                </div>
-              </div>
-              <p className="italic text-muted-foreground mb-4">
-                &quot;I was skeptical at first, but TrustBuild delivered beyond my expectations. The bathroom remodel was completed on time and within budget.&quot;
-              </p>
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
-                  <span className="font-medium text-primary">RJ</span>
-                </div>
-                <div>
-                  <p className="font-medium">Robert Johnson</p>
-                  <p className="text-sm text-muted-foreground">Bathroom Remodel</p>
-                </div>
-              </div>
-            </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -421,20 +404,20 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">5K+</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">{content.stats?.verifiedContractors || "500+"}</p>
               <p className="text-muted-foreground">Verified Contractors</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">10K+</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">{content.stats?.projectsCompleted || "1000+"}</p>
               <p className="text-muted-foreground">Completed Projects</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">4.8</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">{content.stats?.averageRating || "4.8"}</p>
               <p className="text-muted-foreground">Average Rating</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">20K+</p>
-              <p className="text-muted-foreground">Happy Customers</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary mb-2">{content.stats?.customerSatisfaction || "98%"}</p>
+              <p className="text-muted-foreground">Customer Satisfaction</p>
             </div>
           </div>
         </div>
