@@ -46,7 +46,7 @@ export default function KycPage() {
 
   const fetchKycStatus = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/my-status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/my-status`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -85,7 +85,7 @@ export default function KycPage() {
         formData.append('companyNumber', companyNumber);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/upload`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/upload`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,

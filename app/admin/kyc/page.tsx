@@ -80,7 +80,7 @@ export default function AdminKycPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/queue?status=${activeTab}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/queue?status=${activeTab}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
@@ -110,7 +110,7 @@ export default function AdminKycPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/${selectedKyc.id}/approve`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/${selectedKyc.id}/approve`,
         {
           method: 'POST',
           headers: {
@@ -150,7 +150,7 @@ export default function AdminKycPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/${selectedKyc.id}/reject`,
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/${selectedKyc.id}/reject`,
         {
           method: 'POST',
           headers: {
