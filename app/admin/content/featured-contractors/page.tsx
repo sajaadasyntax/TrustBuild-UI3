@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Star, Search, Eye, Award, TrendingUp } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { adminApi } from "@/lib/adminApi"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,45 +29,38 @@ interface Contractor {
 }
 
 export default function FeaturedContractorsPage() {
-  const { loading: authLoading } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [filterFeatured, setFilterFeatured] = useState("all")
   const [loading, setLoading] = useState(true)
 
-  // Properly construct API URL
-  const getApiUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
-    return apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`
-  }
-
   const fetchContractors = useCallback(async () => {
-    if (authLoading) return
+    if (authLoading || !admin) return
     
     try {
-      const API_BASE_URL = getApiUrl()
-      const response = await fetch(`${API_BASE_URL}/admin/contractors`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
-        },
-      })
-
-      if (!response.ok) throw new Error('Failed to fetch contractors')
-
-      const data = await response.json()
-      setContractors(data.data?.contractors || [])
-    } catch (error) {
-      console.error('Error fetching contractors:', error)
+      setLoading(true)
+      console.log('📋 Fetching contractors...')
+      
+      const response = await adminApi.getAllContractors({ limit: 1000 })
+      console.log('📋 Contractors response:', response)
+      
+      const contractorsData = response.data?.contractors || response.contractors || []
+      setContractors(contractorsData)
+      
+      console.log(`📋 Loaded ${contractorsData.length} contractors`)
+    } catch (error: any) {
+      console.error('❌ Error fetching contractors:', error)
       toast({
         title: 'Error',
-        description: 'Failed to load contractors',
+        description: error.message || 'Failed to load contractors',
         variant: 'destructive',
       })
     } finally {
       setLoading(false)
     }
-  }, [authLoading, toast])
+  }, [authLoading, admin, toast])
 
   useEffect(() => {
     fetchContractors()
@@ -87,19 +81,28 @@ export default function FeaturedContractorsPage() {
     if (!contractor) return
 
     try {
-      const API_BASE_URL = getApiUrl()
-      const response = await fetch(`${API_BASE_URL}/admin/contractors/${contractorId}/featured`, {
+      console.log(`🔄 Toggling featured status for contractor ${contractorId}`)
+      
+      // Call the admin API to update featured status
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
+      const BASE_URL = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`
+      const token = localStorage.getItem('admin_token')
+      
+      const response = await fetch(`${BASE_URL}/admin/contractors/${contractorId}/featured`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           featuredContractor: !contractor.featuredContractor
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to update featured status')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update featured status')
+      }
 
       // Update local state
       setContractors(prev => 
@@ -114,11 +117,13 @@ export default function FeaturedContractorsPage() {
         title: 'Success',
         description: `Contractor ${!contractor.featuredContractor ? 'featured' : 'unfeatured'} successfully`,
       })
-    } catch (error) {
-      console.error('Error toggling featured status:', error)
+      
+      console.log('✅ Featured status updated successfully')
+    } catch (error: any) {
+      console.error('❌ Error toggling featured status:', error)
       toast({
         title: 'Error',
-        description: 'Failed to update featured status',
+        description: error.message || 'Failed to update featured status',
         variant: 'destructive',
       })
     }
@@ -126,11 +131,21 @@ export default function FeaturedContractorsPage() {
 
   const featuredCount = contractors.filter(c => c.featuredContractor).length
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container py-32">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!admin) {
+    return (
+      <div className="container py-32">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to access this page.</p>
         </div>
       </div>
     )
@@ -337,4 +352,4 @@ export default function FeaturedContractorsPage() {
       </Card>
     </div>
   )
-} 
+}
