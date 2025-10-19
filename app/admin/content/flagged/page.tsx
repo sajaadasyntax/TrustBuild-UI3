@@ -21,7 +21,7 @@ interface FlaggedItem {
   flaggedBy: string
   flagReason: string
   status: 'pending' | 'approved' | 'removed'
-  severity: 'low' | 'medium' | 'high'
+  severity: 'flagged'
   createdDate: Date
   flaggedDate: Date
   // Review specific
@@ -41,7 +41,6 @@ export default function FlaggedContentPage() {
   const [content, setContent] = useState<FlaggedItem[]>([])
   const [filteredContent, setFilteredContent] = useState<FlaggedItem[]>([])
   const [filterType, setFilterType] = useState<string>('all')
-  const [filterSeverity, setFilterSeverity] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -53,7 +52,7 @@ export default function FlaggedContentPage() {
 
   useEffect(() => {
     filterContent()
-  }, [content, filterType, filterSeverity, searchTerm])
+  }, [content, filterType, searchTerm])
 
   const fetchFlaggedContent = async () => {
     try {
@@ -90,10 +89,6 @@ export default function FlaggedContentPage() {
 
     if (filterType !== 'all') {
       filtered = filtered.filter(item => item.type === filterType)
-    }
-
-    if (filterSeverity !== 'all') {
-      filtered = filtered.filter(item => item.severity === filterSeverity)
     }
 
     if (searchTerm) {
@@ -216,7 +211,7 @@ export default function FlaggedContentPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Search</label>
             <Input
@@ -239,36 +234,14 @@ export default function FlaggedContentPage() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-sm font-medium mb-2 block">Filter by Severity</label>
-            <Select value={filterSeverity} onValueChange={setFilterSeverity}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Severities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Severities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{content.length}</div>
               <p className="text-xs text-muted-foreground">Total Flagged</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-destructive">
-                {content.filter(i => i.severity === 'high').length}
-              </div>
-              <p className="text-xs text-muted-foreground">High Severity</p>
             </CardContent>
           </Card>
           <Card>
@@ -307,19 +280,15 @@ export default function FlaggedContentPage() {
       ) : (
         <div className="grid gap-6">
           {filteredContent.map((item) => (
-            <Card key={item.id} className="border-l-4" style={{
-              borderLeftColor: item.severity === 'high' ? '#ef4444' : item.severity === 'medium' ? '#f59e0b' : '#6b7280'
-            }}>
+            <Card key={item.id} className="border-l-4 border-l-destructive">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       {getTypeIcon(item.type)}
-                      <Badge variant={
-                        item.severity === 'high' ? 'destructive' :
-                        item.severity === 'medium' ? 'default' : 'secondary'
-                      }>
-                        {item.severity.toUpperCase()}
+                      <Badge variant="destructive">
+                        <Flag className="h-3 w-3 mr-1" />
+                        FLAGGED
                       </Badge>
                       <Badge variant="outline">{getTypeLabel(item.type)}</Badge>
                     </div>
