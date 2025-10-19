@@ -244,7 +244,11 @@ export default function JobOversightPage() {
     
     try {
       setLoading(true);
-      await adminApi.updateJobContractorLimit(selectedJob.id, editingContractorLimit.maxContractorsPerJob);
+      await adminApi.updateJobContractorLimit(
+        selectedJob.id, 
+        editingContractorLimit.maxContractorsPerJob,
+        editingContractorLimit.reason
+      );
       
       // Refresh jobs data
       await fetchJobs();

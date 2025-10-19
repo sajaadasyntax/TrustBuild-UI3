@@ -1964,10 +1964,10 @@ export const adminApi = {
     }),
   
   // Update job contractor limit
-  updateJobContractorLimit: (jobId: string, maxContractorsPerJob: number) =>
+  updateJobContractorLimit: (jobId: string, maxContractorsPerJob: number, reason: string) =>
     apiRequest(`/admin/jobs/${jobId}/contractor-limit`, {
       method: 'PATCH',
-      body: JSON.stringify({ maxContractorsPerJob }),
+      body: JSON.stringify({ maxContractorsPerJob, reason }),
     }),
 };
 

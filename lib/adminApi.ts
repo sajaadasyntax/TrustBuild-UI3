@@ -294,10 +294,10 @@ export const adminApi = {
   },
 
   // Update job contractor limit
-  updateJobContractorLimit: async (jobId: string, limit: number) => {
+  updateJobContractorLimit: async (jobId: string, maxContractorsPerJob: number, reason: string) => {
     const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/contractor-limit`, {
       method: 'PATCH',
-      body: JSON.stringify({ limit }),
+      body: JSON.stringify({ maxContractorsPerJob, reason }),
     });
     return response;
   },
