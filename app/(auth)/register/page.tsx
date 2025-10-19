@@ -176,7 +176,7 @@ export default function RegisterPage() {
       
       toast({
         title: "Account created successfully!",
-        description: "Please log in to complete your KYC verification and start bidding on jobs.",
+        description: "Your contractor account is pending admin approval. You will receive an email once approved, then you can log in to complete your KYC verification and start bidding on jobs.",
       })
 
       // Redirect to home page, not dashboard
