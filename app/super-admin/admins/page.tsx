@@ -151,7 +151,7 @@ export default function AdminsManagementPage() {
       setLoading(true)
       const response = await fetch('/api/admin-auth/admins', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
       })
 
@@ -238,7 +238,7 @@ export default function AdminsManagementPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
         body: JSON.stringify({
           ...formData,

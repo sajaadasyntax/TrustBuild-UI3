@@ -79,7 +79,7 @@ export default function AdminKycPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/queue?status=${activeTab}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           },
         }
       );
@@ -115,7 +115,7 @@ export default function AdminKycPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           },
           body: JSON.stringify({ notes: approvalNotes }),
         }
@@ -155,7 +155,7 @@ export default function AdminKycPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           },
           body: JSON.stringify({
             reason: rejectionReason,

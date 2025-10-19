@@ -66,7 +66,7 @@ export default function FeaturedContractorsPage() {
     } finally {
       setLoading(false)
     }
-  }, [authLoading, API_BASE_URL, toast])
+  }, [authLoading, toast])
 
   useEffect(() => {
     fetchContractors()
