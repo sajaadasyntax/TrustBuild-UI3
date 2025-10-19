@@ -301,7 +301,7 @@ export default function Home() {
                       </div>
                       
                       <Button asChild className="w-full">
-                        <Link href={`/contractors/${contractor.id}`}>View Profile</Link>
+                        <Link href={`/contractors/${contractor.id}`} prefetch={false}>View Profile</Link>
                       </Button>
                     </div>
                   </div>

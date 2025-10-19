@@ -35,12 +35,17 @@ export default function FeaturedContractorsPage() {
   const [filterFeatured, setFilterFeatured] = useState("all")
   const [loading, setLoading] = useState(true)
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
+  // Properly construct API URL
+  const getApiUrl = () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api'
+    return apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`
+  }
 
   const fetchContractors = useCallback(async () => {
     if (authLoading) return
     
     try {
+      const API_BASE_URL = getApiUrl()
       const response = await fetch(`${API_BASE_URL}/admin/contractors`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
@@ -82,6 +87,7 @@ export default function FeaturedContractorsPage() {
     if (!contractor) return
 
     try {
+      const API_BASE_URL = getApiUrl()
       const response = await fetch(`${API_BASE_URL}/admin/contractors/${contractorId}/featured`, {
         method: 'PATCH',
         headers: {
