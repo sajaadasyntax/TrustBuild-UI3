@@ -1,62 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit2, Trash2, ChevronUp, ChevronDown, Save, X } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Trash2, ChevronUp, ChevronDown, Save, X, Loader2 } from 'lucide-react'
+import { adminFaqApi } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
 interface FAQ {
   id: string
   question: string
   answer: string
-  category: string
-  order: number
+  category: string | null
+  sortOrder: number
   isActive: boolean
 }
 
 export default function FAQManagement() {
-  const [faqs, setFaqs] = useState<FAQ[]>([
-    {
-      id: '1',
-      question: 'How do I post a job on TrustBuild?',
-      answer: 'To post a job, simply click "Post a Job" from your dashboard, fill in the job details, and submit for review.',
-      category: 'Job Posting',
-      order: 1,
-      isActive: true
-    },
-    {
-      id: '2',
-      question: 'How are contractors verified?',
-      answer: 'All contractors go through a thorough verification process including background checks, license verification, and insurance validation.',
-      category: 'Verification',
-      order: 2,
-      isActive: true
-    },
-    {
-      id: '3',
-      question: 'What payment methods are accepted?',
-      answer: 'We accept all major credit cards, bank transfers, and digital wallet payments for secure transactions.',
-      category: 'Payments',
-      order: 3,
-      isActive: true
-    },
-    {
-      id: '4',
-      question: 'How do I dispute a transaction?',
-      answer: 'Contact our support team through the help center or use the dispute resolution system in your dashboard.',
-      category: 'Support',
-      order: 4,
-      isActive: true
-    },
-    {
-      id: '5',
-      question: 'Can I edit my contractor profile?',
-      answer: 'Yes, you can update your profile, portfolio, and services anytime from your contractor dashboard.',
-      category: 'Profile',
-      order: 5,
-      isActive: false
-    }
-  ])
-
+  const { toast } = useToast()
+  const [faqs, setFaqs] = useState<FAQ[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null)
@@ -66,70 +28,195 @@ export default function FAQManagement() {
     answer: '',
     category: 'General'
   })
+  const [actionLoading, setActionLoading] = useState(false)
 
   const categories = ['all', 'Job Posting', 'Verification', 'Payments', 'Support', 'Profile', 'General']
+
+  const fetchFaqs = useCallback(async () => {
+    try {
+      setLoading(true)
+      const fetchedFaqs = await adminFaqApi.getAllFaqs()
+      setFaqs(fetchedFaqs)
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to fetch FAQs',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
+
+  useEffect(() => {
+    fetchFaqs()
+  }, [fetchFaqs])
 
   const filteredFaqs = faqs.filter(faq => {
     const matchesSearch = faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory
     return matchesSearch && matchesCategory
-  }).sort((a, b) => a.order - b.order)
+  }).sort((a, b) => a.sortOrder - b.sortOrder)
 
-  const handleToggleStatus = (id: string) => {
-    setFaqs(faqs.map(faq => 
-      faq.id === id ? { ...faq, isActive: !faq.isActive } : faq
-    ))
-  }
-
-  const handleDelete = (id: string) => {
-    setFaqs(faqs.filter(faq => faq.id !== id))
-  }
-
-  const handleMoveUp = (id: string) => {
-    const index = faqs.findIndex(faq => faq.id === id)
-    if (index > 0) {
-      const newFaqs = [...faqs]
-      const temp = newFaqs[index].order
-      newFaqs[index].order = newFaqs[index - 1].order
-      newFaqs[index - 1].order = temp
-      setFaqs(newFaqs)
+  const handleToggleStatus = async (id: string) => {
+    try {
+      setActionLoading(true)
+      await adminFaqApi.toggleFaqStatus(id)
+      await fetchFaqs()
+      toast({
+        title: 'Success',
+        description: 'FAQ status updated successfully',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update FAQ status',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const handleMoveDown = (id: string) => {
-    const index = faqs.findIndex(faq => faq.id === id)
-    if (index < faqs.length - 1) {
-      const newFaqs = [...faqs]
-      const temp = newFaqs[index].order
-      newFaqs[index].order = newFaqs[index + 1].order
-      newFaqs[index + 1].order = temp
-      setFaqs(newFaqs)
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this FAQ?')) {
+      return
+    }
+    
+    try {
+      setActionLoading(true)
+      await adminFaqApi.deleteFaq(id)
+      await fetchFaqs()
+      toast({
+        title: 'Success',
+        description: 'FAQ deleted successfully',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete FAQ',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const handleSaveEdit = () => {
-    if (editingFaq) {
-      setFaqs(faqs.map(faq => 
-        faq.id === editingFaq.id ? editingFaq : faq
-      ))
+  const handleMoveUp = async (id: string) => {
+    try {
+      setActionLoading(true)
+      await adminFaqApi.reorderFaq(id, 'up')
+      await fetchFaqs()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reorder FAQ',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleMoveDown = async (id: string) => {
+    try {
+      setActionLoading(true)
+      await adminFaqApi.reorderFaq(id, 'down')
+      await fetchFaqs()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reorder FAQ',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingFaq) return
+
+    if (!editingFaq.question.trim() || !editingFaq.answer.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Question and answer are required',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      await adminFaqApi.updateFaq(editingFaq.id, {
+        question: editingFaq.question,
+        answer: editingFaq.answer,
+        category: editingFaq.category || 'General',
+      })
+      await fetchFaqs()
       setEditingFaq(null)
+      toast({
+        title: 'Success',
+        description: 'FAQ updated successfully',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update FAQ',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const handleAddNew = () => {
-    if (newFaq.question && newFaq.answer) {
-      const id = (faqs.length + 1).toString()
-      const order = Math.max(...faqs.map(f => f.order)) + 1
-      setFaqs([...faqs, {
-        id,
-        ...newFaq,
-        order,
-        isActive: true
-      }])
+  const handleAddNew = async () => {
+    if (!newFaq.question.trim() || !newFaq.answer.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Question and answer are required',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      await adminFaqApi.createFaq({
+        question: newFaq.question,
+        answer: newFaq.answer,
+        category: newFaq.category,
+        isActive: true,
+      })
+      await fetchFaqs()
       setNewFaq({ question: '', answer: '', category: 'General' })
       setIsAddingNew(false)
+      toast({
+        title: 'Success',
+        description: 'FAQ added successfully',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add FAQ',
+        variant: 'destructive',
+      })
+    } finally {
+      setActionLoading(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -241,10 +328,20 @@ export default function FAQManagement() {
               <div className="flex gap-3">
                 <button
                   onClick={handleAddNew}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  disabled={actionLoading}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
-                  Save FAQ
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save FAQ
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -272,7 +369,7 @@ export default function FAQManagement() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                       <select
-                        value={editingFaq.category}
+                        value={editingFaq.category || 'General'}
                         onChange={(e) => setEditingFaq({ ...editingFaq, category: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
@@ -302,10 +399,20 @@ export default function FAQManagement() {
                     <div className="flex gap-3">
                       <button
                         onClick={handleSaveEdit}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                        disabled={actionLoading}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
                       >
-                        <Save className="w-4 h-4" />
-                        Save Changes
+                        {actionLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                          </>
+                        )}
                       </button>
                       <button
                         onClick={() => setEditingFaq(null)}
@@ -331,9 +438,9 @@ export default function FAQManagement() {
                           {faq.isActive ? 'Active' : 'Inactive'}
                         </span>
                         <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                          {faq.category}
+                          {faq.category || 'General'}
                         </span>
-                        <span className="text-sm text-gray-500">Order: {faq.order}</span>
+                        <span className="text-sm text-gray-500">Order: {faq.sortOrder}</span>
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.question}</h3>
                       <p className="text-gray-600">{faq.answer}</p>
@@ -341,14 +448,16 @@ export default function FAQManagement() {
                     <div className="flex items-center gap-2 ml-4">
                       <button
                         onClick={() => handleMoveUp(faq.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600"
+                        disabled={actionLoading}
+                        className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                         title="Move up"
                       >
                         <ChevronUp className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleMoveDown(faq.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600"
+                        disabled={actionLoading}
+                        className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                         title="Move down"
                       >
                         <ChevronDown className="w-4 h-4" />
@@ -362,7 +471,8 @@ export default function FAQManagement() {
                       </button>
                       <button
                         onClick={() => handleToggleStatus(faq.id)}
-                        className={`px-3 py-1 text-sm rounded ${
+                        disabled={actionLoading}
+                        className={`px-3 py-1 text-sm rounded disabled:opacity-50 ${
                           faq.isActive
                             ? 'bg-red-100 text-red-700 hover:bg-red-200'
                             : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -372,7 +482,8 @@ export default function FAQManagement() {
                       </button>
                       <button
                         onClick={() => handleDelete(faq.id)}
-                        className="p-2 text-red-600 hover:text-red-700"
+                        disabled={actionLoading}
+                        className="p-2 text-red-600 hover:text-red-700 disabled:opacity-50"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -393,4 +504,4 @@ export default function FAQManagement() {
       </div>
     </div>
   )
-} 
+}

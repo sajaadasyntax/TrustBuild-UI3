@@ -1993,6 +1993,92 @@ export const contentApi = {
   },
 };
 
+// Public FAQ API (no authentication required)
+export const faqApi = {
+  getAllFaqs: async (category?: string): Promise<any[]> => {
+    const url = category && category !== 'all' 
+      ? `${API_BASE_URL}/faq?category=${category}` 
+      : `${API_BASE_URL}/faq`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch FAQs');
+    }
+    const data = await response.json();
+    return data.data.faqs;
+  },
+
+  getCategories: async (): Promise<string[]> => {
+    const response = await fetch(`${API_BASE_URL}/faq/categories`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch FAQ categories');
+    }
+    const data = await response.json();
+    return data.data.categories;
+  },
+};
+
+// Admin FAQ API (authentication required)
+export const adminFaqApi = {
+  getAllFaqs: async (category?: string, status?: 'active' | 'inactive'): Promise<any[]> => {
+    const params = new URLSearchParams();
+    if (category && category !== 'all') params.append('category', category);
+    if (status) params.append('status', status);
+    
+    const response = await apiRequest<{ data: { faqs: any[] } }>(
+      `/faq/admin${params.toString() ? `?${params.toString()}` : ''}`
+    );
+    return response.data.faqs;
+  },
+
+  createFaq: async (faq: {
+    question: string;
+    answer: string;
+    category?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }): Promise<any> => {
+    const response = await apiRequest<{ data: { faq: any } }>('/faq', {
+      method: 'POST',
+      body: JSON.stringify(faq),
+    });
+    return response.data.faq;
+  },
+
+  updateFaq: async (id: string, updates: {
+    question?: string;
+    answer?: string;
+    category?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }): Promise<any> => {
+    const response = await apiRequest<{ data: { faq: any } }>(`/faq/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return response.data.faq;
+  },
+
+  deleteFaq: async (id: string): Promise<void> => {
+    await apiRequest(`/faq/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  toggleFaqStatus: async (id: string): Promise<any> => {
+    const response = await apiRequest<{ data: { faq: any } }>(`/faq/${id}/toggle`, {
+      method: 'PATCH',
+    });
+    return response.data.faq;
+  },
+
+  reorderFaq: async (id: string, direction: 'up' | 'down'): Promise<void> => {
+    await apiRequest(`/faq/${id}/reorder`, {
+      method: 'POST',
+      body: JSON.stringify({ direction }),
+    });
+  },
+};
+
 export const paymentsApi = {
   getMyPayments: async (params: {
     page?: number;
