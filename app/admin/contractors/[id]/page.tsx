@@ -98,7 +98,10 @@ export default function AdminContractorProfile() {
     try {
       setLoading(true)
       const response = await adminApi.getAllContractors()
-      const foundContractor = response.contractors.find((c: Contractor) => c.id === contractorId)
+      
+      // Check if response has contractors array
+      const contractorsList = response?.contractors || response?.data?.contractors || []
+      const foundContractor = contractorsList.find((c: Contractor) => c.id === contractorId)
       
       if (foundContractor) {
         setContractor(foundContractor)
