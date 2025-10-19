@@ -300,7 +300,6 @@ export default function ProfilePage() {
     switch (user.role) {
       case 'CONTRACTOR': return "/dashboard/contractor"
       case 'ADMIN': return "/admin"
-      case 'SUPER_ADMIN': return "/super-admin"
       default: return "/dashboard/client"
     }
   }

@@ -15,9 +15,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
-    // Admin and Super Admin routes have their own auth handling via AdminAuthContext
+    // Admin routes have their own auth handling via AdminAuthContext
     // Skip RouteGuard checks for these routes entirely
-    if (pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
+    if (pathname.startsWith('/admin')) {
       return
     }
 
@@ -52,7 +52,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
       '/dashboard/contractor',
       '/dashboard/client',
       '/admin',
-      '/super-admin',
       '/post-job'
     ]
 
@@ -76,14 +75,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
     // Role-based access control
     if (user) {
-      // Super admin routes - only SUPER_ADMIN role
-      if (pathname.startsWith('/super-admin') && user.role !== 'SUPER_ADMIN') {
-        setIsRedirecting(true)
-        router.push('/admin') // Redirect regular admins to admin panel
-        return
-      }
-      
-      // Admin routes - ADMIN and SUPER_ADMIN roles
+      // Admin routes - ADMIN and SUPER_ADMIN roles (legacy user roles, not actually used)
       if (pathname.startsWith('/admin') && !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
         setIsRedirecting(true)
         router.push(user.role === 'CONTRACTOR' ? '/dashboard/contractor' : '/dashboard/client')
@@ -93,8 +85,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // Contractor dashboard - only CONTRACTOR role
       if (pathname.startsWith('/dashboard/contractor') && user.role !== 'CONTRACTOR') {
         setIsRedirecting(true)
-        const dashboardRoute = user.role === 'SUPER_ADMIN' ? '/super-admin'
-          : user.role === 'ADMIN' ? '/admin' 
+        const dashboardRoute = user.role === 'ADMIN' ? '/admin' 
           : '/dashboard/client'
         router.push(dashboardRoute)
         return
@@ -103,8 +94,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // Client dashboard - only CUSTOMER role
       if (pathname.startsWith('/dashboard/client') && user.role !== 'CUSTOMER') {
         setIsRedirecting(true)
-        const dashboardRoute = user.role === 'SUPER_ADMIN' ? '/super-admin'
-          : user.role === 'ADMIN' ? '/admin' 
+        const dashboardRoute = user.role === 'ADMIN' ? '/admin' 
           : '/dashboard/contractor'
         router.push(dashboardRoute)
         return
@@ -113,8 +103,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // Post job - only CUSTOMER role (customers post jobs, contractors complete them)
       if (pathname === '/post-job' && user.role !== 'CUSTOMER') {
         setIsRedirecting(true)
-        const dashboardRoute = user.role === 'SUPER_ADMIN' ? '/super-admin'
-          : user.role === 'ADMIN' ? '/admin' 
+        const dashboardRoute = user.role === 'ADMIN' ? '/admin' 
           : '/dashboard/contractor'
         router.push(dashboardRoute)
         return
@@ -124,8 +113,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     // If authenticated and on login/register/home, redirect to appropriate dashboard
     if (user && (pathname === '/login' || pathname === '/register' || pathname === '/')) {
       setIsRedirecting(true)
-      const dashboardRoute = user.role === 'SUPER_ADMIN' ? '/super-admin'
-        : user.role === 'ADMIN' ? '/admin' 
+      const dashboardRoute = user.role === 'ADMIN' ? '/admin' 
         : user.role === 'CONTRACTOR' ? '/dashboard/contractor'
         : '/dashboard/client'
       router.push(dashboardRoute)
@@ -137,7 +125,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
   }, [user, loading, pathname, router])
 
   // Admin routes bypass RouteGuard - let them render immediately
-  if (pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
+  if (pathname.startsWith('/admin')) {
     return <>{children}</>
   }
 
