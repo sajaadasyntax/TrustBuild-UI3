@@ -151,8 +151,11 @@ export default function AdminPricingPage() {
 
     try {
       const amount = parseInt(creditForm.amount)
-      await adminApi.adjustContractorCredits(selectedContractor.id, amount, creditForm.reason)
-      
+      // Determine type based on whether amount is positive or negative
+      const type = amount >= 0 ? 'ADDITION' : 'DEDUCTION'
+      const absoluteAmount = Math.abs(amount)
+      await adminApi.adjustContractorCredits(selectedContractor.id, absoluteAmount, creditForm.reason, type)
+
       toast({
         title: "Credits Adjusted",
         description: `${amount > 0 ? 'Added' : 'Removed'} ${Math.abs(amount)} credits for ${selectedContractor.user.name}`,
