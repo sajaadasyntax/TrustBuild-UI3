@@ -1,13 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { Loader2, CheckCircle, XCircle, Clock, AlertCircle, Eye } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -16,24 +22,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  FileText,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
 
-interface KYCRecord {
+interface KycRecord {
   id: string;
-  contractorId: string;
-  status: 'PENDING' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'OVERDUE';
-  idDocPath?: string;
-  utilityDocPath?: string;
-  companyNumber?: string;
-  submittedAt?: string;
-  dueBy?: string;
-  reviewedBy?: string;
-  reviewedAt?: string;
-  rejectionReason?: string;
-  notes?: string;
-  contractor?: {
+  status: string;
+  submittedAt: string | null;
+  dueBy: string | null;
+  idDocPath: string | null;
+  utilityDocPath: string | null;
+  companyNumber: string | null;
+  contractor: {
     id: string;
-    businessName?: string;
+    businessName: string | null;
     user: {
       name: string;
       email: string;
@@ -41,271 +53,382 @@ interface KYCRecord {
   };
 }
 
-export default function AdminKYCPage() {
-  const { loading: authLoading } = useAdminAuth();
-  const [kycRecords, setKycRecords] = useState<KYCRecord[]>([]);
+export default function AdminKycPage() {
+  const router = useRouter();
+  const [kycs, setKycs] = useState<KycRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedKYC, setSelectedKYC] = useState<KYCRecord | null>(null);
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);
-  const [reviewNotes, setReviewNotes] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const { toast } = useToast();
+  const [selectedKyc, setSelectedKyc] = useState<KycRecord | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('SUBMITTED');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Action dialog state
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionNotes, setRejectionNotes] = useState('');
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
+  useEffect(() => {
+    fetchKycs();
+  }, [activeTab]);
 
-  const fetchKYCRecords = useCallback(async () => {
+  const fetchKycs = async () => {
+    setLoading(true);
+    setError('');
+
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/kyc/queue`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/queue?status=${activeTab}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+          },
+        }
+      );
 
-      if (!response.ok) throw new Error('Failed to fetch KYC records');
-
-      const data = await response.json();
-      setKycRecords(data.data?.kycRecords || []);
-    } catch (error) {
-      console.error('Error fetching KYC records:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load KYC records',
-        variant: 'destructive',
-      });
+      if (response.ok) {
+        const data = await response.json();
+        setKycs(data.data.kycRecords);
+      } else {
+        setError('Failed to fetch KYC records');
+      }
+    } catch (err) {
+      setError('Network error');
     } finally {
       setLoading(false);
     }
-  }, [toast, API_BASE_URL]);
-
-  useEffect(() => {
-    if (!authLoading) {
-      fetchKYCRecords();
-    }
-  }, [fetchKYCRecords, authLoading]);
-
-  const handleReview = (kyc: KYCRecord, action: 'approve' | 'reject') => {
-    setSelectedKYC(kyc);
-    setReviewAction(action);
-    setReviewNotes('');
-    setReviewDialogOpen(true);
   };
 
-  const submitReview = async () => {
-    if (!selectedKYC || !reviewAction) return;
+  const handleApprove = async () => {
+    if (!selectedKyc) return;
 
-    setProcessing(true);
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
-      const endpoint = reviewAction === 'approve' 
-        ? `${API_BASE_URL}/admin/kyc/${selectedKYC.id}/approve`
-        : `${API_BASE_URL}/admin/kyc/${selectedKYC.id}/reject`;
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/${selectedKyc.id}/approve`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+          },
+          body: JSON.stringify({ notes: approvalNotes }),
+        }
+      );
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
-        },
-        body: JSON.stringify({ notes: reviewNotes }),
-      });
-
-      if (!response.ok) throw new Error(`Failed to ${reviewAction} KYC`);
-
-      toast({
-        title: 'Success',
-        description: `KYC ${reviewAction === 'approve' ? 'approved' : 'rejected'} successfully`,
-      });
-
-      setReviewDialogOpen(false);
-      fetchKYCRecords();
-    } catch (error) {
-      console.error(`Error ${reviewAction}ing KYC:`, error);
-      toast({
-        title: 'Error',
-        description: `Failed to ${reviewAction} KYC`,
-        variant: 'destructive',
-      });
+      if (response.ok) {
+        setSuccess('KYC approved successfully');
+        setShowApproveDialog(false);
+        setApprovalNotes('');
+        setSelectedKyc(null);
+        fetchKycs();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to approve KYC');
+      }
+    } catch (err) {
+      setError('Network error');
     } finally {
-      setProcessing(false);
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedKyc || !rejectionReason.trim()) {
+      setError('Rejection reason is required');
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/${selectedKyc.id}/reject`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+          },
+          body: JSON.stringify({
+            reason: rejectionReason,
+            notes: rejectionNotes,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setSuccess('KYC rejected successfully');
+        setShowRejectDialog(false);
+        setRejectionReason('');
+        setRejectionNotes('');
+        setSelectedKyc(null);
+        fetchKycs();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to reject KYC');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: any }> = {
-      PENDING: { variant: 'secondary', icon: Clock },
-      SUBMITTED: { variant: 'default', icon: Clock },
-      UNDER_REVIEW: { variant: 'default', icon: Eye },
-      APPROVED: { variant: 'outline', icon: CheckCircle },
-      REJECTED: { variant: 'destructive', icon: XCircle },
-      OVERDUE: { variant: 'destructive', icon: AlertCircle },
+    const variants: Record<string, { variant: any; label: string }> = {
+      PENDING: { variant: 'secondary', label: 'Pending' },
+      SUBMITTED: { variant: 'default', label: 'Submitted' },
+      UNDER_REVIEW: { variant: 'default', label: 'Under Review' },
+      APPROVED: { variant: 'success', label: 'Approved' },
+      REJECTED: { variant: 'destructive', label: 'Rejected' },
+      OVERDUE: { variant: 'destructive', label: 'Overdue' },
     };
 
     const config = variants[status] || variants.PENDING;
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status}
-      </Badge>
-    );
+    return <Badge variant={config.variant as any}>{config.label}</Badge>;
   };
-
-  const viewDocument = (docPath: string) => {
-    window.open(`/api/admin/kyc/documents/${docPath}`, '_blank');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">KYC Review Queue</h1>
-        <p className="text-muted-foreground">
-          Review and approve contractor KYC submissions
-        </p>
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">KYC Verification Queue</h1>
+        <p className="text-gray-600">Review and approve contractor verification documents</p>
       </div>
 
-      <div className="grid gap-4">
-        {kycRecords.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">No KYC submissions to review</p>
-            </CardContent>
-          </Card>
-        ) : (
-          kycRecords.map((kyc) => (
-            <Card key={kyc.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{kyc.contractor?.businessName || kyc.contractor?.user.name}</CardTitle>
-                    <CardDescription>{kyc.contractor?.user.email}</CardDescription>
-                  </div>
-                  {getStatusBadge(kyc.status)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium">Company Number</p>
-                      <p className="text-muted-foreground">{kyc.companyNumber || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Submitted</p>
-                      <p className="text-muted-foreground">
-                        {kyc.submittedAt ? new Date(kyc.submittedAt).toLocaleDateString() : 'Not submitted'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Due By</p>
-                      <p className="text-muted-foreground">
-                        {kyc.dueBy ? new Date(kyc.dueBy).toLocaleDateString() : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Documents</p>
-                      <div className="flex gap-2">
-                        {kyc.idDocPath && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => viewDocument(kyc.idDocPath!)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            ID
-                          </Button>
-                        )}
-                        {kyc.utilityDocPath && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => viewDocument(kyc.utilityDocPath!)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Utility
-                          </Button>
+      {error && (
+        <Alert className="mb-6 border-red-300 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="mb-6 border-green-300 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
+        <CardHeader>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="SUBMITTED">Pending Review</TabsTrigger>
+              <TabsTrigger value="APPROVED">Approved</TabsTrigger>
+              <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
+              <TabsTrigger value="OVERDUE">Overdue</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          ) : kycs.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No KYC records found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Contractor</TableHead>
+                  <TableHead>Business Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Company #</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Due By</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {kycs.map((kyc) => (
+                  <TableRow key={kyc.id}>
+                    <TableCell className="font-medium">
+                      {kyc.contractor.user.name}
+                    </TableCell>
+                    <TableCell>
+                      {kyc.contractor.businessName || <span className="text-gray-400">-</span>}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {kyc.contractor.user.email}
+                    </TableCell>
+                    <TableCell>
+                      {kyc.companyNumber || <span className="text-gray-400">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {kyc.submittedAt
+                        ? new Date(kyc.submittedAt).toLocaleDateString()
+                        : <span className="text-gray-400">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {kyc.dueBy
+                        ? new Date(kyc.dueBy).toLocaleDateString()
+                        : <span className="text-gray-400">-</span>}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(kyc.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {kyc.status === 'SUBMITTED' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => {
+                                setSelectedKyc(kyc);
+                                setShowApproveDialog(true);
+                              }}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                setSelectedKyc(kyc);
+                                setShowRejectDialog(true);
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
                         )}
                       </div>
-                    </div>
-                  </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-                  {kyc.notes && (
-                    <div>
-                      <p className="font-medium text-sm mb-1">Notes</p>
-                      <p className="text-sm text-muted-foreground">{kyc.notes}</p>
-                    </div>
-                  )}
-
-                  {kyc.status === 'SUBMITTED' && (
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleReview(kyc, 'approve')}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleReview(kyc, 'reject')}
-                        variant="destructive"
-                      >
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Review Dialog */}
-      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+      {/* Approve Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {reviewAction === 'approve' ? 'Approve' : 'Reject'} KYC Submission
-            </DialogTitle>
+            <DialogTitle>Approve KYC Verification</DialogTitle>
             <DialogDescription>
-              {reviewAction === 'approve'
-                ? 'This will approve the contractor\'s KYC submission and activate their account.'
-                : 'Provide a reason for rejecting this KYC submission.'}
+              This will approve the contractor's KYC verification and fully activate their account.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="notes">Notes {reviewAction === 'reject' && '(Required)'}</Label>
+
+          <div className="space-y-4">
+            {selectedKyc && (
+              <div className="text-sm">
+                <p><strong>Contractor:</strong> {selectedKyc.contractor.user.name}</p>
+                <p><strong>Email:</strong> {selectedKyc.contractor.user.email}</p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="approvalNotes">Notes (Optional)</Label>
               <Textarea
-                id="notes"
-                value={reviewNotes}
-                onChange={(e) => setReviewNotes(e.target.value)}
-                placeholder={reviewAction === 'approve' ? 'Add optional notes...' : 'Explain why this submission is being rejected...'}
-                rows={4}
+                id="approvalNotes"
+                placeholder="Add any notes for the contractor..."
+                value={approvalNotes}
+                onChange={(e) => setApprovalNotes(e.target.value)}
+                rows={3}
               />
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleApprove} disabled={actionLoading}>
+              {actionLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Approve KYC
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject KYC Verification</DialogTitle>
+            <DialogDescription>
+              This will reject the contractor's KYC submission and pause their account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {selectedKyc && (
+              <div className="text-sm">
+                <p><strong>Contractor:</strong> {selectedKyc.contractor.user.name}</p>
+                <p><strong>Email:</strong> {selectedKyc.contractor.user.email}</p>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="rejectionReason">Rejection Reason *</Label>
+              <Textarea
+                id="rejectionReason"
+                placeholder="Explain why the documents are rejected..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="rejectionNotes">Additional Notes (Optional)</Label>
+              <Textarea
+                id="rejectionNotes"
+                placeholder="Any additional information..."
+                value={rejectionNotes}
+                onChange={(e) => setRejectionNotes(e.target.value)}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
               Cancel
             </Button>
             <Button
-              onClick={submitReview}
-              disabled={processing || (reviewAction === 'reject' && !reviewNotes.trim())}
-              className={reviewAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
-              variant={reviewAction === 'reject' ? 'destructive' : 'default'}
+              variant="destructive"
+              onClick={handleReject}
+              disabled={actionLoading || !rejectionReason.trim()}
             >
-              {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {reviewAction === 'approve' ? 'Approve' : 'Reject'}
+              {actionLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Rejecting...
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Reject KYC
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -313,4 +436,3 @@ export default function AdminKYCPage() {
     </div>
   );
 }
-
