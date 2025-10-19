@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { contractorsApi, jobsApi, reviewsApi, paymentsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
 import { CommissionExplanation } from '@/components/subscription/CommissionExplanation'
+import { KycStatusBanner } from '@/components/auth/KycStatusBanner'
 
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -215,6 +216,9 @@ export default function ContractorDashboard() {
 
         </div>
       </div>
+
+      {/* KYC Status Banner */}
+      <KycStatusBanner />
 
       <div className="flex flex-col-reverse md:flex-row gap-6 mb-8">
         <div className="md:w-2/3 space-y-6">

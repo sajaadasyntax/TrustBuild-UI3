@@ -170,13 +170,17 @@ export default function RegisterPage() {
         description: data.description,
       })
 
-      // The authApi.register already handles token storage
+      // Clear the token - contractor should log in manually after registration
+      localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
+      
       toast({
-        title: "Account created!",
-        description: "Welcome to TrustBuild! Your contractor profile is pending approval.",
+        title: "Account created successfully!",
+        description: "Please log in to complete your KYC verification and start bidding on jobs.",
       })
 
-      router.push("/dashboard/contractor")
+      // Redirect to home page, not dashboard
+      router.push("/")
     } catch (error) {
       if (error instanceof ApiError) {
         toast({
