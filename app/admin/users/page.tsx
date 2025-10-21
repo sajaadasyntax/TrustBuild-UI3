@@ -125,8 +125,31 @@ export default function AdminUsersPage() {
       // Add default permissions for non-SUPER_ADMIN roles
       if (newAdmin.role !== 'SUPER_ADMIN') {
         const defaultPermissions = newAdmin.role === 'FINANCE_ADMIN' 
-          ? ['manage_payments', 'manage_subscriptions', 'view_reports']
-          : ['manage_support', 'manage_reviews', 'view_users']
+          ? [
+              // Finance Admin permissions
+              'payments:read',
+              'payments:write',
+              'payments:refund',
+              'jobs:read',
+              'contractors:read',
+              'users:read',
+              'pricing:read',
+              'pricing:write',
+            ]
+          : [
+              // Support Admin permissions
+              'users:read',
+              'jobs:read',
+              'jobs:write',
+              'contractors:read',
+              'reviews:read',
+              'reviews:write',
+              'content:read',
+              'content:write',
+              'support:read',
+              'support:write',
+              'payments:read',
+            ]
         adminData.permissions = defaultPermissions
       }
       
