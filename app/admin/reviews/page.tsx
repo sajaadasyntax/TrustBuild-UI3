@@ -28,6 +28,7 @@ interface Review {
   comment: string
   createdAt: string
   isVerified: boolean
+  flagReason?: string | null
   job: {
     id: string
     title: string
@@ -307,8 +308,7 @@ export default function ReviewManagementPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">
-              {/* No flag reason in Review type; placeholder for future flagged logic */}
-              0
+              {reviews.filter(r => r.flagReason).length}
             </div>
             <p className="text-sm text-muted-foreground">Flagged</p>
           </CardContent>
@@ -344,7 +344,12 @@ export default function ReviewManagementPage() {
                       <CardTitle className="flex items-center gap-2">
                         {customerName}
                         {getStatusBadge(review)}
-                        {/* No flag icon, as Review type has no flagReason */}
+                        {review.flagReason && (
+                          <Badge variant="destructive" className="flex items-center gap-1">
+                            <Flag className="h-3 w-3" />
+                            Flagged
+                          </Badge>
+                        )}
                       </CardTitle>
                       <CardDescription>
                         Review for {contractorName} • {jobTitle}
@@ -359,7 +364,14 @@ export default function ReviewManagementPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4">{review.comment}</p>
-                {/* No flagged reason block, as Review type has no flagReason */}
+                {review.flagReason && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-md p-3 mb-4">
+                    <p className="text-sm text-destructive font-medium flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Flagged: {review.flagReason}
+                    </p>
+                  </div>
+                )}
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     variant="outline" 
@@ -369,16 +381,18 @@ export default function ReviewManagementPage() {
                     <Eye className="h-4 w-4 mr-1" />
                     View Job Details
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleOpenFlagDialog(review.id)}
-                    className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
-                  >
-                    <Flag className="h-4 w-4 mr-1" />
-                    Flag Review
-                  </Button>
-                  {!review.isVerified && (
+                  {!review.flagReason && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleOpenFlagDialog(review.id)}
+                      className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
+                    >
+                      <Flag className="h-4 w-4 mr-1" />
+                      Flag Review
+                    </Button>
+                  )}
+                  {!review.isVerified && !review.flagReason && (
                     <>
                       <Button 
                         size="sm" 

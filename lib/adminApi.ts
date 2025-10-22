@@ -354,7 +354,7 @@ export const adminApi = {
   // Get payment statistics
   getPaymentStats: async () => {
     const response = await adminApiRequest<any>('/admin/payments/stats');
-    return response;
+    return response.data?.stats || response.data || response;
   },
 
   // Get payment transactions
