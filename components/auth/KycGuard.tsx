@@ -45,7 +45,7 @@ export function KycGuard({ children }: KycGuardProps) {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/my-status`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
           },
         });
 

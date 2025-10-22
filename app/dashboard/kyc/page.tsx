@@ -48,7 +48,7 @@ export default function KycPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/my-status`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
 
@@ -94,7 +94,7 @@ export default function KycPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/upload`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
         body: formData,
       });
