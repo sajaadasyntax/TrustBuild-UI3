@@ -133,64 +133,80 @@ export default function JobDetailsPage() {
   }
 
   const handleApply = async () => {
-    if (!job || !user) return
+    console.log('🚀 Starting application submission...', {
+      job: job?.id,
+      user: user?.id,
+      hasAccess,
+      application
+    });
+
+    if (!job || !user) {
+      console.error('❌ Missing job or user');
+      return;
+    }
 
     // Check if contractor has access
     if (!hasAccess) {
-      setShowAccessDialog(true)
-      return
+      console.warn('⚠️ No access to job, showing access dialog');
+      setShowAccessDialog(true);
+      return;
     }
 
     // For quote-on-request jobs, ensure quote is provided
     if (!job.budget && !application.estimatedCost) {
+      console.warn('⚠️ Quote required but not provided');
       toast({
         title: "Quote Required",
         description: "Please provide your quote for this project.",
         variant: "destructive"
-      })
-      return
+      });
+      return;
     }
 
     if (!application.estimatedCost || parseFloat(application.estimatedCost) <= 0) {
+      console.warn('⚠️ Invalid quote amount');
       toast({
         title: "Invalid Quote",
         description: "Please provide a valid quote amount.",
         variant: "destructive"
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setApplying(true)
+      setApplying(true);
+      console.log('📤 Submitting application via API...');
       await jobsApi.apply(job.id, {
         proposal: application.proposal,
         estimatedCost: parseInt(application.estimatedCost),
         timeline: application.timeline,
         questions: application.questions
-      })
+      });
       
+      console.log('✅ Application submitted successfully');
       toast({
         title: "Application submitted!",
         description: "Your application has been sent to the customer.",
-      })
+      });
       
-      setShowApplicationForm(false)
-      await fetchJob(job.id)
+      setShowApplicationForm(false);
+      await fetchJob(job.id);
     } catch (error: any) {
+      console.error('❌ Application submission failed:', error);
       // Check for access-related errors
       if (error?.response?.status === 403 || error?.message?.includes('access')) {
         toast({
           title: "Access Required",
           description: "You need to purchase job access before applying. Please purchase access first.",
           variant: "destructive"
-        })
-        setShowApplicationForm(false) // Close the form
+        });
+        setShowApplicationForm(false); // Close the form
         // Optionally refresh access status
         if (job) {
-          await checkJobAccess(job.id)
+          await checkJobAccess(job.id);
         }
       } else {
-        handleApiError(error, 'Failed to submit application')
+        handleApiError(error, 'Failed to submit application');
       }
     } finally {
       setApplying(false)
@@ -578,7 +594,10 @@ export default function JobDetailsPage() {
                         </div>
                         
                         <Button 
-                          onClick={() => setShowApplicationForm(true)}
+                          onClick={() => {
+                            console.log('📝 Opening application form...');
+                            setShowApplicationForm(true);
+                          }}
                           disabled={applying}
                           className="w-full"
                         >
@@ -628,7 +647,10 @@ export default function JobDetailsPage() {
                       </Button>
                     </div>
                                   ) : !showApplicationForm ? (
-                    <Button onClick={() => setShowApplicationForm(true)}>
+                    <Button onClick={() => {
+                      console.log('📝 Opening application form...');
+                      setShowApplicationForm(true);
+                    }}>
                       {isQuoteOnRequest() ? "Provide Quote & Apply" : "Apply Now"}
                     </Button>
                   ) : (
