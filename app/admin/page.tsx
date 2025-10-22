@@ -115,13 +115,12 @@ export default function AdminPage() {
               Manage contractors, jobs, and reviews on the TrustBuild platform
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleDebugLogout}
-            className="bg-orange-50 text-orange-600 hover:bg-orange-100"
-          >
-            🔍 Debug Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <RefreshCw 
+              className="h-5 w-5 cursor-pointer text-muted-foreground hover:text-primary transition-colors" 
+              onClick={fetchDashboardStats}
+            />
+          </div>
         </div>
       </div>
 
