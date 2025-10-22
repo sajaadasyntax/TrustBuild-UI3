@@ -107,6 +107,17 @@ export default function AdminPayments() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [showTransactionDialog, setShowTransactionDialog] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+      setPage(1)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   const fetchPaymentStats = useCallback(async () => {
     try {
@@ -135,7 +146,7 @@ export default function AdminPayments() {
         limit: 20,
         status: statusFilter,
         type: typeFilter,
-        search: searchTerm,
+        search: debouncedSearchTerm,
         dateFilter
       })
       setTransactions(response.data.transactions)
@@ -150,7 +161,7 @@ export default function AdminPayments() {
     } finally {
       setLoading(false)
     }
-  }, [page, statusFilter, typeFilter, searchTerm, dateFilter])
+  }, [page, statusFilter, typeFilter, debouncedSearchTerm, dateFilter])
 
   useEffect(() => {
     // Wait for authentication to be ready before fetching data
@@ -456,10 +467,14 @@ export default function AdminPayments() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
+                    disabled={loading}
                   />
                 </div>
                 
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(value) => {
+                  setStatusFilter(value)
+                  setPage(1)
+                }}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -472,7 +487,10 @@ export default function AdminPayments() {
                   </SelectContent>
                 </Select>
 
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <Select value={typeFilter} onValueChange={(value) => {
+                  setTypeFilter(value)
+                  setPage(1)
+                }}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
@@ -484,7 +502,10 @@ export default function AdminPayments() {
                   </SelectContent>
                 </Select>
 
-                <Select value={dateFilter} onValueChange={setDateFilter}>
+                <Select value={dateFilter} onValueChange={(value) => {
+                  setDateFilter(value)
+                  setPage(1)
+                }}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by date" />
                   </SelectTrigger>
@@ -506,8 +527,24 @@ export default function AdminPayments() {
                     setDateFilter('all')
                     setPage(1)
                   }}
+                  disabled={loading}
                 >
                   Clear Filters
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    fetchPaymentStats()
+                    fetchTransactions()
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -520,6 +557,12 @@ export default function AdminPayments() {
               <CardDescription>Latest payment transactions from Stripe</CardDescription>
             </CardHeader>
             <CardContent>
+              {loading && transactions.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading transactions...</span>
+                </div>
+              ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -598,6 +641,34 @@ export default function AdminPayments() {
                   )}
                 </TableBody>
               </Table>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between space-x-2 py-4 px-6">
+                  <div className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page <= 1 || loading}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages || loading}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
