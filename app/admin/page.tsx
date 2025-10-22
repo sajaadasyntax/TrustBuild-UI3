@@ -58,28 +58,13 @@ export default function AdminPage() {
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
   const permissions = admin?.permissions || []
   
-  // Debug function to test logout
-  const handleDebugLogout = async () => {
-    console.log("🔴 Admin Debug Logout - Starting...")
-    console.log("🔴 Current admin:", admin)
-    console.log("🔴 Admin role:", admin?.role)
-    try {
-      await logout()
-      console.log("🔴 Logout successful")
-    } catch (error) {
-      console.error("🔴 Logout error:", error)
-    }
-  }
 
   const fetchDashboardStats = useCallback(async () => {
     try {
-      console.log('📊 Dashboard: Fetching stats...')
       setLoading(true)
       const dashboardData = await adminApi.getDashboardStats()
-      console.log('📊 Dashboard: Stats received:', dashboardData)
       setStats(dashboardData)
     } catch (error) {
-      console.error('📊 Dashboard: Failed to fetch stats:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to fetch dashboard statistics",
@@ -87,7 +72,6 @@ export default function AdminPage() {
       })
     } finally {
       setLoading(false)
-      console.log('📊 Dashboard: Fetch complete')
     }
   }, [toast])
 
@@ -334,35 +318,63 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* Payment Management - requires payments:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write', 'payments:refund', 'content:read', 'content:write'])) && (
+        {/* Content Moderation - SUPPORT_ADMIN access */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['content:read', 'content:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment & Content
+                <FileText className="h-5 w-5" />
+                Content Moderation
               </CardTitle>
               <CardDescription>
-                Manage payments and content moderation
+                Manage FAQs, featured contractors, and flagged content
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write', 'payments:refund'])) && (
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/admin/payments">Payment Dashboard</Link>
-                </Button>
-              )}
-              {(isSuperAdmin || hasAnyPermission(permissions, ['content:read', 'content:write'])) && (
-                <Button variant="outline" className="w-full" asChild>
-                  <Link href="/admin/content">Content Moderation</Link>
-                </Button>
-              )}
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/content/faq">Manage FAQs</Link>
+              </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/content/featured-contractors">Featured Contractors</Link>
+              </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/content/flagged">Flagged Content</Link>
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Platform Settings - requires settings:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write', 'pricing:read', 'pricing:write'])) && (
+        {/* Payment Management - FINANCE_ADMIN access */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write', 'payments:refund'])) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Dashboard
+              </CardTitle>
+              <CardDescription>
+                Manage payments, refunds, and financial transactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Total Revenue</span>
+                <Badge variant="default">
+                  ${stats?.revenue?.total?.toLocaleString() || '0'}
+                </Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/payments">Payment Dashboard</Link>
+              </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/subscriptions">Subscriptions</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Platform Settings - FINANCE_ADMIN access */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

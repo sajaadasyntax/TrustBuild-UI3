@@ -12,8 +12,6 @@ import dynamic from 'next/dynamic';
 import { RouteGuard } from "@/components/auth/route-guard"
 import { usePathname } from 'next/navigation'
 
-// Import ResetSplash component with no SSR to avoid hydration issues
-const ResetSplash = dynamic(() => import('@/components/ResetSplash'), { ssr: false });
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -42,8 +40,6 @@ export default function RootLayout({
                 </main>
                 {!isAdminRoute && <SiteFooter />}
                 <Toaster />
-                {/* Add ResetSplash button for testing */}
-                <ResetSplash />
               </SplashProvider>
             </ThemeProvider>
           </RouteGuard>
