@@ -59,7 +59,7 @@ export default function AdminKycPage() {
   const [loading, setLoading] = useState(true);
   const [selectedKyc, setSelectedKyc] = useState<KycRecord | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('SUBMITTED');
+  const [activeTab, setActiveTab] = useState('not-verified'); // Changed to verified/not-verified
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
@@ -75,14 +75,16 @@ export default function AdminKycPage() {
     setError('');
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/queue?status=${activeTab}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          },
-        }
-      );
+      // Fetch based on verified status instead of KYC status
+      const endpoint = activeTab === 'verified' 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/queue?status=APPROVED`
+        : `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/queue?status=PENDING,SUBMITTED,REJECTED,OVERDUE,UNDER_REVIEW`;
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -220,11 +222,15 @@ export default function AdminKycPage() {
       <Card>
         <CardHeader>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="SUBMITTED">Pending Review</TabsTrigger>
-              <TabsTrigger value="APPROVED">Approved</TabsTrigger>
-              <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
-              <TabsTrigger value="OVERDUE">Overdue</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="not-verified">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Not Verified
+              </TabsTrigger>
+              <TabsTrigger value="verified">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Verified
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
