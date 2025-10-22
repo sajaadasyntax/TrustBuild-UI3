@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { 
+import {
   AlertCircle, ArrowRight, Bell, BriefcaseBusiness, Clock, CreditCard, FileCheck, 
-  FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye
+  FileClock, FileText, Star, TrendingUp, Wallet, Briefcase, MapPin, DollarSign, Calendar, CheckCircle, Eye, Shield
 } from "lucide-react"
 import { contractorsApi, jobsApi, reviewsApi, paymentsApi, handleApiError, Contractor, Job, JobApplication, Review } from '@/lib/api'
 import { CommissionExplanation } from '@/components/subscription/CommissionExplanation'
@@ -195,6 +195,12 @@ export default function ContractorDashboard() {
           <p className="text-muted-foreground">Manage your jobs and find new opportunities</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/kyc">
+              <Shield className="mr-2 h-4 w-4" />
+              KYC Verification
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/dashboard/contractor/current-jobs">
               <Clock className="mr-2 h-4 w-4" />
