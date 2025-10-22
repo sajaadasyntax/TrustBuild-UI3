@@ -33,6 +33,8 @@ import {
   FileText,
   Loader2,
   AlertCircle,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 
 interface KycRecord {
@@ -66,6 +68,7 @@ export default function AdminKycPage() {
   // Action dialog state
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionNotes, setRejectionNotes] = useState('');
@@ -286,6 +289,17 @@ export default function AdminKycPage() {
                     <TableCell>{getStatusBadge(kyc.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedKyc(kyc);
+                            setShowViewDialog(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View Details
+                        </Button>
                         {kyc.status === 'SUBMITTED' && (
                           <>
                             <Button
@@ -435,6 +449,173 @@ export default function AdminKycPage() {
                   Reject KYC
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>KYC Document Review</DialogTitle>
+            <DialogDescription>
+              Review the contractor's submitted verification documents
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedKyc && (
+            <div className="space-y-6">
+              {/* Contractor Info */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">Contractor Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> {selectedKyc.contractor.user.name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Email:</span> {selectedKyc.contractor.user.email}
+                  </div>
+                  <div>
+                    <span className="font-medium">Business:</span> {selectedKyc.contractor.businessName || 'Not provided'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Company Number:</span> {selectedKyc.companyNumber || 'Not provided'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Status:</span> {getStatusBadge(selectedKyc.status)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Submitted:</span> {selectedKyc.submittedAt ? new Date(selectedKyc.submittedAt).toLocaleDateString() : 'Not submitted'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">Submitted Documents</h3>
+                
+                {/* ID Document */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Government ID Document</h4>
+                    {selectedKyc.idDocPath ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <FileText className="w-3 h-3 mr-1" />
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-red-600 border-red-600">
+                        Not provided
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedKyc.idDocPath && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">Document uploaded successfully</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedKyc.idDocPath}`, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Document
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedKyc.idDocPath}`;
+                            link.download = `id-document-${selectedKyc.contractor.user.name}.pdf`;
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Utility Bill */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Utility Bill</h4>
+                    {selectedKyc.utilityDocPath ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <FileText className="w-3 h-3 mr-1" />
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-red-600 border-red-600">
+                        Not provided
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedKyc.utilityDocPath && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">Document uploaded successfully</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedKyc.utilityDocPath}`, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Document
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedKyc.utilityDocPath}`;
+                            link.download = `utility-bill-${selectedKyc.contractor.user.name}.pdf`;
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {selectedKyc.status === 'SUBMITTED' && (
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewDialog(false);
+                      setShowRejectDialog(true);
+                    }}
+                  >
+                    <XCircle className="w-4 h-4 mr-1" />
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewDialog(false);
+                      setShowApproveDialog(true);
+                    }}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Approve
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
