@@ -55,6 +55,12 @@ export default function KycPage() {
       if (response.ok) {
         const data = await response.json();
         setKyc(data.data.kyc);
+      } else if (response.status === 404) {
+        // KYC record doesn't exist yet - the backend should create it automatically
+        // Retry after a short delay
+        setTimeout(() => {
+          fetchKycStatus();
+        }, 1000);
       } else {
         setError('Failed to fetch KYC status');
       }
@@ -153,10 +159,21 @@ export default function KycPage() {
   if (!kyc) {
     return (
       <div className="container mx-auto p-6">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            KYC record not found. Please contact support.
+        <Alert variant="default" className="border-yellow-300 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            <div className="space-y-2">
+              <p className="font-semibold">Setting up your KYC verification...</p>
+              <p className="text-sm">This usually takes just a moment. If this persists, please refresh the page.</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                size="sm"
+                className="mt-2"
+              >
+                Refresh Page
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       </div>
