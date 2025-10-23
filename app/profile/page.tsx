@@ -156,11 +156,12 @@ export default function ProfilePage() {
 
     try {
       const uploadResult = await uploadApi.uploadFile(file)
+      console.log('Upload result:', uploadResult)
       handleInputChange('logoUrl', uploadResult.url)
       
       toast({
         title: "Logo uploaded successfully",
-        description: "Your business logo has been uploaded."
+        description: `Logo URL: ${uploadResult.url}`
       })
     } catch (error) {
       console.error('Error uploading logo:', error)
@@ -200,6 +201,8 @@ export default function ProfilePage() {
           postcode: profileData.postcode,
           logoUrl: profileData.logoUrl
         }
+        
+        console.log('Saving contractor profile with data:', contractorUpdateData)
         
         try {
           await contractorsApi.updateProfile(contractorUpdateData)

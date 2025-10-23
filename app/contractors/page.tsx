@@ -11,6 +11,7 @@ import { Star } from 'lucide-react'
 export default function ContractorsDirectory() {
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [loading, setLoading] = useState(true)
+  const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchContractors()
@@ -45,13 +46,17 @@ export default function ContractorsDirectory() {
             <CardHeader>
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {contractor.logoUrl ? (
+                  {contractor.logoUrl && !logoErrors.has(contractor.id) ? (
                     <Image
                       src={contractor.logoUrl}
                       alt={`${contractor.businessName || contractor.user?.name} logo`}
                       width={48}
                       height={48}
                       className="object-cover w-full h-full"
+                      onError={() => {
+                        console.error('Failed to load logo for contractor:', contractor.id, contractor.logoUrl);
+                        setLogoErrors(prev => new Set(prev).add(contractor.id));
+                      }}
                     />
                   ) : (
                     <span className="text-lg font-bold text-primary">

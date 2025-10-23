@@ -20,6 +20,7 @@ export default function ContractorProfilePage() {
   const [reviewsPage, setReviewsPage] = useState(1)
   const [reviewsTotal, setReviewsTotal] = useState(0)
   const [averageRating, setAverageRating] = useState(0)
+  const [logoError, setLogoError] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -130,13 +131,17 @@ export default function ContractorProfilePage() {
                   <CardDescription>{contractor.servicesProvided}</CardDescription>
                 </div>
                 <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">
-                  {contractor.logoUrl ? (
+                  {contractor.logoUrl && !logoError ? (
                     <Image
                       src={contractor.logoUrl}
                       alt={`${contractor.businessName || contractor.user?.name} logo`}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"
+                      onError={() => {
+                        console.error('Failed to load logo:', contractor.logoUrl);
+                        setLogoError(true);
+                      }}
                     />
                   ) : (
                     <span className="text-xl font-bold text-primary">

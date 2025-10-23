@@ -3,7 +3,39 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true },
+  images: { 
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.cloudinary.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.trustbuild.uk',
+      },
+      {
+        protocol: 'https',
+        hostname: 'trustbuild.uk',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.trustbuild.uk',
+      },
+    ],
+  },
   async headers() {
     return [
       {
