@@ -264,6 +264,21 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleAdminStatusToggle = async (adminId: string, newStatus: boolean, adminName: string) => {
+    try {
+      await adminApi.updateAdmin(adminId, { isActive: newStatus })
+      
+      toast({
+        title: "Admin Updated",
+        description: `Admin ${adminName} has been ${newStatus ? 'enabled' : 'disabled'} successfully`,
+      })
+      
+      fetchAdmins()
+    } catch (error) {
+      handleApiError(error, `Failed to ${newStatus ? 'enable' : 'disable'} admin`)
+    }
+  }
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
@@ -634,6 +649,7 @@ export default function AdminUsersPage() {
                           <TableHead>2FA</TableHead>
                           <TableHead>Last Login</TableHead>
                           <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -682,6 +698,27 @@ export default function AdminUsersPage() {
                             </TableCell>
                             <TableCell>
                               {new Date(adminUser.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              {adminUser.id !== admin.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAdminStatusToggle(adminUser.id, !adminUser.isActive, adminUser.name)}
+                                >
+                                  {adminUser.isActive ? (
+                                    <>
+                                      <UserX className="h-4 w-4 mr-1" />
+                                      Disable
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="h-4 w-4 mr-1" />
+                                      Enable
+                                    </>
+                                  )}
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

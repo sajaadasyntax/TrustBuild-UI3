@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder } from "lucide-react"
+import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -135,17 +135,21 @@ export function AdminNavigation() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/admin/profile" className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  My Profile
+                </Link>
+              </DropdownMenuItem>
               {(isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])) && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/settings" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/settings" className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
