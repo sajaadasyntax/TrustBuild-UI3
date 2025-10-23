@@ -71,7 +71,7 @@ export function AdminNavigation() {
       href: "/admin/payments", 
       label: "Payments", 
       icon: CreditCard,
-      requiredPermissions: ['payments:read', 'payments:write'],
+      requiredPermissions: ['payments:read'],
     },
     { 
       href: "/admin/settings", 

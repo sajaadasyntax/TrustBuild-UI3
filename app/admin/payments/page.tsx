@@ -277,7 +277,14 @@ export default function AdminPayments() {
     )
   }
 
-  if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE_ADMIN') {
+  // Check if admin has payment permissions
+  const hasPaymentAccess = admin.role === 'SUPER_ADMIN' || 
+                          admin.role === 'FINANCE_ADMIN' || 
+                          (admin.permissions && admin.permissions.some(perm => 
+                            perm.startsWith('payments:')
+                          ))
+
+  if (!hasPaymentAccess) {
     return (
       <div className="container mx-auto p-6">
         <Card>
