@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Search, Star, Eye, AlertTriangle, CheckCircle, X, Flag } from "lucide-react"
+import { Search, Star, Eye, AlertTriangle, CheckCircle, X, Flag, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -215,6 +215,33 @@ export default function ReviewManagementPage() {
     }
   }
 
+  const exportReviewsToCSV = () => {
+    const headers = ['ID', 'Rating', 'Customer', 'Contractor', 'Job Title', 'Comment', 'Status', 'Flag Reason', 'Created Date']
+    const csvData = reviews.map(review => [
+      review.id,
+      review.rating,
+      review.customer.user.name,
+      review.contractor.businessName,
+      review.job.title,
+      `"${review.comment.replace(/"/g, '""')}"`,
+      review.isVerified ? 'Approved' : 'Pending',
+      review.flagReason || 'None',
+      new Date(review.createdAt).toLocaleDateString()
+    ])
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reviews-export-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
   const getStatusBadge = (review: Review) => {
     const status = review.isVerified ? 'approved' : 'pending'
     switch (status) {
@@ -285,6 +312,10 @@ export default function ReviewManagementPage() {
             <SelectItem value="1">1 Star</SelectItem>
           </SelectContent>
         </Select>
+        <Button onClick={exportReviewsToCSV} variant="outline" disabled={reviews.length === 0}>
+          <Download className="h-4 w-4 md:mr-2" />
+          <span className="hidden md:inline">Export CSV</span>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -429,7 +460,7 @@ export default function ReviewManagementPage() {
 
       {/* Flag Review Dialog */}
       <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Flag Review</DialogTitle>
             <DialogDescription>

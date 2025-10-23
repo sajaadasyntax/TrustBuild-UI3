@@ -29,9 +29,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 import { 
   UserPlus, Search, Filter, Eye, Shield, UserCheck, UserX, Trash2, 
-  RefreshCw, Users, Crown
+  RefreshCw, Users, Crown, Download
 } from "lucide-react"
 import { adminApi } from '@/lib/adminApi'
 import { toast } from '@/hooks/use-toast'
@@ -59,9 +65,12 @@ const handleApiError = (error: any, defaultMessage: string) => {
 export default function AdminUsersPage() {
   const { admin, loading: authLoading } = useAdminAuth()
   const [users, setUsers] = useState<User[]>([])
+  const [admins, setAdmins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingAdmins, setLoadingAdmins] = useState(true)
   const [totalUsers, setTotalUsers] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [activeTab, setActiveTab] = useState<'users' | 'admins'>('users')
   const [filters, setFilters] = useState({
     role: 'all',
     status: 'all',
@@ -94,12 +103,33 @@ export default function AdminUsersPage() {
     }
   }, [currentPage, filters])
 
+  const fetchAdmins = useCallback(async () => {
+    // Only super admins can view admin list
+    if (admin?.role !== 'SUPER_ADMIN') {
+      setLoadingAdmins(false)
+      return
+    }
+    
+    try {
+      setLoadingAdmins(true)
+      const adminsList = await adminApi.listAdmins()
+      setAdmins(adminsList || [])
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch admins')
+    } finally {
+      setLoadingAdmins(false)
+    }
+  }, [admin])
+
   useEffect(() => {
     // Wait for authentication to be ready before fetching data
     if (!authLoading) {
       fetchUsers()
+      if (admin?.role === 'SUPER_ADMIN') {
+        fetchAdmins()
+      }
     }
-  }, [fetchUsers, authLoading])
+  }, [fetchUsers, fetchAdmins, authLoading, admin])
 
   const handleCreateAdmin = async () => {
     if (!newAdmin.name || !newAdmin.email || !newAdmin.password) {
@@ -160,6 +190,9 @@ export default function AdminUsersPage() {
         description: `New admin ${newAdmin.name} has been created successfully`,
       })
       
+      // Refresh admin list
+      fetchAdmins()
+      
       setShowCreateAdmin(false)
       setNewAdmin({ 
         name: '', 
@@ -173,6 +206,46 @@ export default function AdminUsersPage() {
       handleApiError(error, 'Failed to create admin')
     } finally {
       setCreatingAdmin(false)
+    }
+  }
+
+  const exportToCSV = (data: any[], filename: string, type: 'users' | 'admins') => {
+    if (type === 'users') {
+      const csvContent = [
+        ['Name', 'Email', 'Role', 'Status', 'Created Date'].join(','),
+        ...data.map(user => [
+          user.name,
+          user.email,
+          user.role,
+          user.isActive ? 'Active' : 'Inactive',
+          new Date(user.createdAt).toLocaleDateString()
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = filename
+      link.click()
+    } else {
+      const csvContent = [
+        ['Name', 'Email', 'Role', 'Status', '2FA', 'Last Login', 'Created Date'].join(','),
+        ...data.map(admin => [
+          admin.name,
+          admin.email,
+          admin.role.replace('_', ' '),
+          admin.isActive ? 'Active' : 'Inactive',
+          admin.twoFAEnabled ? 'Enabled' : 'Disabled',
+          admin.lastLoginAt ? new Date(admin.lastLoginAt).toLocaleString() : 'Never',
+          new Date(admin.createdAt).toLocaleDateString()
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = filename
+      link.click()
     }
   }
 
@@ -315,77 +388,98 @@ export default function AdminUsersPage() {
           )}
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="role-filter">Role</Label>
-                <Select
-                  value={filters.role}
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, role: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="CONTRACTOR">Contractor</SelectItem>
-                    <SelectItem value="CUSTOMER">Customer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="status-filter">Status</Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="md:col-span-2">
-                <Label htmlFor="search">Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Search by name or email..."
-                    value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="pl-10"
-                  />
+        {/* Tabs for Users and Admins */}
+        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="users">Platform Users</TabsTrigger>
+            {admin?.role === 'SUPER_ADMIN' && (
+              <TabsTrigger value="admins">Administrators</TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-4 mt-6">
+            {/* User Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="role-filter">Role</Label>
+                    <Select
+                      value={filters.role}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, role: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="CONTRACTOR">Contractor</SelectItem>
+                        <SelectItem value="CUSTOMER">Customer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="status-filter">Status</Label>
+                    <Select
+                      value={filters.status}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <Label htmlFor="search">Search</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder="Search by name or email..."
+                        value={filters.search}
+                        onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
         {/* Users Table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Users ({totalUsers})</span>
-              <Button variant="outline" size="sm" onClick={fetchUsers}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => exportToCSV(users, `users-${new Date().toISOString().split('T')[0]}.csv`, 'users')}
+                  disabled={users.length === 0}
+                >
+                  <Download className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Export CSV</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={fetchUsers}>
+                  <RefreshCw className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Refresh</span>
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -467,28 +561,138 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
 
-        {/* Pagination */}
-        {totalUsers > 10 && (
-          <div className="flex justify-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <span className="flex items-center px-4">
-              Page {currentPage} of {Math.ceil(totalUsers / 10)}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              disabled={currentPage >= Math.ceil(totalUsers / 10)}
-            >
-              Next
-            </Button>
-          </div>
-        )}
+            {/* Pagination */}
+            {totalUsers > 10 && (
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="flex items-center px-4">
+                  Page {currentPage} of {Math.ceil(totalUsers / 10)}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  disabled={currentPage >= Math.ceil(totalUsers / 10)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Admins Tab - Only visible to SUPER_ADMIN */}
+          {admin?.role === 'SUPER_ADMIN' && (
+            <TabsContent value="admins" className="space-y-4 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      Administrators ({admins.length})
+                    </span>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportToCSV(admins, `admins-${new Date().toISOString().split('T')[0]}.csv`, 'admins')}
+                        disabled={admins.length === 0}
+                      >
+                        <Download className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">Export CSV</span>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={fetchAdmins}>
+                        <RefreshCw className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">Refresh</span>
+                      </Button>
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    Manage administrator accounts and their permissions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingAdmins ? (
+                    <div className="flex justify-center py-8">
+                      <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : admins.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No administrators found
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Admin</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>2FA</TableHead>
+                          <TableHead>Last Login</TableHead>
+                          <TableHead>Created</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {admins.map((adminUser) => (
+                          <TableRow key={adminUser.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium flex items-center gap-2">
+                                  {adminUser.role === 'SUPER_ADMIN' && <Crown className="w-4 h-4 text-yellow-500" />}
+                                  {adminUser.name}
+                                </div>
+                                <div className="text-sm text-muted-foreground">{adminUser.email}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                adminUser.role === 'SUPER_ADMIN' ? 'default' :
+                                adminUser.role === 'FINANCE_ADMIN' ? 'secondary' :
+                                'outline'
+                              }>
+                                {adminUser.role.replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusBadgeColor(adminUser.isActive)}>
+                                {adminUser.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {adminUser.twoFAEnabled ? (
+                                <Badge className="bg-green-100 text-green-800">
+                                  <Shield className="w-3 h-3 mr-1" />
+                                  Enabled
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Disabled
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {adminUser.lastLoginAt 
+                                ? new Date(adminUser.lastLoginAt).toLocaleString()
+                                : 'Never'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              {new Date(adminUser.createdAt).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   )

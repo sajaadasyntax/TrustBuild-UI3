@@ -450,13 +450,13 @@ export default function AdminPayments() {
           >
             {exporting ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
+                <RefreshCw className="h-4 w-4 md:mr-2 animate-spin" />
+                <span className="hidden md:inline">Exporting...</span>
               </>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                <Download className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Export CSV</span>
               </>
             )}
           </Button>
@@ -699,7 +699,7 @@ export default function AdminPayments() {
 
       {/* Transaction Details Dialog */}
       <Dialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
             <DialogDescription>

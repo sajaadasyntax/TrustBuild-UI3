@@ -344,7 +344,7 @@ export default function AdminPage() {
         )}
 
         {/* Payment Management - FINANCE_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write', 'payments:refund'])) && (
+        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -589,13 +589,13 @@ export default function AdminContractors() {
           >
             {exporting ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
+                <RefreshCw className="h-4 w-4 md:mr-2 animate-spin" />
+                <span className="hidden md:inline">Exporting...</span>
               </>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                <Download className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Export CSV</span>
               </>
             )}
           </Button>
@@ -944,7 +944,7 @@ export default function AdminContractors() {
 
       {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {approvalData.approved ? 'Approve' : 'Reject'} Contractor
@@ -1043,7 +1043,7 @@ export default function AdminContractors() {
 
       {/* Status Change Dialog */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Change Contractor Status</DialogTitle>
             <DialogDescription>
@@ -1100,7 +1100,7 @@ export default function AdminContractors() {
 
       {/* Credit Adjustment Dialog */}
       <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Contractor Credits</DialogTitle>
             <DialogDescription>

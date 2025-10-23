@@ -406,8 +406,8 @@ export default function JobOversightPage() {
           </SelectContent>
         </Select>
         <Button onClick={exportToCSV} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
+          <Download className="h-4 w-4 md:mr-2" />
+          <span className="hidden md:inline">Export CSV</span>
         </Button>
       </div>
 
@@ -629,7 +629,7 @@ export default function JobOversightPage() {
 
       {/* Job Details Modal */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Project Details</DialogTitle>
             <DialogDescription>
@@ -708,7 +708,7 @@ export default function JobOversightPage() {
 
       {/* Job Price Edit Dialog */}
       <Dialog open={showPriceDialog} onOpenChange={setShowPriceDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Job Lead Price</DialogTitle>
             <DialogDescription>
@@ -777,7 +777,7 @@ export default function JobOversightPage() {
 
       {/* Job Budget Edit Dialog */}
       <Dialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Job Budget</DialogTitle>
             <DialogDescription>
@@ -840,7 +840,7 @@ export default function JobOversightPage() {
 
       {/* Contractor Limit Dialog */}
       <Dialog open={showContractorLimitDialog} onOpenChange={setShowContractorLimitDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Contractor Limit</DialogTitle>
             <DialogDescription>
@@ -913,7 +913,7 @@ export default function JobOversightPage() {
 
       {/* Flag Job Dialog */}
       <Dialog open={showFlagDialog} onOpenChange={setShowFlagDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Flag Job for Review</DialogTitle>
             <DialogDescription>
