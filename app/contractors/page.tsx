@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { contractorsApi, Contractor, handleApiError } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,10 +43,29 @@ export default function ContractorsDirectory() {
         {contractors.map(contractor => (
           <Card key={contractor.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle>{contractor.businessName || contractor.user?.name}</CardTitle>
-              {contractor.servicesProvided && (
-                <p className="text-sm text-muted-foreground">{contractor.servicesProvided}</p>
-              )}
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {contractor.logoUrl ? (
+                    <Image
+                      src={contractor.logoUrl}
+                      alt={`${contractor.businessName || contractor.user?.name} logo`}
+                      width={48}
+                      height={48}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-primary">
+                      {(contractor.businessName || contractor.user?.name || 'C').substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <CardTitle>{contractor.businessName || contractor.user?.name}</CardTitle>
+                  {contractor.servicesProvided && (
+                    <p className="text-sm text-muted-foreground">{contractor.servicesProvided}</p>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="mb-3 text-muted-foreground">{contractor.city || 'City not specified'}</div>

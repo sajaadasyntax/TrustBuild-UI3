@@ -197,7 +197,8 @@ export default function ProfilePage() {
           servicesProvided: profileData.servicesProvided,
           yearsExperience: profileData.yearsExperience,
           city: profileData.city,
-          postcode: profileData.postcode
+          postcode: profileData.postcode,
+          logoUrl: profileData.logoUrl
         }
         
         try {

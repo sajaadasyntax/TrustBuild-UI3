@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -128,10 +129,20 @@ export default function ContractorProfilePage() {
                   <CardTitle className="text-2xl">{contractor.businessName || contractor.user?.name}</CardTitle>
                   <CardDescription>{contractor.servicesProvided}</CardDescription>
                 </div>
-                <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold text-primary">
-                    {(contractor.businessName || contractor.user?.name || 'C').substring(0, 2).toUpperCase()}
-                  </span>
+                <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">
+                  {contractor.logoUrl ? (
+                    <Image
+                      src={contractor.logoUrl}
+                      alt={`${contractor.businessName || contractor.user?.name} logo`}
+                      width={64}
+                      height={64}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-xl font-bold text-primary">
+                      {(contractor.businessName || contractor.user?.name || 'C').substring(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
             </CardHeader>
