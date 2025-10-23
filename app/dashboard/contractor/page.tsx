@@ -110,8 +110,13 @@ export default function ContractorDashboard() {
         monthlyEarnings: earningsData.monthlyEarnings,
         averageRating: contractorData.averageRating || 0,
         totalReviews: contractorData.reviewCount || 0,
-        earningsGrowth: earningsData.monthlyEarnings > 0 ? 
-          Math.round(((earningsData.monthlyEarnings - (earningsData.totalEarnings - earningsData.monthlyEarnings)) / (earningsData.totalEarnings - earningsData.monthlyEarnings)) * 100) : 0
+        earningsGrowth: (() => {
+          const previousEarnings = earningsData.totalEarnings - earningsData.monthlyEarnings;
+          if (previousEarnings > 0 && earningsData.monthlyEarnings > 0) {
+            return Math.round(((earningsData.monthlyEarnings - previousEarnings) / previousEarnings) * 100);
+          }
+          return 0;
+        })()
       })
 
     } catch (error) {
