@@ -171,10 +171,13 @@ export default function AdminDisputesPage() {
 
   const handleViewDetails = async (dispute: Dispute) => {
     try {
+      const token = localStorage.getItem('admin_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/disputes/${dispute.id}`,
         {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         }
       );
 
@@ -182,9 +185,20 @@ export default function AdminDisputesPage() {
         const data = await response.json();
         setSelectedDispute(data);
         setShowDetailsDialog(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to load dispute details',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching dispute details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load dispute details',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -199,14 +213,15 @@ export default function AdminDisputesPage() {
     }
 
     try {
+      const token = localStorage.getItem('admin_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/disputes/${selectedDispute.id}/resolve`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
-          credentials: 'include',
           body: JSON.stringify({
             resolution,
             resolutionNotes,
@@ -249,14 +264,15 @@ export default function AdminDisputesPage() {
 
   const handleUpdateStatus = async (disputeId: string, newStatus: string) => {
     try {
+      const token = localStorage.getItem('admin_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/disputes/${disputeId}/status`,
         {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
-          credentials: 'include',
           body: JSON.stringify({ status: newStatus }),
         }
       );
@@ -267,9 +283,20 @@ export default function AdminDisputesPage() {
           description: 'Status updated successfully',
         });
         fetchDisputes();
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to update status',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update status',
+        variant: 'destructive',
+      });
     }
   };
 

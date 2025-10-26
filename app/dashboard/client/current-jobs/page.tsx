@@ -52,6 +52,8 @@ export default function ClientCurrentJobs() {
         return { label: 'Open', variant: 'secondary' as const }
       case 'IN_PROGRESS':
         return { label: 'In Progress', variant: 'outline' as const }
+      case 'DISPUTED':
+        return { label: 'Disputed', variant: 'destructive' as const }
       case 'COMPLETED':
         return { label: 'Completed', variant: 'default' as const }
       case 'CANCELLED':

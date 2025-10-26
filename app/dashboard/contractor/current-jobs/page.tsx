@@ -30,7 +30,7 @@ export default function ContractorCurrentJobs() {
       const acceptedApplications = applications.filter(app => app.status === 'ACCEPTED')
       const activeJobsData = acceptedApplications
         .map(app => app.job)
-        .filter(job => job.status === 'IN_PROGRESS')
+        .filter(job => job.status === 'IN_PROGRESS' || job.status === 'DISPUTED')
       
       setActiveJobs(activeJobsData)
     } catch (error) {
@@ -115,7 +115,9 @@ export default function ContractorCurrentJobs() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <CardTitle>{job.title}</CardTitle>
-                  <Badge variant="outline">In Progress</Badge>
+                  <Badge variant={job.status === 'DISPUTED' ? 'destructive' : 'outline'}>
+                    {job.status === 'DISPUTED' ? 'Disputed' : 'In Progress'}
+                  </Badge>
                 </div>
                 <CardDescription className="flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1">
