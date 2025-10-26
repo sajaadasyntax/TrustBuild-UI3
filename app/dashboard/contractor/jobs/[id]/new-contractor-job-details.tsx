@@ -406,10 +406,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
         )}
 
         {/* Dispute Section for Contractors */}
-        {hasAccess && (job.status === 'IN_PROGRESS' || 
-          job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' || 
-          job.status === 'COMPLETED' ||
-          job.status === 'DISPUTED') && (
+        {hasAccess && (['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && (
           <Card className="border-muted">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2 flex items-center gap-2">
