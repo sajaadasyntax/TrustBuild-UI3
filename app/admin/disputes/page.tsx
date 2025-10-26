@@ -111,15 +111,18 @@ export default function AdminDisputesPage() {
   const fetchDisputes = async () => {
     try {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (typeFilter) params.append('type', typeFilter);
-      if (priorityFilter) params.append('priority', priorityFilter);
+      if (statusFilter && statusFilter !== 'ALL') params.append('status', statusFilter);
+      if (typeFilter && typeFilter !== 'ALL') params.append('type', typeFilter);
+      if (priorityFilter && priorityFilter !== 'ALL') params.append('priority', priorityFilter);
       if (searchQuery) params.append('search', searchQuery);
 
+      const token = localStorage.getItem('admin_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/disputes?${params.toString()}`,
         {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         }
       );
 
@@ -147,10 +150,13 @@ export default function AdminDisputesPage() {
 
   const fetchStats = async () => {
     try {
+      const token = localStorage.getItem('admin_token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/disputes/stats`,
         {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         }
       );
 
@@ -402,7 +408,7 @@ export default function AdminDisputesPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="ALL">All Statuses</SelectItem>
                 <SelectItem value="OPEN">Open</SelectItem>
                 <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                 <SelectItem value="AWAITING_EVIDENCE">Awaiting Evidence</SelectItem>
@@ -415,7 +421,7 @@ export default function AdminDisputesPage() {
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="ALL">All Types</SelectItem>
                 <SelectItem value="WORK_QUALITY">Work Quality</SelectItem>
                 <SelectItem value="JOB_CONFIRMATION">Job Confirmation</SelectItem>
                 <SelectItem value="CREDIT_REFUND">Credit Refund</SelectItem>
@@ -429,7 +435,7 @@ export default function AdminDisputesPage() {
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Priorities</SelectItem>
+                <SelectItem value="ALL">All Priorities</SelectItem>
                 <SelectItem value="LOW">Low</SelectItem>
                 <SelectItem value="MEDIUM">Medium</SelectItem>
                 <SelectItem value="HIGH">High</SelectItem>
