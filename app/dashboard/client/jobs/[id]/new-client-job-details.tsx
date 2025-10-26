@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
 import { FinalPriceConfirmationDialog } from "@/components/jobs/FinalPriceConfirmationDialog"
+import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
 
 interface ClientJobDetailsProps {
   job: Job
@@ -524,6 +525,33 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                   className="bg-yellow-600 hover:bg-yellow-700"
                 >
                   Review & Confirm
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dispute Section */}
+        {(['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && job.wonByContractorId && (
+          <Card className="border-muted">
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                Having issues with this job?
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                If you&apos;re experiencing problems with work quality, delays, communication, or other issues, 
+                you can open a dispute and our support team will help resolve it.
+              </p>
+              <div className="flex gap-3">
+                <CreateDisputeDialog 
+                  jobId={job.id} 
+                  jobTitle={job.title}
+                />
+                <Button variant="outline" asChild>
+                  <Link href="/dashboard/client/disputes">
+                    View My Disputes
+                  </Link>
                 </Button>
               </div>
             </CardContent>

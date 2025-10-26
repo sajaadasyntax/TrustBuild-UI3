@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Textarea } from "@/components/ui/textarea"
 import JobLeadAccessDialog from "@/components/JobLeadAccessDialog"
 import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDialog"
+import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
+import Link from 'next/link'
 
 interface ContractorJobDetailsProps {
   job: Job
@@ -398,6 +400,71 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
               <div>
                 <h4 className="font-semibold mb-1">Applied On</h4>
                 <p>{new Date(myApplication.appliedAt).toLocaleDateString()}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dispute Section for Contractors */}
+        {hasAccess && (job.status === 'IN_PROGRESS' || 
+          job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' || 
+          job.status === 'COMPLETED' ||
+          job.status === 'DISPUTED') && (
+          <Card className="border-muted">
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                Need to report an issue?
+              </h3>
+              <div className="space-y-3">
+                {/* Job Confirmation Issue */}
+                {job.status === 'COMPLETED' && !job.customerConfirmed && (
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm font-medium text-orange-800 mb-1">
+                      Job completed but not confirmed?
+                    </p>
+                    <p className="text-sm text-orange-700">
+                      If you've completed the work but the customer hasn't confirmed, 
+                      you can open a dispute for commission payment.
+                    </p>
+                  </div>
+                )}
+
+                {/* Credit Refund for Cancelled Jobs */}
+                {job.status === 'CANCELLED' && job.jobAccess?.some(access => access.creditUsed) && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-1">
+                      Job cancelled? Request credit refund
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      If the job was cancelled before work started and you used a credit, 
+                      you may be eligible for a refund.
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-sm text-muted-foreground">
+                  Report issues with job confirmation, payment, delays, or other concerns.
+                  Our support team will help resolve it.
+                </p>
+                
+                <div className="flex gap-3">
+                  <CreateDisputeDialog 
+                    jobId={job.id} 
+                    jobTitle={job.title}
+                    trigger={
+                      <Button variant="outline" className="text-orange-600 border-orange-300">
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Open Dispute
+                      </Button>
+                    }
+                  />
+                  <Button variant="outline" asChild>
+                    <Link href="/dashboard/contractor/disputes">
+                      View My Disputes
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

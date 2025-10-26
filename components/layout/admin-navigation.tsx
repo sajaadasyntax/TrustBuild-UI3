@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder, User } from "lucide-react"
+import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder, User, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -60,6 +60,12 @@ export function AdminNavigation() {
       label: "Reviews", 
       icon: Star,
       requiredPermissions: ['reviews:read', 'reviews:write'],
+    },
+    { 
+      href: "/admin/disputes", 
+      label: "Disputes", 
+      icon: AlertTriangle,
+      requiredPermissions: ['disputes:read', 'disputes:write'],
     },
     { 
       href: "/admin/content", 

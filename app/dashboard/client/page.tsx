@@ -224,6 +224,12 @@ export default function ClientDashboard() {
                 </Link>
               </Button>
               <Button asChild variant="outline" className="h-20 flex-col">
+                <Link href="/dashboard/client/disputes">
+                  <AlertCircle className="h-6 w-6 mb-2" />
+                  My Disputes
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="h-20 flex-col">
                 <Link href="/profile">
                   <CheckCircle className="h-6 w-6 mb-2" />
                   Update Profile

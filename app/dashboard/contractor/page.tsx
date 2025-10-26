@@ -218,6 +218,12 @@ export default function ContractorDashboard() {
               Job History
             </Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/contractor/disputes">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              My Disputes
+            </Link>
+          </Button>
           <Button asChild>
             <Link href="/jobs">
               <BriefcaseBusiness className="mr-2 h-4 w-4" />
