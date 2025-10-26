@@ -78,9 +78,12 @@ export function CreateDisputeDialog({ jobId, jobTitle, trigger }: CreateDisputeD
         formData.append('evidence', file);
       });
 
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 

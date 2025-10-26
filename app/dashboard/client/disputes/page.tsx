@@ -36,8 +36,11 @@ export default function ClientDisputesPage() {
 
   const fetchDisputes = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
