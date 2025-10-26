@@ -90,7 +90,7 @@ export default function ContractorDashboard() {
       // Fetch jobs (active and completed) from accepted applications
       const acceptedApplications = applicationsData.filter(app => app.status === 'ACCEPTED')
       const jobsFromApplications = acceptedApplications.map(app => app.job)
-      const activeJobsData = jobsFromApplications.filter(job => job.status === 'IN_PROGRESS' || job.status === 'DISPUTED')
+      const activeJobsData = jobsFromApplications.filter(job => ['IN_PROGRESS', 'DISPUTED'].includes(job.status))
       const completedJobsData = jobsFromApplications.filter(job => job.status === 'COMPLETED')
       
       setActiveJobs(activeJobsData)

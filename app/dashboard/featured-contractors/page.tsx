@@ -150,14 +150,19 @@ export default function FeaturedContractorsPage() {
               <div>
                 <p className="text-sm font-medium mb-2">Specialties</p>
                 <div className="flex flex-wrap gap-2">
-                  {contractor.specialties?.slice(0, 3).map((specialty) => (
+                  {Array.isArray(contractor.specialties) && contractor.specialties.slice(0, 3).map((specialty) => (
                     <Badge key={specialty} variant="secondary" className="text-xs">
                       {specialty}
                     </Badge>
                   ))}
-                  {contractor.specialties && contractor.specialties.length > 3 && (
+                  {Array.isArray(contractor.specialties) && contractor.specialties.length > 3 && (
                     <Badge variant="secondary" className="text-xs">
                       +{contractor.specialties.length - 3} more
+                    </Badge>
+                  )}
+                  {!Array.isArray(contractor.specialties) && (
+                    <Badge variant="secondary" className="text-xs">
+                      Various Services
                     </Badge>
                   )}
                 </div>
