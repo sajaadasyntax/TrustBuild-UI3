@@ -155,7 +155,7 @@ export default function FeaturedContractorsPage() {
                       {specialty}
                     </Badge>
                   ))}
-                  {contractor.specialties.length > 3 && (
+                  {contractor.specialties && contractor.specialties.length > 3 && (
                     <Badge variant="secondary" className="text-xs">
                       +{contractor.specialties.length - 3} more
                     </Badge>
