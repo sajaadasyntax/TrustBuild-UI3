@@ -79,12 +79,38 @@ export function CreateDisputeDialog({ jobId, jobTitle, trigger }: CreateDisputeD
       });
 
       const token = localStorage.getItem('auth_token');
+      
+      // Debug logging
+      console.log('🔍 Dispute Creation Debug:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL,
+        fullUrl: `${process.env.NEXT_PUBLIC_API_URL}/disputes`,
+        jobId,
+        type,
+      });
+
+      if (!token) {
+        toast({
+          title: 'Authentication Error',
+          description: 'Please log in again to create a dispute',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
         body: formData,
+      });
+
+      console.log('📥 Dispute API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
       });
 
       if (response.ok) {
@@ -99,18 +125,22 @@ export function CreateDisputeDialog({ jobId, jobTitle, trigger }: CreateDisputeD
           window.location.reload();
         }, 1000);
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Dispute creation failed:', {
+          status: response.status,
+          error: data,
+        });
         toast({
           title: 'Error',
-          description: data.error || 'Failed to create dispute',
+          description: data.error || `Failed to create dispute (${response.status})`,
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error creating dispute:', error);
+      console.error('❌ Error creating dispute:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create dispute',
+        description: error instanceof Error ? error.message : 'Failed to create dispute',
         variant: 'destructive',
       });
     } finally {
