@@ -19,6 +19,8 @@ interface KycData {
   rejectionReason?: string;
   hasIdDocument: boolean;
   hasUtilityBill: boolean;
+  hasInsurance: boolean;
+  hasCompanyDoc: boolean;
   companyNumber?: string;
 }
 
@@ -34,6 +36,8 @@ export default function KycPage() {
   // Form state
   const [idDocument, setIdDocument] = useState<File | null>(null);
   const [utilityBill, setUtilityBill] = useState<File | null>(null);
+  const [insuranceDoc, setInsuranceDoc] = useState<File | null>(null);
+  const [companyDoc, setCompanyDoc] = useState<File | null>(null);
   const [companyNumber, setCompanyNumber] = useState('');
 
   useEffect(() => {
@@ -76,8 +80,8 @@ export default function KycPage() {
     setError('');
     setSuccess('');
 
-    if (!idDocument || !utilityBill) {
-      setError('Please upload both required documents');
+    if (!idDocument || !utilityBill || !insuranceDoc) {
+      setError('Please upload all required documents (ID, utility bill, and insurance certificate)');
       return;
     }
 
@@ -87,6 +91,10 @@ export default function KycPage() {
       const formData = new FormData();
       formData.append('idDocument', idDocument);
       formData.append('utilityBill', utilityBill);
+      formData.append('insuranceDoc', insuranceDoc);
+      if (companyDoc) {
+        formData.append('companyDoc', companyDoc);
+      }
       if (companyNumber) {
         formData.append('companyNumber', companyNumber);
       }
@@ -102,11 +110,13 @@ export default function KycPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Documents uploaded successfully! Your account is now active pending admin review.');
+        setSuccess('Documents uploaded successfully! Our team will review your documents and notify you once approved. Your account will be activated after KYC approval.');
         fetchKycStatus();
         // Clear form
         setIdDocument(null);
         setUtilityBill(null);
+        setInsuranceDoc(null);
+        setCompanyDoc(null);
         setCompanyNumber('');
       } else {
         setError(data.message || 'Failed to upload documents');
@@ -315,10 +325,10 @@ export default function KycPage() {
               {/* Utility Bill */}
               <div>
                 <Label htmlFor="utilityBill" className="text-base font-medium">
-                  Utility Bill *
+                  Proof of Address *
                 </Label>
                 <p className="text-sm text-gray-600 mb-2">
-                  Must be dated within the last 3 months
+                  Utility bill or bank statement dated within the last 3 months
                 </p>
                 <Input
                   id="utilityBill"
@@ -326,6 +336,39 @@ export default function KycPage() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setUtilityBill(e.target.files?.[0] || null)}
                   required
+                />
+              </div>
+
+              {/* Insurance Document */}
+              <div>
+                <Label htmlFor="insuranceDoc" className="text-base font-medium">
+                  Public Liability Insurance *
+                </Label>
+                <p className="text-sm text-gray-600 mb-2">
+                  Valid insurance certificate showing public liability coverage
+                </p>
+                <Input
+                  id="insuranceDoc"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setInsuranceDoc(e.target.files?.[0] || null)}
+                  required
+                />
+              </div>
+
+              {/* Company Document */}
+              <div>
+                <Label htmlFor="companyDoc" className="text-base font-medium">
+                  Company Registration Documents
+                </Label>
+                <p className="text-sm text-gray-600 mb-2">
+                  Certificate of incorporation or business registration (if applicable)
+                </p>
+                <Input
+                  id="companyDoc"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setCompanyDoc(e.target.files?.[0] || null)}
                 />
               </div>
 
