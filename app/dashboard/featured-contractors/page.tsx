@@ -150,7 +150,7 @@ export default function FeaturedContractorsPage() {
               <div>
                 <p className="text-sm font-medium mb-2">Specialties</p>
                 <div className="flex flex-wrap gap-2">
-                  {contractor.specialties.slice(0, 3).map((specialty) => (
+                  {contractor.specialties?.slice(0, 3).map((specialty) => (
                     <Badge key={specialty} variant="secondary" className="text-xs">
                       {specialty}
                     </Badge>
