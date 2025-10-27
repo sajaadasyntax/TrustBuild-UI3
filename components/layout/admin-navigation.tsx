@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder, User, AlertTriangle } from "lucide-react"
+import { Shield, LogOut, Settings, Users, Building2, FileText, CreditCard, Star, Folder, User, AlertTriangle, Receipt, Activity, Lock, Mail, AlertCircle, DollarSign, CheckCircle, ShieldCheck, LifeBuoy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -68,6 +68,12 @@ export function AdminNavigation() {
       requiredPermissions: ['disputes:read', 'disputes:write'],
     },
     { 
+      href: "/admin/invoices", 
+      label: "Invoices", 
+      icon: Receipt,
+      requiredPermissions: ['payments:read'],
+    },
+    { 
       href: "/admin/content", 
       label: "Content", 
       icon: Folder,
@@ -78,6 +84,36 @@ export function AdminNavigation() {
       label: "Payments", 
       icon: CreditCard,
       requiredPermissions: ['payments:read'],
+    },
+    { 
+      href: "/admin/kyc", 
+      label: "KYC", 
+      icon: ShieldCheck,
+      requiredPermissions: ['kyc:read', 'kyc:approve'],
+    },
+    { 
+      href: "/admin/pricing", 
+      label: "Pricing", 
+      icon: DollarSign,
+      requiredPermissions: ['pricing:read', 'pricing:write'],
+    },
+    { 
+      href: "/admin/final-price-confirmations", 
+      label: "Final Prices", 
+      icon: CheckCircle,
+      requiredPermissions: ['jobs:read', 'jobs:write'],
+    },
+    { 
+      href: "/admin/activity-logs", 
+      label: "Activity Logs", 
+      icon: Activity,
+      requiredPermissions: [], // Super Admin only (no specific permission)
+    },
+    { 
+      href: "/admin/support", 
+      label: "Support", 
+      icon: LifeBuoy,
+      requiredPermissions: ['disputes:read', 'disputes:write'],
     },
     { 
       href: "/admin/settings", 
@@ -151,12 +187,46 @@ export function AdminNavigation() {
                 </Link>
               </DropdownMenuItem>
               {(isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])) && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/settings" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/settings" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/settings/admins" className="cursor-pointer">
+                      <Users className="mr-2 h-4 w-4" />
+                      Admin Management
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                    Security & Monitoring
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/security/logins" className="cursor-pointer">
+                      <Lock className="mr-2 h-4 w-4" />
+                      Login Activity
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/security/email-activity" className="cursor-pointer">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Email Activity
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/security/error-logs" className="cursor-pointer">
+                      <AlertCircle className="mr-2 h-4 w-4" />
+                      Error Logs
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="cursor-pointer">

@@ -153,6 +153,32 @@ export const adminApi = {
     return response;
   },
 
+  // Email Logs
+  getEmailLogs: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/email/logs?${queryParams}`);
+    return response;
+  },
+
+  getEmailStats: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/email/stats?${queryParams}`);
+    return response;
+  },
+
+  // Error Logs
+  getErrorLogs: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/errors/logs?${queryParams}`);
+    return response;
+  },
+
+  getErrorStats: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/errors/stats?${queryParams}`);
+    return response;
+  },
+
   // Get all users with filters and pagination
   getAllUsers: async (params?: { 
     page?: number; 
