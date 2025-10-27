@@ -151,6 +151,8 @@ export default function AdminContractors() {
   const [showTransactionHistory, setShowTransactionHistory] = useState(false)
   const [creditTransactions, setCreditTransactions] = useState<any[]>([])
   const [loadingTransactions, setLoadingTransactions] = useState(false)
+  const [showDirectApprovalDialog, setShowDirectApprovalDialog] = useState(false)
+  const [directApprovalReason, setDirectApprovalReason] = useState('')
   const [approvalData, setApprovalData] = useState({
     approved: true,
     reason: '',
@@ -438,6 +440,12 @@ export default function AdminContractors() {
     setShowApprovalDialog(true)
   }
 
+  const openDirectApprovalDialog = (contractor: Contractor) => {
+    setSelectedContractor(contractor)
+    setDirectApprovalReason('')
+    setShowDirectApprovalDialog(true)
+  }
+
   const openStatusDialog = (contractor: Contractor, status: string) => {
     setSelectedContractor(contractor)
     setStatusData({ status, reason: '' })
@@ -483,6 +491,36 @@ export default function AdminContractors() {
     try {
       setProcessing(true)
       await handleStatusChange(selectedContractor.id, statusData.status, statusData.reason)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleDirectApproval = async () => {
+    if (!selectedContractor || !directApprovalReason.trim()) return
+
+    try {
+      setProcessing(true)
+      await adminApi.approveContractor(
+        selectedContractor.id,
+        true,
+        `Direct approval without KYC: ${directApprovalReason}`,
+        true // bypassKyc = true
+      )
+      
+      toast({
+        title: "Contractor Approved",
+        description: `${selectedContractor.businessName} has been approved directly without KYC submission`,
+      })
+      
+      setShowDirectApprovalDialog(false)
+      setSelectedContractor(null)
+      setDirectApprovalReason('')
+      fetchContractors()
+      fetchPendingContractors()
+      fetchStats()
+    } catch (error) {
+      handleApiError(error, 'Failed to approve contractor')
     } finally {
       setProcessing(false)
     }
@@ -748,6 +786,16 @@ export default function AdminContractors() {
                       </div>
 
                       <div className="flex items-center space-x-2">
+                        {!contractor.profileApproved && (
+                          <Button
+                            size="sm"
+                            onClick={() => openDirectApprovalDialog(contractor)}
+                            className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                          >
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Quick Approve
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -1369,6 +1417,68 @@ export default function AdminContractors() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Direct Approval Dialog */}
+      <Dialog open={showDirectApprovalDialog} onOpenChange={setShowDirectApprovalDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quick Approve Contractor</DialogTitle>
+            <DialogDescription>
+              Approve {selectedContractor?.businessName} directly without requiring KYC submission
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-yellow-800">Direct Approval</h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    This will approve the contractor immediately without requiring KYC documents. 
+                    Use this only for trusted contractors or special circumstances.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="directReason">Approval Reason *</Label>
+              <Textarea
+                id="directReason"
+                value={directApprovalReason}
+                onChange={(e) => setDirectApprovalReason(e.target.value)}
+                placeholder="Why are you approving this contractor without KYC? (e.g., Known contractor, Special circumstances, etc.)"
+                rows={3}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDirectApprovalDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDirectApproval}
+              disabled={processing || !directApprovalReason.trim()}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {processing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <UserCheck className="mr-2 h-4 w-4" />
+                  Quick Approve
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

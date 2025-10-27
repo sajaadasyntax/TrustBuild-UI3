@@ -315,6 +315,11 @@ export default function AdminManagementPage() {
                       Only the Main Super Admin can create other Super Admins
                     </p>
                   )}
+                  {newAdminRole === 'SUPER_ADMIN' && canCreateSuperAdmin && (
+                    <p className="text-xs text-muted-foreground">
+                      Note: New Super Admins will be regular Super Admins. Only one Main Super Admin can exist.
+                    </p>
+                  )}
                 </div>
               </div>
               <DialogFooter>
