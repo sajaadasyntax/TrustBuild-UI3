@@ -133,23 +133,24 @@ export const adminApi = {
   },
 
   // Get activity logs
-  getActivityLogs: async (params?: { limit?: number; offset?: number }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
-    
-    const response = await adminApiRequest<any>(`/admin-activity/logs?${queryParams}`);
-    return response.data;
+  getActivityLogs: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/logs?${queryParams}`);
+    return response;
+  },
+
+  // Get activity statistics
+  getActivityStats: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/stats?${queryParams}`);
+    return response;
   },
 
   // Get login activities
-  getLoginActivities: async (params?: { limit?: number; offset?: number }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
-    
-    const response = await adminApiRequest<any>(`/admin-activity/login-activities?${queryParams}`);
-    return response.data;
+  getLoginActivities: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/logins?${queryParams}`);
+    return response;
   },
 
   // Get all users with filters and pagination
@@ -419,25 +420,6 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify(pricing),
     });
-    return response;
-  },
-
-  // Activity Logs
-  getActivityLogs: async (params?: any) => {
-    const queryParams = new URLSearchParams(params);
-    const response = await adminApiRequest<any>(`/admin/activity/logs?${queryParams}`);
-    return response;
-  },
-
-  getActivityStats: async (params?: any) => {
-    const queryParams = new URLSearchParams(params);
-    const response = await adminApiRequest<any>(`/admin/activity/stats?${queryParams}`);
-    return response;
-  },
-
-  getLoginActivities: async (params?: any) => {
-    const queryParams = new URLSearchParams(params);
-    const response = await adminApiRequest<any>(`/admin/activity/logins?${queryParams}`);
     return response;
   },
 };
