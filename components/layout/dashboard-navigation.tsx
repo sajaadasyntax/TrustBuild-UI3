@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { useAuth } from "@/contexts/AuthContext"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function DashboardNavigation() {
   const pathname = usePathname()
@@ -144,6 +145,9 @@ export function DashboardNavigation() {
           
           <nav className="flex items-center space-x-2">
             <ModeToggle />
+            
+            {/* Show notification bell for authenticated users */}
+            {user && <NotificationBell />}
             
             {/* User Menu */}
             <DropdownMenu>

@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 // Helper function to check admin permissions
 function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
@@ -156,6 +157,9 @@ export function AdminNavigation() {
           </nav>
         </div>
         <div className="ml-auto flex items-center space-x-4">
+          {/* Show notification bell for admin users */}
+          <NotificationBell />
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
