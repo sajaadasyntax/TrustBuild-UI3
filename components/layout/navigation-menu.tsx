@@ -8,9 +8,11 @@ import { User, Menu, X, Home, Search, Building, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function NavigationMenu() {
   const pathname = usePathname()
+  const { user } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -28,10 +30,12 @@ export function NavigationMenu() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Filter nav items based on user role - hide contractors browse for clients
   const mainNavItems = [
     { label: "Home", href: "/" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "Join as Contractor", href: "/contractors" },
+    // Only show "Join as Contractor" for non-clients (guests, contractors)
+    ...(user?.role !== 'CUSTOMER' ? [{ label: "Join as Contractor", href: "/contractors" }] : []),
   ]
 
   return (

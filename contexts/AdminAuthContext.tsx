@@ -9,6 +9,7 @@ interface Admin {
   role: 'SUPER_ADMIN' | 'FINANCE_ADMIN' | 'SUPPORT_ADMIN';
   permissions?: string[];
   twoFAEnabled: boolean;
+  isMainSuperAdmin?: boolean;
   lastLoginAt?: string;
   createdAt: string;
 }

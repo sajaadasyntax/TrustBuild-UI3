@@ -212,10 +212,10 @@ export const adminApi = {
   },
 
   // Approve/reject contractor
-  approveContractor: async (contractorId: string, approved: boolean, reason?: string) => {
+  approveContractor: async (contractorId: string, approved: boolean, reason?: string, bypassKyc?: boolean) => {
     const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/approve`, {
       method: 'PATCH',
-      body: JSON.stringify({ approved, reason }),
+      body: JSON.stringify({ approved, reason, bypassKyc }),
     });
     return response;
   },
@@ -226,6 +226,12 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify({ status, reason }),
     });
+    return response;
+  },
+
+  // Get contractor credits and transactions
+  getContractorCredits: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/credits`);
     return response;
   },
 
@@ -413,6 +419,25 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify(pricing),
     });
+    return response;
+  },
+
+  // Activity Logs
+  getActivityLogs: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/logs?${queryParams}`);
+    return response;
+  },
+
+  getActivityStats: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/stats?${queryParams}`);
+    return response;
+  },
+
+  getLoginActivities: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/activity/logins?${queryParams}`);
     return response;
   },
 };

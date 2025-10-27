@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { adminApi } from '@/lib/adminApi'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { toast } from '@/hooks/use-toast'
@@ -147,10 +148,14 @@ export default function AdminContractors() {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false)
+  const [creditTransactions, setCreditTransactions] = useState<any[]>([])
+  const [loadingTransactions, setLoadingTransactions] = useState(false)
   const [approvalData, setApprovalData] = useState({
     approved: true,
     reason: '',
-    notes: ''
+    notes: '',
+    bypassKyc: false
   })
   const [statusData, setStatusData] = useState({
     status: '',
@@ -305,10 +310,23 @@ export default function AdminContractors() {
     }
   }
 
-  const openCreditDialog = (contractor: Contractor) => {
+  const openCreditDialog = async (contractor: Contractor) => {
     setSelectedContractor(contractor)
     setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
     setShowCreditDialog(true)
+    setShowTransactionHistory(false)
+    
+    // Fetch transaction history
+    try {
+      setLoadingTransactions(true)
+      const response = await adminApi.getContractorCredits(contractor.id)
+      setCreditTransactions(response.data?.contractor?.creditTransactions || [])
+    } catch (error) {
+      console.error('Error fetching credit transactions:', error)
+      setCreditTransactions([])
+    } finally {
+      setLoadingTransactions(false)
+    }
   }
 
   const exportContractors = async () => {
@@ -416,7 +434,7 @@ export default function AdminContractors() {
 
   const openApprovalDialog = (contractor: Contractor, approved: boolean) => {
     setSelectedContractor(contractor)
-    setApprovalData({ approved, reason: '', notes: '' })
+    setApprovalData({ approved, reason: '', notes: '', bypassKyc: false })
     setShowApprovalDialog(true)
   }
 
@@ -437,17 +455,18 @@ export default function AdminContractors() {
       await adminApi.approveContractor(
         selectedContractor.id,
         approvalData.approved,
-        combinedReason
+        combinedReason,
+        approvalData.bypassKyc
       )
       
       toast({
         title: approvalData.approved ? "Contractor Approved" : "Contractor Rejected",
-        description: `${selectedContractor.businessName} has been ${approvalData.approved ? 'approved' : 'rejected'}`,
+        description: `${selectedContractor.businessName} has been ${approvalData.approved ? 'approved' : 'rejected'}${approvalData.bypassKyc ? ' (KYC bypassed)' : ''}`,
       })
       
       setShowApprovalDialog(false)
       setSelectedContractor(null)
-      setApprovalData({ approved: true, reason: '', notes: '' })
+      setApprovalData({ approved: true, reason: '', notes: '', bypassKyc: false })
       fetchContractors()
       fetchPendingContractors()
       fetchStats()
@@ -1009,6 +1028,32 @@ export default function AdminContractors() {
                   placeholder="Internal notes for this decision..."
                 />
               </div>
+
+              {/* Manual Approval Bypass KYC */}
+              {approvalData.approved && (
+                <div className="flex items-start space-x-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <Checkbox
+                    id="bypassKyc"
+                    checked={approvalData.bypassKyc}
+                    onCheckedChange={(checked) => 
+                      setApprovalData(prev => ({ ...prev, bypassKyc: checked as boolean }))
+                    }
+                  />
+                  <div className="space-y-1">
+                    <Label 
+                      htmlFor="bypassKyc" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Manual Approval (Bypass KYC)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Approve this contractor manually without requiring complete KYC documentation. 
+                      This gives the admin full discretion to activate the contractor immediately. 
+                      Use this only for trusted or known contractors.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1100,7 +1145,7 @@ export default function AdminContractors() {
 
       {/* Credit Adjustment Dialog */}
       <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Contractor Credits</DialogTitle>
             <DialogDescription>
@@ -1110,6 +1155,25 @@ export default function AdminContractors() {
               }
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Toggle between Adjustment and History */}
+          <div className="flex gap-2 border-b">
+            <Button
+              variant={!showTransactionHistory ? "default" : "ghost"}
+              className="flex-1"
+              onClick={() => setShowTransactionHistory(false)}
+            >
+              Adjust Credits
+            </Button>
+            <Button
+              variant={showTransactionHistory ? "default" : "ghost"}
+              className="flex-1"
+              onClick={() => setShowTransactionHistory(true)}
+            >
+              <History className="h-4 w-4 mr-2" />
+              Transaction History
+            </Button>
+          </div>
           
           {selectedContractor && (
             <div className="space-y-4">
@@ -1127,8 +1191,66 @@ export default function AdminContractors() {
                 </div>
               </div>
 
-              {/* Credit Adjustment Form */}
-              <div className="space-y-4">
+              {/* Transaction History View */}
+              {showTransactionHistory ? (
+                <div className="space-y-3">
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                      <span>Loading transactions...</span>
+                    </div>
+                  ) : creditTransactions.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No transaction history</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {creditTransactions.map((transaction: any) => (
+                        <div
+                          key={transaction.id}
+                          className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent/50"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              {transaction.type === 'ADDITION' || transaction.type === 'WEEKLY_ALLOCATION' || transaction.type === 'BONUS' ? (
+                                <Plus className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Minus className="h-4 w-4 text-red-600" />
+                              )}
+                              <span className={`font-medium ${
+                                transaction.type === 'ADDITION' || transaction.type === 'WEEKLY_ALLOCATION' || transaction.type === 'BONUS'
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              }`}>
+                                {transaction.type === 'ADDITION' || transaction.type === 'WEEKLY_ALLOCATION' || transaction.type === 'BONUS' ? '+' : '-'}
+                                {transaction.amount} credits
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {transaction.type}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {transaction.description}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                              <span>{new Date(transaction.createdAt).toLocaleString()}</span>
+                              {transaction.adminUserId && (
+                                <span className="flex items-center gap-1">
+                                  <Shield className="h-3 w-3" />
+                                  Admin Action
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Credit Adjustment Form */
+                <div className="space-y-4">
                 <div className="grid gap-2">
                   <Label>Action</Label>
                   <Select 
@@ -1203,47 +1325,50 @@ export default function AdminContractors() {
                         : Math.max(0, (selectedContractor.creditsBalance || 0) - creditData.amount)
                     } credits
                   </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowCreditDialog(false)
-                setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreditAdjustment}
-              disabled={
-                processing || 
-                !creditData.reason.trim() || 
-                creditData.amount < 1 ||
-                (creditData.type === 'DEDUCTION' && creditData.amount > (selectedContractor?.creditsBalance || 0))
-              }
-            >
-              {processing ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  {creditData.type === 'ADDITION' ? (
-                    <Plus className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Minus className="mr-2 h-4 w-4" />
-                  )}
-                  {creditData.type === 'ADDITION' ? 'Add' : 'Remove'} Credits
-                </>
-              )}
-            </Button>
-          </div>
+          {!showTransactionHistory && (
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCreditDialog(false)
+                  setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreditAdjustment}
+                disabled={
+                  processing || 
+                  !creditData.reason.trim() || 
+                  creditData.amount < 1 ||
+                  (creditData.type === 'DEDUCTION' && creditData.amount > (selectedContractor?.creditsBalance || 0))
+                }
+              >
+                {processing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {creditData.type === 'ADDITION' ? (
+                      <Plus className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Minus className="mr-2 h-4 w-4" />
+                    )}
+                    {creditData.type === 'ADDITION' ? 'Add' : 'Remove'} Credits
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

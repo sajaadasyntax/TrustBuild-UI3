@@ -1,21 +1,34 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { contractorsApi, Contractor, handleApiError } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Star } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Star, XCircle } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function ContractorsDirectory() {
+  const router = useRouter()
+  const { user } = useAuth()
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [loading, setLoading] = useState(true)
   const [logoErrors, setLogoErrors] = useState<Set<string>>(new Set())
+  const [blocked, setBlocked] = useState(false)
 
   useEffect(() => {
+    // Redirect clients to their dashboard - they shouldn't browse all contractors
+    if (user && user.role === 'CUSTOMER') {
+      setBlocked(true)
+      setLoading(false)
+      return
+    }
+    
     fetchContractors()
-  }, [])
+  }, [user, router])
 
   const fetchContractors = async () => {
     try {
@@ -31,6 +44,38 @@ export default function ContractorsDirectory() {
 
   if (loading) {
     return <div className="container py-32 text-center">Loading contractors...</div>
+  }
+
+  if (blocked) {
+    return (
+      <div className="container py-32">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <XCircle className="w-10 h-10 text-red-600" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Access Restricted</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                This page is not available for clients. You can view contractors who apply to your posted jobs from your dashboard.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-center space-x-4">
+              <Link href="/dashboard/client">
+                <Button>Go to Dashboard</Button>
+              </Link>
+              <Link href="/post-job">
+                <Button variant="outline">Post a Job</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (contractors.length === 0) {

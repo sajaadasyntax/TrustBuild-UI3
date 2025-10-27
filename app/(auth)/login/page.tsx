@@ -129,6 +129,14 @@ export default function LoginPage() {
                   {form.formState.errors.password.message}
                 </p>
               )}
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             <Button disabled={isLoading} type="submit">
               {isLoading && (
