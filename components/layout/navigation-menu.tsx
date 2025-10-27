@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { useAuth } from "@/contexts/AuthContext"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
 
 export function NavigationMenu() {
   const pathname = usePathname()
@@ -77,6 +78,9 @@ export function NavigationMenu() {
         
         <div className="hidden md:flex items-center space-x-2">
           <ModeToggle />
+          
+          {/* Show notification bell for authenticated users */}
+          {user && <NotificationBell />}
           
           {/* Auth buttons for non-authenticated users */}
           <div className="flex items-center space-x-2">
