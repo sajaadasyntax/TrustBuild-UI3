@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { adminApi } from '@/lib/adminApi';
 import { 
   Loader2, 
   Download, 
@@ -122,7 +123,7 @@ export default function EmailActivityPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, statusFilter, typeFilter, toast]);
+  }, [page, searchTerm, statusFilter, typeFilter, startDate, endDate, toast]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -143,7 +144,7 @@ export default function EmailActivityPage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [toast]);
+  }, [startDate, endDate, toast]);
 
   useEffect(() => {
     if (!authLoading && currentAdmin) {
