@@ -50,7 +50,7 @@ export default function JobWorkflowButtons({
   const handleMarkAsWon = async () => {
     try {
       setLoading(true);
-      await api.patch(`/jobs/${jobId}/mark-won`);
+      await api.patch(`/jobs/${jobId}/mark-won`, {});
       toast({
         title: 'Success',
         description: 'Job marked as won. Customer has been notified.',
@@ -59,9 +59,10 @@ export default function JobWorkflowButtons({
       onUpdate();
     } catch (error: any) {
       console.error('Error marking job as won:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to mark job as won';
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to mark job as won',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -96,9 +97,10 @@ export default function JobWorkflowButtons({
       onUpdate();
     } catch (error: any) {
       console.error('Error marking job as completed:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to mark job as completed';
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to mark job as completed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -132,9 +134,10 @@ export default function JobWorkflowButtons({
       onUpdate();
     } catch (error: any) {
       console.error('Error confirming completion:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to process confirmation';
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to process confirmation',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

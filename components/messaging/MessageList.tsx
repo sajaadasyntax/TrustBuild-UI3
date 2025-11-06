@@ -41,9 +41,9 @@ export default function MessageList({ type = 'inbox' }: { type?: 'inbox' | 'sent
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/messages?type=${type}`);
-      setMessages(response.data.data.messages);
-      setUnreadCount(response.data.data.unreadCount || 0);
+      const response = await api.get<{ status: string; data: { messages: Message[]; unreadCount: number; pagination: any } }>(`/messages?type=${type}`);
+      setMessages(response.data.messages);
+      setUnreadCount(response.data.unreadCount || 0);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -58,7 +58,7 @@ export default function MessageList({ type = 'inbox' }: { type?: 'inbox' | 'sent
 
   const handleDelete = async (messageId: string) => {
     try {
-      await api.delete(`/messages/${messageId}`);
+      await api.delete<{ status: string; message: string }>(`/messages/${messageId}`);
       toast({
         title: 'Success',
         description: 'Message deleted successfully',
@@ -76,7 +76,7 @@ export default function MessageList({ type = 'inbox' }: { type?: 'inbox' | 'sent
 
   const handleMarkAsRead = async (messageId: string) => {
     try {
-      await api.patch(`/messages/${messageId}/read`);
+      await api.patch<{ status: string; data: { message: any } }>(`/messages/${messageId}/read`, {});
       fetchMessages();
     } catch (error) {
       console.error('Error marking message as read:', error);

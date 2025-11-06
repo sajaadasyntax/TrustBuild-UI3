@@ -1073,6 +1073,30 @@ export const jobsApi = {
       method: 'PATCH',
     }),
 
+  // New workflow methods (Won → Completed → Customer Confirmation)
+  markAsWon: async (jobId: string): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/mark-won`, {
+      method: 'PATCH',
+    });
+    return response.data.job;
+  },
+
+  markAsCompleted: async (jobId: string, finalAmount: number): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/mark-completed`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finalAmount }),
+    });
+    return response.data.job;
+  },
+
+  confirmJobCompletionNew: async (jobId: string, confirmed: boolean, feedback?: string): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/confirm-job-completion`, {
+      method: 'PATCH',
+      body: JSON.stringify({ confirmed, feedback }),
+    });
+    return response.data.job;
+  },
+
   // Customer confirms contractor selection and allows work to start
   confirmContractorStart: (jobId: string) =>
     apiRequest(`/jobs/${jobId}/confirm-contractor-start`, {
@@ -2584,4 +2608,79 @@ export const handleApiError = (error: unknown, fallbackMessage = 'An error occur
     });
   }
   console.error('API Error:', error);
-}; 
+};
+
+// Messages API
+export const messagesApi = {
+  getAll: async (type: 'inbox' | 'sent' = 'inbox', params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('type', type);
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    
+    return apiRequest<{ data: { messages: any[]; unreadCount: number; pagination: any } }>(`/messages?${searchParams.toString()}`);
+  },
+
+  getById: async (id: string) => {
+    return apiRequest<{ data: { message: any } }>(`/messages/${id}`);
+  },
+
+  send: async (data: {
+    recipientId: string;
+    subject?: string;
+    content: string;
+    relatedJobId?: string;
+    attachmentUrls?: string[];
+  }) => {
+    return apiRequest<{ status: string; message: string; data: { message: any } }>('/messages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  markAsRead: async (id: string) => {
+    return apiRequest<{ status: string; data: { message: any } }>(`/messages/${id}/read`, {
+      method: 'PATCH',
+    });
+  },
+
+  delete: async (id: string) => {
+    return apiRequest<{ status: string; message: string }>(`/messages/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getConversation: async (userId: string) => {
+    return apiRequest<{ data: { messages: any[] } }>(`/messages/conversation/${userId}`);
+  },
+};
+
+// Default export - provides a simple API interface for components
+const api = {
+  get: async <T = any>(endpoint: string): Promise<T> => {
+    return apiRequest<T>(endpoint, { method: 'GET' });
+  },
+  post: async <T = any>(endpoint: string, data?: any): Promise<T> => {
+    return apiRequest<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+  patch: async <T = any>(endpoint: string, data?: any): Promise<T> => {
+    return apiRequest<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+  put: async <T = any>(endpoint: string, data?: any): Promise<T> => {
+    return apiRequest<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+  delete: async <T = any>(endpoint: string): Promise<T> => {
+    return apiRequest<T>(endpoint, { method: 'DELETE' });
+  },
+};
+
+export default api; 

@@ -54,7 +54,7 @@ export default function SendMessageForm({
 
     try {
       setLoading(true);
-      await api.post('/messages', {
+      await api.post<{ status: string; message: string; data: { message: any } }>('/messages', {
         recipientId,
         subject: subject || undefined,
         content,
@@ -78,10 +78,10 @@ export default function SendMessageForm({
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to send message';
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to send message';
       
       // Show specific error for forbidden customer-contractor messaging
-      if (errorMessage.includes('Direct messaging between customers and contractors')) {
+      if (errorMessage.includes('Direct messaging between customers and contractors') || errorMessage.includes('not allowed')) {
         toast({
           title: 'Messaging Restricted',
           description: 'Direct messaging between customers and contractors is not allowed. Please contact admin for assistance.',
