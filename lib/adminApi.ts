@@ -448,6 +448,105 @@ export const adminApi = {
     });
     return response;
   },
+
+  // Support Tickets
+  getSupportTickets: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/support-tickets?${queryParams}`);
+    return response;
+  },
+
+  getSupportTicketStats: async () => {
+    const response = await adminApiRequest<any>('/admin/support-tickets/stats');
+    return response;
+  },
+
+  getSupportTicketById: async (ticketId: string) => {
+    const response = await adminApiRequest<any>(`/admin/support-tickets/${ticketId}`);
+    return response;
+  },
+
+  createSupportTicket: async (ticketData: any) => {
+    const response = await adminApiRequest<any>('/admin/support-tickets', {
+      method: 'POST',
+      body: JSON.stringify(ticketData),
+    });
+    return response;
+  },
+
+  updateSupportTicketStatus: async (ticketId: string, status: string) => {
+    const response = await adminApiRequest<any>(`/admin/support-tickets/${ticketId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+    return response;
+  },
+
+  assignSupportTicket: async (ticketId: string, assignee?: string, assigneeId?: string) => {
+    const response = await adminApiRequest<any>(`/admin/support-tickets/${ticketId}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({ assignee, assigneeId }),
+    });
+    return response;
+  },
+
+  addSupportTicketResponse: async (ticketId: string, message: string, isInternal: boolean = false) => {
+    const response = await adminApiRequest<any>(`/admin/support-tickets/${ticketId}/responses`, {
+      method: 'POST',
+      body: JSON.stringify({ message, isInternal }),
+    });
+    return response;
+  },
+
+  // Manual Invoices
+  getManualInvoices: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/manual-invoices?${queryParams}`);
+    return response;
+  },
+
+  getManualInvoiceById: async (invoiceId: string) => {
+    const response = await adminApiRequest<any>(`/admin/manual-invoices/${invoiceId}`);
+    return response;
+  },
+
+  createManualInvoice: async (invoiceData: any) => {
+    const response = await adminApiRequest<any>('/admin/manual-invoices', {
+      method: 'POST',
+      body: JSON.stringify(invoiceData),
+    });
+    return response;
+  },
+
+  issueManualInvoice: async (invoiceId: string) => {
+    const response = await adminApiRequest<any>(`/admin/manual-invoices/${invoiceId}/issue`, {
+      method: 'POST',
+    });
+    return response;
+  },
+
+  sendManualInvoiceReminder: async (invoiceId: string) => {
+    const response = await adminApiRequest<any>(`/admin/manual-invoices/${invoiceId}/remind`, {
+      method: 'POST',
+    });
+    return response;
+  },
+
+  recordManualInvoicePayment: async (invoiceId: string, notes?: string) => {
+    const response = await adminApiRequest<any>(`/admin/manual-invoices/${invoiceId}/record-payment`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+    return response;
+  },
+
+  cancelManualInvoice: async (invoiceId: string, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/manual-invoices/${invoiceId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+    return response;
+  },
 };
 
 export default adminApi;

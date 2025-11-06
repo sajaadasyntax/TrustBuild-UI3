@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Users, MessageSquare, Clock, CheckCircle, AlertTriangle, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,100 +8,128 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { adminApi } from "@/lib/adminApi"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock data
-const mockTickets = [
-  {
-    id: "TKT001",
-    customer: "John Doe",
-    email: "john.doe@email.com",
-    subject: "Payment Issue with Kitchen Renovation",
-    category: "billing",
-    priority: "high",
-    status: "open",
-    assignee: "Sarah Wilson",
-    created: "2024-03-15 10:30",
-    lastResponse: "2024-03-15 14:20",
-    description: "Customer unable to process payment for completed kitchen renovation project.",
-  },
-  {
-    id: "TKT002",
-    customer: "Jane Smith",
-    email: "jane.smith@email.com",
-    subject: "Contractor No-Show Issue",
-    category: "complaint",
-    priority: "urgent",
-    status: "in_progress",
-    assignee: "Mike Johnson",
-    created: "2024-03-15 09:15",
-    lastResponse: "2024-03-15 13:45",
-    description: "Contractor failed to show up for scheduled bathroom remodeling appointment.",
-  },
-  {
-    id: "TKT003",
-    customer: "Bob Wilson",
-    email: "bob.wilson@email.com",
-    subject: "How to Update Profile Information",
-    category: "general",
-    priority: "low",
-    status: "resolved",
-    assignee: "Emily Brown",
-    created: "2024-03-14 16:20",
-    lastResponse: "2024-03-14 17:30",
-    description: "Customer needs help updating profile information and contact details.",
-  },
-  {
-    id: "TKT004",
-    customer: "Lisa Davis",
-    email: "lisa.davis@email.com",
-    subject: "Refund Request for Cancelled Project",
-    category: "billing",
-    priority: "medium",
-    status: "pending",
-    assignee: "Tom Anderson",
-    created: "2024-03-14 11:45",
-    lastResponse: "2024-03-15 09:20",
-    description: "Customer requesting refund for cancelled home extension project.",
-  },
-]
+interface SupportTicket {
+  id: string
+  ticketNumber: string
+  customerName: string
+  email: string
+  subject: string
+  category: string
+  priority: string
+  status: string
+  assignee?: string
+  createdAt: string
+  lastResponse?: string
+  description: string
+}
 
 export default function CustomerSupportPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [tickets, setTickets] = useState(mockTickets)
-
-  const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch = ticket.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || ticket.status === statusFilter
-    const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter
-    return matchesSearch && matchesStatus && matchesPriority
+  const [tickets, setTickets] = useState<SupportTicket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    openTickets: 0,
+    inProgressTickets: 0,
+    resolvedToday: 12,
+    averageResponseTime: "2.5 hours",
   })
+  const { toast } = useToast()
 
-  const handleResolve = (ticketId: string) => {
-    setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { ...ticket, status: "resolved" }
-          : ticket
-      )
-    )
+  useEffect(() => {
+    fetchTickets()
+    fetchStats()
+  }, [statusFilter, priorityFilter])
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      const params: any = {}
+      if (statusFilter !== "all") params.status = statusFilter.toUpperCase()
+      if (priorityFilter !== "all") params.priority = priorityFilter.toUpperCase()
+      if (searchQuery) params.search = searchQuery
+
+      const response = await adminApi.getSupportTickets(params)
+      setTickets(response.data.tickets || [])
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load tickets",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleAssign = (ticketId: string) => {
-    setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { ...ticket, status: "in_progress", assignee: "Current User" }
-          : ticket
-      )
-    )
+  const fetchStats = async () => {
+    try {
+      const response = await adminApi.getSupportTicketStats()
+      if (response.data?.stats) {
+        setStats(response.data.stats)
+      }
+    } catch (error) {
+      console.error("Failed to fetch stats:", error)
+    }
+  }
+
+  const handleSearch = () => {
+    fetchTickets()
+  }
+
+  const handleResolve = async (ticketId: string) => {
+    try {
+      await adminApi.updateSupportTicketStatus(ticketId, "RESOLVED")
+      toast({
+        title: "Success",
+        description: "Ticket marked as resolved",
+      })
+      fetchTickets()
+      fetchStats()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resolve ticket",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAssign = async (ticketId: string) => {
+    try {
+      await adminApi.assignSupportTicket(ticketId)
+      toast({
+        title: "Success",
+        description: "Ticket assigned to you",
+      })
+      fetchTickets()
+      fetchStats()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign ticket",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
       case "open":
         return <Badge variant="destructive">Open</Badge>
       case "in_progress":
@@ -116,7 +144,8 @@ export default function CustomerSupportPage() {
   }
 
   const getPriorityBadge = (priority: string) => {
-    switch (priority) {
+    const normalizedPriority = priority.toLowerCase()
+    switch (normalizedPriority) {
       case "urgent":
         return <Badge variant="destructive">Urgent</Badge>
       case "high":
@@ -128,13 +157,6 @@ export default function CustomerSupportPage() {
       default:
         return <Badge variant="outline">{priority}</Badge>
     }
-  }
-
-  const supportStats = {
-    openTickets: tickets.filter(t => t.status === "open").length,
-    inProgress: tickets.filter(t => t.status === "in_progress").length,
-    resolvedToday: 12,
-    averageResponseTime: "2.5 hours",
   }
 
   return (
@@ -154,7 +176,7 @@ export default function CustomerSupportPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">
-              {supportStats.openTickets}
+              {stats.openTickets}
             </div>
             <p className="text-sm text-muted-foreground">Open Tickets</p>
           </CardContent>
@@ -162,7 +184,7 @@ export default function CustomerSupportPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">
-              {supportStats.inProgress}
+              {stats.inProgressTickets}
             </div>
             <p className="text-sm text-muted-foreground">In Progress</p>
           </CardContent>
@@ -170,7 +192,7 @@ export default function CustomerSupportPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">
-              {supportStats.resolvedToday}
+              {stats.resolvedToday}
             </div>
             <p className="text-sm text-muted-foreground">Resolved Today</p>
           </CardContent>
@@ -178,7 +200,7 @@ export default function CustomerSupportPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">
-              {supportStats.averageResponseTime}
+              {stats.averageResponseTime}
             </div>
             <p className="text-sm text-muted-foreground">Avg Response</p>
           </CardContent>
@@ -194,6 +216,7 @@ export default function CustomerSupportPage() {
               placeholder="Search tickets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-8"
             />
           </div>
@@ -226,88 +249,94 @@ export default function CustomerSupportPage() {
 
       {/* Tickets List */}
       <div className="space-y-4">
-        {filteredTickets.map((ticket) => (
-          <Card key={ticket.id} className={ticket.priority === "urgent" ? "border-red-200" : ""}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://avatar.vercel.sh/${ticket.customer}`} />
-                    <AvatarFallback>{ticket.customer.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      #{ticket.id} - {ticket.subject}
-                      {getStatusBadge(ticket.status)}
-                      {getPriorityBadge(ticket.priority)}
-                    </CardTitle>
-                    <CardDescription>
-                      {ticket.customer} • {ticket.email}
-                    </CardDescription>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading tickets...</p>
+          </div>
+        ) : tickets.length > 0 ? (
+          tickets.map((ticket) => (
+            <Card key={ticket.id} className={ticket.priority.toLowerCase() === "urgent" ? "border-red-200" : ""}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={`https://avatar.vercel.sh/${ticket.customerName}`} />
+                      <AvatarFallback>{ticket.customerName.slice(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        #{ticket.ticketNumber} - {ticket.subject}
+                        {getStatusBadge(ticket.status)}
+                        {getPriorityBadge(ticket.priority)}
+                      </CardTitle>
+                      <CardDescription>
+                        {ticket.customerName} • {ticket.email}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Reply
+                    </Button>
+                    {ticket.status.toLowerCase() === "open" && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleAssign(ticket.id)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Assign to Me
+                      </Button>
+                    )}
+                    {ticket.status.toLowerCase() !== "resolved" && (
+                      <Button 
+                        size="sm"
+                        onClick={() => handleResolve(ticket.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Resolve
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    Reply
-                  </Button>
-                  {ticket.status === "open" && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAssign(ticket.id)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Assign to Me
-                    </Button>
-                  )}
-                  {ticket.status !== "resolved" && (
-                    <Button 
-                      size="sm"
-                      onClick={() => handleResolve(ticket.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Resolve
-                    </Button>
-                  )}
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm font-medium">Category</p>
+                    <p className="text-sm text-muted-foreground capitalize">{ticket.category.toLowerCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Assigned to</p>
+                    <p className="text-sm text-muted-foreground">{ticket.assignee || 'Unassigned'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Created</p>
+                    <p className="text-sm text-muted-foreground">{formatDate(ticket.createdAt)}</p>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <p className="text-sm font-medium">Category</p>
-                  <p className="text-sm text-muted-foreground capitalize">{ticket.category}</p>
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium mb-2">Description</p>
+                  <p className="text-sm text-muted-foreground">{ticket.description}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Assigned to</p>
-                  <p className="text-sm text-muted-foreground">{ticket.assignee}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Created</p>
-                  <p className="text-sm text-muted-foreground">{ticket.created}</p>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Description</p>
-                <p className="text-sm text-muted-foreground">{ticket.description}</p>
-              </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>Last response: {ticket.lastResponse}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {ticket.lastResponse && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Last response: {formatDate(ticket.lastResponse)}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No tickets found matching your criteria.</p>
+          </div>
+        )}
       </div>
-
-      {filteredTickets.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No tickets found matching your criteria.</p>
-        </div>
-      )}
     </div>
   )
 } 
