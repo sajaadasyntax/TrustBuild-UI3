@@ -517,7 +517,7 @@ export default function AdminKycPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/${selectedKyc.idDocPath}`, '_blank')}
+                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.idDocPath}`, '_blank')}
                         >
                           <ExternalLink className="w-4 h-4 mr-1" />
                           View Document
@@ -527,7 +527,7 @@ export default function AdminKycPage() {
                           variant="outline"
                           onClick={() => {
                             const link = document.createElement('a');
-                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/${selectedKyc.idDocPath}`;
+                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.idDocPath}`;
                             link.download = `id-document-${selectedKyc.contractor.user.name}.pdf`;
                             link.click();
                           }}
@@ -562,7 +562,7 @@ export default function AdminKycPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/${selectedKyc.utilityDocPath}`, '_blank')}
+                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.utilityDocPath}`, '_blank')}
                         >
                           <ExternalLink className="w-4 h-4 mr-1" />
                           View Document
@@ -572,7 +572,7 @@ export default function AdminKycPage() {
                           variant="outline"
                           onClick={() => {
                             const link = document.createElement('a');
-                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/${selectedKyc.utilityDocPath}`;
+                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.utilityDocPath}`;
                             link.download = `utility-bill-${selectedKyc.contractor.user.name}.pdf`;
                             link.click();
                           }}
