@@ -568,6 +568,47 @@ export const adminApi = {
     return response;
   },
 
+  // Admin Notifications (for admins themselves)
+  getAdminNotifications: async (params?: {
+    unreadOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.unreadOnly) queryParams.append('unreadOnly', 'true');
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const response = await adminApiRequest<any>(`/admin/notifications-api?${queryParams}`);
+    return response;
+  },
+
+  getAdminUnreadCount: async () => {
+    const response = await adminApiRequest<any>('/admin/notifications-api/unread-count');
+    return response;
+  },
+
+  markAdminNotificationAsRead: async (notificationId: string) => {
+    const response = await adminApiRequest<any>(`/admin/notifications-api/${notificationId}/read`, {
+      method: 'PATCH',
+    });
+    return response;
+  },
+
+  markAllAdminNotificationsAsRead: async () => {
+    const response = await adminApiRequest<any>('/admin/notifications-api/read-all', {
+      method: 'PATCH',
+    });
+    return response;
+  },
+
+  deleteAdminNotification: async (notificationId: string) => {
+    const response = await adminApiRequest<any>(`/admin/notifications-api/${notificationId}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
+
   // Manual Invoices
   getManualInvoices: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

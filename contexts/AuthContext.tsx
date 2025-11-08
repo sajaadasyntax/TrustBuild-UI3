@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User) => void;
   isAuthenticated: boolean;
 }
 
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     login,
     logout,
+    setUser,
     isAuthenticated,
   };
 

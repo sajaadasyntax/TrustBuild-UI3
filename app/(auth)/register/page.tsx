@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/hooks/use-toast"
 import { authApi, ApiError } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
 import { Eye, EyeOff } from "lucide-react"
 
 const baseSchema = z.object({
@@ -58,6 +59,7 @@ type ContractorFormData = z.infer<typeof contractorSchema>
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { setUser } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [role, setRole] = useState<"CUSTOMER" | "CONTRACTOR">("CUSTOMER")
   const [showPassword, setShowPassword] = useState(false)
@@ -124,13 +126,17 @@ export default function RegisterPage() {
         postcode: data.postcode,
       })
 
+      // Update auth context immediately with the user data
+      setUser(response.user)
+
       // The authApi.register already handles token storage
       toast({
         title: "Account created!",
         description: "Welcome to TrustBuild! You can now post jobs and hire contractors.",
       })
 
-      router.push("/dashboard/client")
+      // Use replace instead of push for immediate navigation without history entry
+      router.replace("/dashboard/client")
     } catch (error) {
       if (error instanceof ApiError) {
         toast({

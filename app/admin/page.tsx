@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock, MessageSquare, Receipt, DollarSign, AlertTriangle, Activity } from "lucide-react"
+import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock, MessageSquare, Receipt, DollarSign, AlertTriangle, Activity, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -547,6 +547,28 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Admin Notifications - available to all admins */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Admin Notifications
+            </CardTitle>
+            <CardDescription>
+              View system events and important admin actions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm">Unread Notifications</span>
+              <Badge variant="destructive">View</Badge>
+            </div>
+            <Button className="w-full" asChild>
+              <Link href="/admin/notifications">View Notifications</Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Security & Activity Logs - SUPER_ADMIN only */}
         {admin?.role === 'SUPER_ADMIN' && (
