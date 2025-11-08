@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock } from "lucide-react"
+import { Shield, Users, Building2, FileText, CreditCard, Star, RefreshCw, Settings, CheckCircle, Lock, MessageSquare, Receipt, DollarSign, AlertTriangle, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -423,6 +423,146 @@ export default function AdminPage() {
               </div>
               <Button className="w-full" asChild>
                 <Link href="/admin/kyc">Review KYC</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Support Tickets - requires support:read */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Customer Support
+              </CardTitle>
+              <CardDescription>
+                Manage customer inquiries and support tickets
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Open Tickets</span>
+                <Badge variant="destructive">View</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">In Progress</span>
+                <Badge variant="outline">View</Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/support">Manage Support</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Invoices Management - FINANCE_ADMIN access */}
+        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Invoices Management
+              </CardTitle>
+              <CardDescription>
+                View and manage all invoices in the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">All Invoices</span>
+                <Badge variant="outline">View</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Manual Invoices</span>
+                <Badge variant="outline">Create</Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/invoices">Manage Invoices</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pricing & Credits - FINANCE_ADMIN access */}
+        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Pricing & Credits
+              </CardTitle>
+              <CardDescription>
+                Manage service pricing and contractor credits
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Service Pricing</span>
+                <Badge variant="outline">Configure</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Credit Management</span>
+                <Badge variant="outline">Manage</Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/pricing">Manage Pricing</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Disputes Management - requires disputes:read */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write', 'disputes:resolve'])) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Disputes Management
+              </CardTitle>
+              <CardDescription>
+                Review and resolve customer/contractor disputes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Open Disputes</span>
+                <Badge variant="destructive">View</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Resolved</span>
+                <Badge variant="default">View</Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/disputes">Manage Disputes</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Activity Logs - SUPER_ADMIN only */}
+        {admin?.role === 'SUPER_ADMIN' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Activity Logs
+              </CardTitle>
+              <CardDescription>
+                View system activity and audit logs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Admin Activities</span>
+                <Badge variant="outline">View</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">System Logs</span>
+                <Badge variant="outline">View</Badge>
+              </div>
+              <Button className="w-full" asChild>
+                <Link href="/admin/activity-logs">View Logs</Link>
               </Button>
             </CardContent>
           </Card>
