@@ -27,26 +27,8 @@ function hasAnyPermission(userPermissions: string[] | null | undefined, required
 
 export function AdminNavigationNew() {
   const { admin, logout } = useAdminAuth()
+  const { notifications, unreadCount, loading, markAsRead, deleteNotification } = useAdminNotifications()
   const pathname = usePathname()
-
-  // Safely get admin notifications (may not be available if provider isn't set up)
-  let notifications: any[] = []
-  let unreadCount = 0
-  let loading = false
-  let markAsRead: (id: string) => Promise<void> = async () => {}
-  let deleteNotification: (id: string) => Promise<void> = async () => {}
-  
-  try {
-    const notificationContext = useAdminNotifications()
-    notifications = notificationContext.notifications
-    unreadCount = notificationContext.unreadCount
-    loading = notificationContext.loading
-    markAsRead = notificationContext.markAsRead
-    deleteNotification = notificationContext.deleteNotification
-  } catch (error) {
-    // Context not available - this is okay, we'll just show no notifications
-    console.warn('AdminNotificationContext not available:', error)
-  }
 
   if (!admin) return null
 
