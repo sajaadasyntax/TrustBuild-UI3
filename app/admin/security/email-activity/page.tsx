@@ -46,7 +46,14 @@ interface EmailLog {
   status: 'sent' | 'failed' | 'pending';
   error?: string;
   sentAt: string;
-  metadata?: any;
+  metadata?: {
+    emailContent?: string;
+    from?: string;
+    messageId?: string;
+    errorCode?: string;
+    errorStatus?: number;
+    [key: string]: any;
+  };
 }
 
 interface EmailStats {
@@ -500,12 +507,30 @@ export default function EmailActivityPage() {
                 </div>
               )}
 
-              {selectedEmail.metadata && (
+              {selectedEmail.metadata?.emailContent && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Metadata</Label>
+                  <Label className="text-xs text-muted-foreground">Email Content</Label>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mt-2 max-h-96 overflow-y-auto border">
+                    <div 
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: selectedEmail.metadata.emailContent }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedEmail.metadata && Object.keys(selectedEmail.metadata).filter(key => key !== 'emailContent').length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Additional Metadata</Label>
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mt-2">
                     <pre className="text-xs overflow-x-auto">
-                      {JSON.stringify(selectedEmail.metadata, null, 2)}
+                      {JSON.stringify(
+                        Object.fromEntries(
+                          Object.entries(selectedEmail.metadata).filter(([key]) => key !== 'emailContent')
+                        ),
+                        null,
+                        2
+                      )}
                     </pre>
                   </div>
                 </div>
