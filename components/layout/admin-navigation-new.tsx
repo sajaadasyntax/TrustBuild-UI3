@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { useAdminNotifications } from "@/contexts/AdminNotificationContext"
+import { formatDistanceToNow } from "date-fns"
+import { Check, Trash2 } from "lucide-react"
 
 // Helper function to check admin permissions
 function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
@@ -24,6 +27,7 @@ function hasAnyPermission(userPermissions: string[] | null | undefined, required
 
 export function AdminNavigationNew() {
   const { admin, logout } = useAdminAuth()
+  const { notifications, unreadCount, loading, markAsRead, deleteNotification } = useAdminNotifications()
   const pathname = usePathname()
 
   if (!admin) return null
@@ -274,51 +278,76 @@ export function AdminNavigationNew() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  3
-                </Badge>
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="max-h-96 overflow-y-auto">
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <div className="flex w-full items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">New contractor registration</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        John Smith submitted documents for verification
-                      </p>
+                {loading ? (
+                  <DropdownMenuItem disabled>
+                    <span className="text-sm text-muted-foreground">Loading...</span>
+                  </DropdownMenuItem>
+                ) : notifications.length === 0 ? (
+                  <DropdownMenuItem disabled>
+                    <span className="text-sm text-muted-foreground">No notifications</span>
+                  </DropdownMenuItem>
+                ) : (
+                  notifications.slice(0, 5).map((notification) => (
+                    <div key={notification.id}>
+                      <DropdownMenuItem
+                        className="flex-col items-start p-4 cursor-pointer"
+                        onClick={() => {
+                          if (notification.actionLink) {
+                            window.location.href = notification.actionLink
+                          }
+                          if (!notification.isRead) {
+                            markAsRead(notification.id)
+                          }
+                        }}
+                      >
+                        <div className="flex w-full items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{notification.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <span className="text-xs text-muted-foreground mt-2 block">
+                              {formatDistanceToNow(new Date(notification.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!notification.isRead && (
+                              <Badge variant="secondary" className="text-xs">New</Badge>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteNotification(notification.id)
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                     </div>
-                    <Badge variant="secondary" className="text-xs ml-2">New</Badge>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-2">2 minutes ago</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <div className="flex w-full items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Dispute escalated</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Job #12345 requires immediate attention
-                      </p>
-                    </div>
-                    <Badge variant="destructive" className="text-xs ml-2">Urgent</Badge>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-2">1 hour ago</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <p className="text-sm font-medium">Payment processed</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Invoice #INV-001 has been paid
-                  </p>
-                  <span className="text-xs text-muted-foreground mt-2">3 hours ago</span>
-                </DropdownMenuItem>
+                  ))
+                )}
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

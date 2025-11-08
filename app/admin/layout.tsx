@@ -1,6 +1,7 @@
 "use client"
 
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
+import { AdminNotificationProvider } from '@/contexts/AdminNotificationContext'
 import { AdminNavigationNew } from '@/components/layout/admin-navigation-new'
 
 export default function AdminLayout({
@@ -10,8 +11,10 @@ export default function AdminLayout({
 }) {
   return (
     <AdminAuthProvider>
-      <AdminNavigationNew />
-      {children}
+      <AdminNotificationProvider>
+        <AdminNavigationNew />
+        {children}
+      </AdminNotificationProvider>
     </AdminAuthProvider>
   )
 }
