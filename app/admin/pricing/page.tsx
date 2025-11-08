@@ -17,6 +17,7 @@ import {
   Briefcase,
   Coins,
   Plus,
+  Minus,
   Edit,
   Save,
   Search,
@@ -146,19 +147,38 @@ export default function AdminPricingPage() {
     }
   }
 
-  const handleAdjustCredits = async () => {
-    if (!selectedContractor || !creditForm.amount || !creditForm.reason) return
+  const handleAdjustCredits = async (adjustmentType: 'add' | 'subtract' | 'set') => {
+    if (!selectedContractor || !creditForm.reason) return
 
     try {
-      const amount = parseInt(creditForm.amount)
-      // Determine type based on whether amount is positive or negative
-      const type = amount >= 0 ? 'ADDITION' : 'DEDUCTION'
-      const absoluteAmount = Math.abs(amount)
-      await adminApi.adjustContractorCredits(selectedContractor.id, absoluteAmount, creditForm.reason, type)
+      let amount: number
+      let type: 'ADDITION' | 'DEDUCTION'
+      
+      if (adjustmentType === 'set') {
+        const targetAmount = parseInt(creditForm.amount) || 0
+        const currentBalance = selectedContractor.creditsBalance || 0
+        const difference = targetAmount - currentBalance
+        
+        if (difference === 0) {
+          toast({
+            title: "No Change",
+            description: "The target amount is the same as the current balance",
+          })
+          return
+        }
+        
+        amount = Math.abs(difference)
+        type = difference > 0 ? 'ADDITION' : 'DEDUCTION'
+      } else {
+        amount = parseInt(creditForm.amount) || 1
+        type = adjustmentType === 'add' ? 'ADDITION' : 'DEDUCTION'
+      }
+      
+      await adminApi.adjustContractorCredits(selectedContractor.id, amount, creditForm.reason, type)
 
       toast({
         title: "Credits Adjusted",
-        description: `${amount > 0 ? 'Added' : 'Removed'} ${Math.abs(amount)} credits for ${selectedContractor.user.name}`,
+        description: `${type === 'ADDITION' ? 'Added' : 'Removed'} ${amount} credits for ${selectedContractor.user.name}`,
       })
       
       setShowCreditDialog(false)
@@ -527,15 +547,40 @@ export default function AdminPricingPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="amount">Credit Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter positive or negative amount"
-                  value={creditForm.amount}
-                  onChange={(e) => setCreditForm(prev => ({ ...prev, amount: e.target.value }))}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const current = parseInt(creditForm.amount) || 0
+                      setCreditForm(prev => ({ ...prev, amount: Math.max(0, current - 1).toString() }))
+                    }}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="0"
+                    value={creditForm.amount}
+                    onChange={(e) => setCreditForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const current = parseInt(creditForm.amount) || 0
+                      setCreditForm(prev => ({ ...prev, amount: (current + 1).toString() }))
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use positive numbers to add credits, negative to remove
+                  Current balance: {selectedContractor?.creditsBalance || 0} credits
                 </p>
               </div>
               
@@ -550,13 +595,34 @@ export default function AdminPricingPage() {
                 />
               </div>
               
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => handleAdjustCredits('add')} 
+                  className="flex-1"
+                  disabled={!creditForm.amount || !creditForm.reason}
+                  variant="default"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Credits
+                </Button>
+                <Button 
+                  onClick={() => handleAdjustCredits('subtract')} 
+                  className="flex-1"
+                  disabled={!creditForm.amount || !creditForm.reason}
+                  variant="destructive"
+                >
+                  <Minus className="h-4 w-4 mr-2" />
+                  Remove Credits
+                </Button>
+              </div>
               <Button 
-                onClick={handleAdjustCredits} 
+                onClick={() => handleAdjustCredits('set')} 
                 className="w-full"
                 disabled={!creditForm.amount || !creditForm.reason}
+                variant="outline"
               >
                 <Coins className="h-4 w-4 mr-2" />
-                Adjust Credits
+                Set to {creditForm.amount || 0} Credits
               </Button>
             </div>
           </DialogContent>
