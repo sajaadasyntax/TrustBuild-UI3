@@ -366,7 +366,7 @@ export default function AdminPage() {
                 <Link href="/admin/payments">Payment Dashboard</Link>
               </Button>
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/admin/subscriptions">Subscriptions</Link>
+                <Link href="/admin/payments?tab=subscriptions">Subscriptions</Link>
               </Button>
             </CardContent>
           </Card>

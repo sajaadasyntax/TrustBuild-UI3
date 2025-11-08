@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,6 +94,7 @@ interface Transaction {
 }
 
 export default function AdminPayments() {
+  const searchParams = useSearchParams()
   const { admin, loading: authLoading } = useAdminAuth()
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -108,6 +110,15 @@ export default function AdminPayments() {
   const [showTransactionDialog, setShowTransactionDialog] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<string>('transactions')
+  
+  // Set active tab from URL query parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['transactions', 'subscriptions', 'refunds'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // Debounce search term
   useEffect(() => {
@@ -435,7 +446,7 @@ export default function AdminPayments() {
         </div>
       )}
 
-      <Tabs defaultValue="transactions" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="transactions">Transactions ({transactions.length})</TabsTrigger>
@@ -779,5 +790,22 @@ export default function AdminPayments() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function AdminPayments() {
+  return (
+    <Suspense fallback={
+      <div className="container py-32">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+            <div className="h-64 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <AdminPaymentsContent />
+    </Suspense>
   )
 } 
