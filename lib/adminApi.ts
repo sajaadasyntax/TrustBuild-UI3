@@ -538,7 +538,7 @@ export const adminApi = {
   },
 
   sendMessage: async (recipientId: string, content: string, subject?: string) => {
-    const response = await adminApiRequest<any>('/messages', {
+    const response = await adminApiRequest<any>('/admin/messages/send', {
       method: 'POST',
       body: JSON.stringify({ recipientId, content, subject }),
     });
