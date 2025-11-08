@@ -105,7 +105,7 @@ export default function AdminPricingPage() {
     reason: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterTier, setFilterTier] = useState('all')
+  const [filterSubscription, setFilterSubscription] = useState('all')
 
   useEffect(() => {
     fetchData()
@@ -195,8 +195,11 @@ export default function AdminPricingPage() {
   const filteredContractors = contractors.filter(contractor => {
     const matchesSearch = contractor.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contractor.businessName?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesTier = filterTier === 'all' || contractor.tier === filterTier
-    return matchesSearch && matchesTier
+    const isSubscribed = contractor.weeklyCreditsLimit > 0 || contractor.subscriptionStatus === 'active'
+    const matchesSubscription = filterSubscription === 'all' || 
+                               (filterSubscription === 'subscribed' && isSubscribed) ||
+                               (filterSubscription === 'not_subscribed' && !isSubscribed)
+    return matchesSearch && matchesSubscription
   })
 
   if (loading) {
@@ -302,15 +305,14 @@ export default function AdminPricingPage() {
                       className="max-w-sm"
                     />
                   </div>
-                  <Select value={filterTier} onValueChange={setFilterTier}>
+                  <Select value={filterSubscription} onValueChange={setFilterSubscription}>
                     <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by tier" />
+                      <SelectValue placeholder="Filter by subscription" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Tiers</SelectItem>
-                      <SelectItem value="STANDARD">Standard</SelectItem>
-                      <SelectItem value="PREMIUM">Premium</SelectItem>
-                      <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
+                      <SelectItem value="all">All Contractors</SelectItem>
+                      <SelectItem value="subscribed">Subscribed</SelectItem>
+                      <SelectItem value="not_subscribed">Not Subscribed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -320,7 +322,7 @@ export default function AdminPricingPage() {
                     <TableRow>
                       <TableHead>Contractor</TableHead>
                       <TableHead>Business</TableHead>
-                      <TableHead>Tier</TableHead>
+                      <TableHead>Subscription Status</TableHead>
                       <TableHead>Credits</TableHead>
                       <TableHead>Weekly Limit</TableHead>
                       <TableHead>Actions</TableHead>
@@ -337,7 +339,11 @@ export default function AdminPricingPage() {
                         </TableCell>
                         <TableCell>{contractor.businessName || 'N/A'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{contractor.tier}</Badge>
+                          {contractor.weeklyCreditsLimit > 0 || contractor.subscriptionStatus === 'active' ? (
+                            <Badge variant="default" className="bg-green-500">Subscribed</Badge>
+                          ) : (
+                            <Badge variant="outline">Not Subscribed</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
