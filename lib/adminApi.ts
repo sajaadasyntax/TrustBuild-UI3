@@ -551,6 +551,23 @@ export const adminApi = {
     return response;
   },
 
+  // Broadcast Notifications
+  broadcastNotification: async (data: {
+    title: string;
+    message: string;
+    userIds: string[];
+    role?: string;
+    type?: string;
+    actionLink?: string;
+    actionText?: string;
+  }) => {
+    const response = await adminApiRequest<any>('/admin/notifications/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response;
+  },
+
   // Manual Invoices
   getManualInvoices: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

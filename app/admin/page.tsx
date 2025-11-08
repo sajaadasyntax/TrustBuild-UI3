@@ -453,6 +453,9 @@ export default function AdminPage() {
                 <Button className="flex-1" variant="outline" asChild>
                   <Link href="/admin/support/chat">Chat</Link>
                 </Button>
+                <Button className="flex-1" variant="outline" asChild>
+                  <Link href="/admin/support/broadcast">Broadcast</Link>
+                </Button>
                 <Button className="flex-1" asChild>
                   <Link href="/admin/support">Tickets</Link>
                 </Button>
