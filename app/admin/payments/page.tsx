@@ -93,7 +93,7 @@ interface Transaction {
   stripePaymentId: string;
 }
 
-export default function AdminPayments() {
+function AdminPaymentsContent() {
   const searchParams = useSearchParams()
   const { admin, loading: authLoading } = useAdminAuth()
   const [stats, setStats] = useState<PaymentStats | null>(null)
