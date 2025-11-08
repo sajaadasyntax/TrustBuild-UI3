@@ -429,9 +429,36 @@ export const adminApi = {
 
   // Download invoice
   downloadInvoice: async (invoiceId: string) => {
+    if (!invoiceId) {
+      throw new Error('Invoice ID is required');
+    }
     const token = getAdminToken();
+    if (!token) {
+      throw new Error('Admin authentication required');
+    }
     const url = `${BASE_URL}/admin/invoices/${invoiceId}/download`;
-    window.open(`${url}?token=${token}`, '_blank');
+    // Use fetch with Authorization header instead of query param for security
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to download invoice');
+    }
+    
+    // Get the blob and create download link
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `invoice-${invoiceId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
   },
 
   // Get all services

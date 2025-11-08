@@ -582,7 +582,7 @@ export default function AdminInvoicesPage() {
                           <Badge variant="outline">Unknown</Badge>
                         }
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(Number(invoice.totalAmount))}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(Number(invoice.totalAmount) || 0)}</TableCell>
                       <TableCell>{getStatusBadge(invoice)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Link href={`/admin/invoices/${invoice.id}`} passHref>

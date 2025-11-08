@@ -89,8 +89,8 @@ export default function AdminInvoiceDetailPage() {
   const fetchInvoiceDetails = useCallback(async (invoiceId: string) => {
     try {
       setLoading(true)
-      const data = await adminApi.getInvoiceById(invoiceId)
-      setInvoice(data)
+      const response = await adminApi.getInvoiceById(invoiceId)
+      setInvoice(response.data?.invoice || response.invoice || response)
     } catch (error) {
       toast({
         title: "Error",
