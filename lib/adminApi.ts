@@ -545,6 +545,12 @@ export const adminApi = {
     return response;
   },
 
+  getUsersForChat: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/messages/users?${queryParams}`);
+    return response;
+  },
+
   // Manual Invoices
   getManualInvoices: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

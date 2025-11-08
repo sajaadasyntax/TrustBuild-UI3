@@ -16,8 +16,17 @@ import {
   Building2,
   Send,
   Mail,
-  Phone
+  Phone,
+  Plus,
+  X
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 
 interface Conversation {
@@ -83,6 +92,11 @@ export default function AdminChatPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [messageContent, setMessageContent] = useState('');
+  const [showNewConversationDialog, setShowNewConversationDialog] = useState(false);
+  const [usersForChat, setUsersForChat] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -149,6 +163,82 @@ export default function AdminChatPage() {
     setSelectedConversation(conversation);
     const otherUserId = conversation.otherUser.id;
     fetchConversation(otherUserId);
+  };
+
+  const fetchUsersForChat = useCallback(async () => {
+    try {
+      setUsersLoading(true);
+      const params: any = {
+        limit: 100,
+      };
+      if (userRoleFilter !== 'all') {
+        params.role = userRoleFilter;
+      }
+      if (userSearchTerm) {
+        params.search = userSearchTerm;
+      }
+      const response = await adminApi.getUsersForChat(params);
+      setUsersForChat(response.data?.users || []);
+    } catch (error: any) {
+      console.error('Failed to fetch users:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to load users',
+        variant: 'destructive',
+      });
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [userSearchTerm, userRoleFilter, toast]);
+
+  useEffect(() => {
+    if (showNewConversationDialog) {
+      const timeoutId = setTimeout(() => {
+        fetchUsersForChat();
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showNewConversationDialog, userSearchTerm, userRoleFilter, fetchUsersForChat]);
+
+  const handleStartNewConversation = async (userId: string) => {
+    try {
+      // Close dialog
+      setShowNewConversationDialog(false);
+      
+      // Create a new conversation object
+      const user = usersForChat.find(u => u.id === userId);
+      if (!user) return;
+
+      const newConversation: Conversation = {
+        id: `${admin?.id}-${userId}`,
+        participant1: admin,
+        participant2: user,
+        otherUser: user,
+        lastMessage: null,
+        messageCount: 0,
+        unreadCount: 0,
+        lastMessageAt: new Date().toISOString(),
+      };
+
+      setSelectedConversation(newConversation);
+      setUserDetails(user);
+      setMessages([]);
+      
+      // Fetch conversation (will be empty if new)
+      await fetchConversation(userId);
+      
+      toast({
+        title: 'Success',
+        description: 'New conversation started',
+      });
+    } catch (error: any) {
+      console.error('Failed to start conversation:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start conversation',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSendMessage = async () => {
@@ -231,10 +321,22 @@ export default function AdminChatPage() {
           {/* Conversations List */}
           <Card className="lg:col-span-1 flex flex-col">
             <CardHeader>
-              <CardTitle>Conversations</CardTitle>
-              <CardDescription>
-                {conversations.length} total conversations
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Conversations</CardTitle>
+                  <CardDescription>
+                    {conversations.length} total conversations
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setShowNewConversationDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  New
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
               {/* Filters */}
@@ -436,6 +538,83 @@ export default function AdminChatPage() {
           </Card>
         </div>
       </div>
+
+      {/* New Conversation Dialog */}
+      <Dialog open={showNewConversationDialog} onOpenChange={setShowNewConversationDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Start New Conversation</DialogTitle>
+            <DialogDescription>
+              Select a customer or contractor to start a new conversation
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Search and Filter */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <select
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="all">All Roles</option>
+                <option value="CUSTOMER">Customers</option>
+                <option value="CONTRACTOR">Contractors</option>
+              </select>
+            </div>
+
+            {/* Users List */}
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {usersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : usersForChat.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No users found</p>
+                </div>
+              ) : (
+                usersForChat.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleStartNewConversation(user.id)}
+                    className="p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {user.role === 'CONTRACTOR' ? (
+                        <Building2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      ) : (
+                        <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {user.contractor?.businessName || user.name}
+                          </span>
+                          {getRoleBadge(user.role)}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
