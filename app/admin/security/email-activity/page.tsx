@@ -512,7 +512,7 @@ export default function EmailActivityPage() {
                   <Label className="text-xs text-muted-foreground">Email Content</Label>
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mt-2 max-h-96 overflow-y-auto border">
                     <div 
-                      className="prose prose-sm dark:prose-invert max-w-none"
+                      className="prose prose-sm dark:prose-invert max-w-none [&_*]:text-sm [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_p]:mb-2 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4"
                       dangerouslySetInnerHTML={{ __html: selectedEmail.metadata.emailContent }}
                     />
                   </div>
