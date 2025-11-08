@@ -449,9 +449,14 @@ export default function AdminPage() {
                 <span className="text-sm">In Progress</span>
                 <Badge variant="outline">View</Badge>
               </div>
-              <Button className="w-full" asChild>
-                <Link href="/admin/support">Manage Support</Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button className="flex-1" variant="outline" asChild>
+                  <Link href="/admin/support/chat">Chat</Link>
+                </Button>
+                <Button className="flex-1" asChild>
+                  <Link href="/admin/support">Tickets</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

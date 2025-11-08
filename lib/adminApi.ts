@@ -525,6 +525,26 @@ export const adminApi = {
     return response;
   },
 
+  // Chat/Conversations
+  getConversations: async (params?: any) => {
+    const queryParams = new URLSearchParams(params);
+    const response = await adminApiRequest<any>(`/admin/messages/conversations?${queryParams}`);
+    return response;
+  },
+
+  getConversationWithUser: async (userId: string) => {
+    const response = await adminApiRequest<any>(`/admin/messages/conversation/${userId}`);
+    return response;
+  },
+
+  sendMessage: async (recipientId: string, content: string, subject?: string) => {
+    const response = await adminApiRequest<any>('/messages', {
+      method: 'POST',
+      body: JSON.stringify({ recipientId, content, subject }),
+    });
+    return response;
+  },
+
   // Manual Invoices
   getManualInvoices: async (params?: any) => {
     const queryParams = new URLSearchParams(params);
