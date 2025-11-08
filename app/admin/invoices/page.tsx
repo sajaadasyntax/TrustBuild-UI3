@@ -141,8 +141,8 @@ export default function AdminInvoicesPage() {
       if (searchTerm) params.search = searchTerm
       
       const response = await adminApi.getInvoices(params)
-      setInvoices(response.data)
-      setPagination(response.data.pagination)
+      setInvoices(response.data?.invoices || response.data || [])
+      setPagination(response.data?.pagination || response.pagination || pagination)
     } catch (error) {
       toast({
         title: "Error",
@@ -191,10 +191,9 @@ export default function AdminInvoicesPage() {
   }
 
   const calculateTotal = () => {
-    const subtotal = invoiceItems.reduce((sum, item) => sum + (item.amount * item.quantity * 100), 0)
-    const tax = Math.round(subtotal * 0.2)
-    const total = subtotal + tax
-    return { subtotal: subtotal / 100, tax: tax / 100, total: total / 100 }
+    // Amounts already include VAT, so no additional calculation needed
+    const total = invoiceItems.reduce((sum, item) => sum + (item.amount * item.quantity), 0)
+    return { subtotal: total, tax: 0, total: total }
   }
 
   const handleCreateManualInvoice = async () => {
@@ -435,16 +434,12 @@ export default function AdminInvoicesPage() {
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span>{formatCurrency(totals.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>VAT (20%):</span>
-                  <span>{formatCurrency(totals.tax)}</span>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Total (VAT included):</span>
+                  <span>{formatCurrency(totals.total)}</span>
                 </div>
                 <div className="flex justify-between font-bold">
-                  <span>Total:</span>
+                  <span>Amount Due:</span>
                   <span>{formatCurrency(totals.total)}</span>
                 </div>
               </div>
