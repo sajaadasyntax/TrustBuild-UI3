@@ -540,57 +540,42 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* Activity Logs - SUPER_ADMIN only */}
+        {/* Security & Activity Logs - SUPER_ADMIN only */}
         {admin?.role === 'SUPER_ADMIN' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Activity Logs
+                <Shield className="h-5 w-5" />
+                Security & Activity Logs
               </CardTitle>
               <CardDescription>
-                View system activity and audit logs
+                Monitor system activity, security events, and audit logs
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Admin Activities</span>
-                <Badge variant="outline">View</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">System Logs</span>
-                <Badge variant="outline">View</Badge>
-              </div>
-              <Button className="w-full" asChild>
-                <Link href="/admin/activity-logs">View Logs</Link>
+            <CardContent className="space-y-3">
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href="/admin/activity-logs">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Activity Logs
+                </Link>
               </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Security & Logs - SUPER_ADMIN only */}
-        {admin?.role === 'SUPER_ADMIN' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Security & Logs
-              </CardTitle>
-              <CardDescription>
-                Monitor admin activity and login attempts
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Login Activities</span>
-                <Badge variant="outline">View</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Activity Logs</span>
-                <Badge variant="outline">View</Badge>
-              </div>
-              <Button className="w-full" asChild>
-                <Link href="/admin/security/logins">View Logs</Link>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href="/admin/security/logins">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Login Activities
+                </Link>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href="/admin/security/email-activity">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Email Activity
+                </Link>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href="/admin/security/error-logs">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Error Logs
+                </Link>
               </Button>
             </CardContent>
           </Card>
