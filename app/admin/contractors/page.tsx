@@ -1235,13 +1235,7 @@ export default function AdminContractors() {
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Weekly Limit:</span>
-                  <span>
-                    {selectedContractor.tier === 'STANDARD' ? (
-                      <span className="text-muted-foreground">N/A</span>
-                    ) : (
-                      selectedContractor.weeklyCreditsLimit || 3
-                    )}
-                  </span>
+                  <span>{selectedContractor.weeklyCreditsLimit || 3}</span>
                 </div>
               </div>
 

@@ -345,13 +345,7 @@ export default function AdminPricingPage() {
                             <span className="font-medium">{contractor.creditsBalance}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {contractor.tier === 'STANDARD' ? (
-                            <span className="text-muted-foreground">N/A</span>
-                          ) : (
-                            contractor.weeklyCreditsLimit
-                          )}
-                        </TableCell>
+                        <TableCell>{contractor.weeklyCreditsLimit}</TableCell>
                         <TableCell>
                           <Button
                             variant="outline"

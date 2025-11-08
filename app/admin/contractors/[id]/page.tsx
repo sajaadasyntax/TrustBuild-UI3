@@ -403,13 +403,7 @@ export default function AdminContractorProfile() {
                     </div>
                     <div className="p-6 border rounded-lg text-center">
                       <Activity className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-3xl font-bold">
-                        {contractor.tier === 'STANDARD' ? (
-                          <span className="text-muted-foreground">N/A</span>
-                        ) : (
-                          contractor.weeklyCreditsLimit || 0
-                        )}
-                      </p>
+                      <p className="text-3xl font-bold">{contractor.weeklyCreditsLimit || 0}</p>
                       <p className="text-sm text-muted-foreground">Weekly Limit</p>
                     </div>
                   </div>
