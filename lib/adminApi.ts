@@ -674,6 +674,44 @@ export const adminApi = {
       currency: 'GBP',
     };
   },
+
+  // Subscriptions
+  getSubscriptionStats: async () => {
+    const response = await adminApiRequest<any>('/admin/subscriptions/stats');
+    return response.data || null;
+  },
+
+  getSubscriptions: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    plan?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.plan) queryParams.append('plan', params.plan);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const response = await adminApiRequest<any>(`/admin/subscriptions?${queryParams.toString()}`);
+    return response;
+  },
+
+  cancelContractorSubscription: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/subscriptions/${contractorId}/cancel`, {
+      method: 'POST',
+    });
+    return response;
+  },
+
+  reactivateContractorSubscription: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/subscriptions/${contractorId}/reactivate`, {
+      method: 'POST',
+    });
+    return response;
+  },
 };
 
 export default adminApi;

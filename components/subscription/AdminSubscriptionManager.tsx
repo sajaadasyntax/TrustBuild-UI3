@@ -55,7 +55,8 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { adminApi, handleApiError } from '@/lib/api'
+import adminApi from '@/lib/adminApi'
+import { handleApiError } from '@/lib/api'
 
 interface Subscription {
   id: string

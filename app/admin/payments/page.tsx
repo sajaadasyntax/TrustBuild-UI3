@@ -239,6 +239,7 @@ function AdminPaymentsContent() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'succeeded':
+      case 'completed':
         return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Succeeded</Badge>
       case 'failed':
         return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
@@ -645,7 +646,7 @@ function AdminPaymentsContent() {
                                 <ArrowUpRight className="mr-2 h-4 w-4" />
                                 View in Stripe
                               </DropdownMenuItem>
-                              {transaction.status === 'succeeded' && (
+                              {(transaction.status === 'succeeded' || transaction.status === 'completed') && (
                                 <DropdownMenuItem>
                                   <ArrowDownRight className="mr-2 h-4 w-4" />
                                   Issue Refund
