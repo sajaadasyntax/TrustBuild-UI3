@@ -94,6 +94,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear all tokens and user state
       clearAllTokens();
       setUser(null);
+      // Redirect to login page after logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   };
 
