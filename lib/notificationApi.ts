@@ -207,7 +207,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-export default {
+const notificationApi = {
   getNotifications,
   getUnreadCount,
   markAsRead,
@@ -218,4 +218,6 @@ export default {
   unsubscribeFromPush,
   getVapidPublicKey,
 };
+
+export default notificationApi;
 
