@@ -51,23 +51,22 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   });
 
   if (!response.ok) {
-    // For 401 errors, return a specific error that can be handled gracefully
-    if (response.status === 401) {
-      const error = new Error('Unauthorized') as any;
-      error.status = 401;
-      error.isUnauthorized = true;
-      throw error;
-    }
-
     const errorText = await response.text();
     let errorData;
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      const error = new Error(`API Error: ${response.status} - ${errorText}`) as any;
-      error.status = response.status;
+      errorData = { message: errorText };
+    }
+
+    // For 401 errors, return a specific error that can be handled gracefully
+    if (response.status === 401) {
+      const error = new Error(errorData.message || 'Unauthorized') as any;
+      error.status = 401;
+      error.isUnauthorized = true;
       throw error;
     }
+
     const error = new Error(errorData.message || `API Error: ${response.status}`) as any;
     error.status = response.status;
     throw error;

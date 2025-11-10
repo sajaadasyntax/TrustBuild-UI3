@@ -57,7 +57,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setUnreadCount(data.unreadCount)
     } catch (error: any) {
       // Silently handle 401 errors (expected when not authenticated or token expired)
-      if (error.isUnauthorized || error.status === 401) {
+      // Check for 401 status or error message indicating unauthorized
+      if (
+        error.isUnauthorized || 
+        error.status === 401 || 
+        error.message?.includes('Unauthorized') ||
+        error.message?.includes('not logged in') ||
+        error.message?.includes('401')
+      ) {
         // Token might be expired or invalid, silently skip
         return
       }
@@ -84,7 +91,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setUnreadCount(count)
     } catch (error: any) {
       // Silently handle 401 errors (expected when not authenticated or token expired)
-      if (error.isUnauthorized || error.status === 401) {
+      // Check for 401 status or error message indicating unauthorized
+      if (
+        error.isUnauthorized || 
+        error.status === 401 || 
+        error.message?.includes('Unauthorized') ||
+        error.message?.includes('not logged in') ||
+        error.message?.includes('401')
+      ) {
         // Token might be expired or invalid, silently skip
         return
       }
@@ -207,6 +221,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       // Poll for new notifications every 30 seconds
       const interval = setInterval(fetchUnreadCount, 30000)
       return () => clearInterval(interval)
+    } else {
+      // Clear notifications and unread count when user logs out
+      setNotifications([])
+      setUnreadCount(0)
     }
   }, [user, fetchNotifications, fetchUnreadCount])
 
