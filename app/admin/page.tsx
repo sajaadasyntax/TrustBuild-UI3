@@ -381,7 +381,7 @@ export default function AdminPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm">Total Revenue</span>
                 <Badge variant="default">
-                  ${stats?.revenue?.total?.toLocaleString() || '0'}
+                  £{stats?.revenue?.total?.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
                 </Badge>
               </div>
               <Button className="w-full" asChild>
