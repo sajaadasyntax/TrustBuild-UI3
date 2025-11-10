@@ -189,11 +189,6 @@ export default function FeaturedContractorsPage() {
                     View Profile
                   </Link>
                 </Button>
-                <Button asChild variant="outline" className="flex-1">
-                  <Link href={`/contractors/${contractor.id}/contact`}>
-                    Contact
-                  </Link>
-                </Button>
               </div>
             </CardContent>
           </Card>

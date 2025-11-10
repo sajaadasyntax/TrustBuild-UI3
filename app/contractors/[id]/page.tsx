@@ -233,11 +233,6 @@ export default function ContractorProfilePage() {
               </div>
 
             </CardContent>
-            <CardFooter>
-              <Button className="w-full">
-                Post a Job for This Contractor
-              </Button>
-            </CardFooter>
           </Card>
 
           {/* Portfolio Preview */}
