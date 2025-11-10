@@ -532,8 +532,6 @@ export default function JobLeadAccessDialog({
     }).format(amount)
   }
 
-  // Check if this is a quote-on-request job
-  const isQuoteOnRequest = !job.budget || job.budget === 0;
 
   // Get effective lead price based on the TrustBuilders pricing model
   const getEffectiveLeadPrice = () => {
@@ -640,7 +638,7 @@ export default function JobLeadAccessDialog({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Budget:</span>
                 <span className="font-medium">
-                  {job.budget ? formatCurrency(job.budget) : 'Quote on request'}
+                  {formatCurrency(job.budget)}
                 </span>
               </div>
               <div className="flex justify-between">

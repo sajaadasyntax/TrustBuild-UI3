@@ -22,7 +22,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
-  budget: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Budget must be a positive number if provided"),
+  budget: z.string().min(1, "Budget is required").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Budget must be a positive number"),
   serviceId: z.string().min(1, "Please select a service category"),
   jobSize: z.enum(["SMALL", "MEDIUM", "LARGE"], {
     required_error: "Please select a job size",
@@ -161,7 +161,7 @@ export default function PostJobPage() {
         description: data.description,
         category: selectedService?.name || 'General Construction',
         location: `${data.address}, ${data.city}`,
-        budget: data.budget ? parseFloat(data.budget) : undefined,
+        budget: parseFloat(data.budget),
         urgent: data.urgency === 'high',
         serviceId: isFallbackService ? undefined : data.serviceId,
         jobSize: data.jobSize,
@@ -329,20 +329,17 @@ export default function PostJobPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="budget">
-                  Budget (£) <span className="text-muted-foreground">(Optional)</span>
+                  Budget (£) <span className="text-destructive">*</span>
                 </Label>
                 <Input 
                   id="budget" 
                   type="number"
-                  placeholder="e.g., 5000 - Leave blank if you prefer quotes"
+                  placeholder="e.g., 5000"
                   {...form.register("budget")}
                 />
                 {form.formState.errors.budget && (
                   <p className="text-sm text-destructive">{form.formState.errors.budget.message}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  Leave blank if you&apos;d prefer contractors to provide quotes instead of a fixed budget.
-                </p>
               </div>
 
                 <FormField

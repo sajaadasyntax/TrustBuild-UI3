@@ -249,7 +249,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-gray-500" />
                   <span>
-                    Budget: {job.budget ? formatCurrency(job.budget) : 'Quote on request'}
+                    Budget: {formatCurrency(job.budget)}
                   </span>
                 </div>
               </div>

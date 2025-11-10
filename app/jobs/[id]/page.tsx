@@ -152,16 +152,6 @@ export default function JobDetailsPage() {
       return;
     }
 
-    // For quote-on-request jobs, ensure quote is provided
-    if (!job.budget && !application.estimatedCost) {
-      console.warn('⚠️ Quote required but not provided');
-      toast({
-        title: "Quote Required",
-        description: "Please provide your quote for this project.",
-        variant: "destructive"
-      });
-      return;
-    }
 
     if (!application.estimatedCost || parseFloat(application.estimatedCost) <= 0) {
       console.warn('⚠️ Invalid quote amount');
@@ -271,15 +261,6 @@ export default function JobDetailsPage() {
       return
     }
 
-    // For quote-on-request jobs, redirect to application form
-    if (!job.budget) {
-      setShowApplicationForm(true)
-      toast({
-        title: "Quote Required",
-        description: "Please provide your quote to accept this job.",
-      })
-      return
-    }
 
     try {
       setApplying(true)
@@ -302,10 +283,6 @@ export default function JobDetailsPage() {
     }
   }
 
-  // Helper function to check if job is quote-on-request
-  const isQuoteOnRequest = () => {
-    return !job?.budget || job.budget === 0
-  }
 
   // Helper function to show restricted content for contractors without access
   const showRestrictedContent = () => {
@@ -368,7 +345,7 @@ export default function JobDetailsPage() {
                   <>
                     <span className="flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {job.budget ? formatBudget(job.budget) : 'Quote on request'}
+                      {formatBudget(job.budget)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
@@ -462,7 +439,7 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Budget</Label>
-                      <p className="text-muted-foreground">{job.budget ? formatBudget(job.budget) : 'Quote on request'}</p>
+                      <p className="text-muted-foreground">{formatBudget(job.budget)}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Location</Label>
@@ -555,70 +532,13 @@ export default function JobDetailsPage() {
               </Card>
             )}
 
-            {canAcceptDirectly() && isQuoteOnRequest() && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quote Required</CardTitle>
-                  <CardDescription>
-                    This is a quote-on-request job. You must provide your quote to apply.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {showRestrictedContent() ? (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
-                          <Lock className="h-4 w-4" />
-                          Access Required
-                        </div>
-                        <p className="text-sm text-blue-700 mb-3">
-                          Pay the access fee to view customer details and submit your quote.
-                        </p>
-                        <Button 
-                          onClick={() => setShowAccessDialog(true)}
-                          size="sm"
-                        >
-                          Pay Access Fee
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
-                            <AlertCircle className="h-4 w-4" />
-                            Quote Required
-                          </div>
-                          <p className="text-sm text-blue-700">
-                            The customer has not specified a budget. Please provide your quote for this project when applying.
-                          </p>
-                        </div>
-                        
-                        <Button 
-                          onClick={() => {
-                            console.log('📝 Opening application form...');
-                            setShowApplicationForm(true);
-                          }}
-                          disabled={applying}
-                          className="w-full"
-                        >
-                          Provide Quote & Apply
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {canApply() && !canAcceptDirectly() && (
               <Card>
                 <CardHeader>
                   <CardTitle>Apply for this Job</CardTitle>
                   <CardDescription>
-                    {isQuoteOnRequest() 
-                      ? "This is a quote-on-request job. Please provide your quote when applying."
-                      : "Submit your application to be considered for this job."
-                    }
+                    Submit your application to be considered for this job.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -651,7 +571,7 @@ export default function JobDetailsPage() {
                       console.log('📝 Opening application form...');
                       setShowApplicationForm(true);
                     }}>
-                      {isQuoteOnRequest() ? "Provide Quote & Apply" : "Apply Now"}
+                      Apply Now
                     </Button>
                   ) : (
                     <div className="space-y-4">
@@ -668,23 +588,16 @@ export default function JobDetailsPage() {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="cost" className="flex items-center gap-1">
-                            Your Quote (£) 
-                            {isQuoteOnRequest() && <span className="text-red-500">*</span>}
+                          <Label htmlFor="cost">
+                            Your Quote (£) <span className="text-red-500">*</span>
                           </Label>
-                          {isQuoteOnRequest() && (
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Required: Customer is requesting quotes for this project
-                            </p>
-                          )}
                           <Input
                             id="cost"
                             type="number"
-                            placeholder={isQuoteOnRequest() ? "Enter your quote (required)" : "Enter your quote"}
+                            placeholder="Enter your quote"
                             value={application.estimatedCost}
                             onChange={(e) => setApplication(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                            required={isQuoteOnRequest()}
-                            className={isQuoteOnRequest() && !application.estimatedCost ? "border-red-300" : ""}
+                            required
                           />
                         </div>
                         <div>
@@ -712,7 +625,7 @@ export default function JobDetailsPage() {
                       <div className="flex gap-2">
                         <Button 
                           onClick={handleApply} 
-                          disabled={applying || !application.proposal || (isQuoteOnRequest() && !application.estimatedCost)}
+                          disabled={applying || !application.proposal || !application.estimatedCost}
                         >
                           {applying ? (
                             <>
@@ -908,7 +821,7 @@ export default function JobDetailsPage() {
              budget: job.budget,
              jobSize: job.jobSize,
              leadPrice: job.leadPrice,
-             requiresQuote: !job.budget || job.budget === 0,
+             requiresQuote: false,
              service: job.service,
              contractorsWithAccess: job.contractorsWithAccess,
              maxContractorsPerJob: job.maxContractorsPerJob,

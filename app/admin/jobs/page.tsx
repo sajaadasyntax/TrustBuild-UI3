@@ -311,7 +311,7 @@ export default function JobOversightPage() {
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Quote on request'
+    if (!amount) return 'N/A'
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
@@ -720,7 +720,7 @@ export default function JobOversightPage() {
             <div>
               <Label htmlFor="currentPrice">Current Budget</Label>
               <p className="text-sm text-muted-foreground mb-2">
-                Customer budget: {selectedJob?.budget ? formatCurrency(selectedJob.budget) : 'Quote on request'}
+                Customer budget: {formatCurrency(selectedJob?.budget || 0)}
               </p>
             </div>
             
@@ -789,7 +789,7 @@ export default function JobOversightPage() {
             <div>
               <Label htmlFor="currentBudget">Current Budget</Label>
               <p className="text-sm text-muted-foreground mb-2">
-                Current: {selectedJob?.budget ? formatCurrency(selectedJob.budget) : 'Quote on request'}
+                Current: {formatCurrency(selectedJob?.budget || 0)}
               </p>
             </div>
             

@@ -41,7 +41,7 @@ export default function ContractorCurrentJobs() {
   }
 
   const formatCurrency = (amount?: number) => {
-    if (!amount) return 'Quote on request'
+    if (!amount) return 'N/A'
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',

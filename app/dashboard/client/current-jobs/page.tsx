@@ -131,7 +131,7 @@ export default function ClientCurrentJobs() {
                       </Badge>
                     </div>
                     <CardDescription>
-                      Budget: {job.budget ? `£${job.budget.toLocaleString()}` : 'Quote on Request'} • {job.service?.name || 'Service'}
+                      Budget: £{job.budget.toLocaleString()} • {job.service?.name || 'Service'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

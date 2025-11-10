@@ -1,10 +1,16 @@
 // API utilities for notifications
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk';
 
+// Ensure we use /api prefix if not already present
+const getApiUrl = (endpoint: string) => {
+  const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+  return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+};
+
 // Get stored token
 function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('trustbuild_token');
+  return localStorage.getItem('auth_token');
 }
 
 // API request helper for notifications
@@ -27,7 +33,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = getApiUrl(endpoint);
   
   const response = await fetch(url, {
     ...options,
