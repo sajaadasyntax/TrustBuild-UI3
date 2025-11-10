@@ -43,12 +43,25 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const fetchNotifications = useCallback(async () => {
     if (!user) return
 
+    // Check if token exists before making request
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (!token) {
+      // No token, silently skip
+      return
+    }
+
     setLoading(true)
     try {
       const data = await notificationApi.getNotifications({ limit: 50 })
       setNotifications(data.notifications)
       setUnreadCount(data.unreadCount)
-    } catch (error) {
+    } catch (error: any) {
+      // Silently handle 401 errors (expected when not authenticated or token expired)
+      if (error.isUnauthorized || error.status === 401) {
+        // Token might be expired or invalid, silently skip
+        return
+      }
+      // Only log other errors
       console.error('Error fetching notifications:', error)
     } finally {
       setLoading(false)
@@ -59,10 +72,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const fetchUnreadCount = useCallback(async () => {
     if (!user) return
 
+    // Check if token exists before making request
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (!token) {
+      // No token, silently skip
+      return
+    }
+
     try {
       const count = await notificationApi.getUnreadCount()
       setUnreadCount(count)
-    } catch (error) {
+    } catch (error: any) {
+      // Silently handle 401 errors (expected when not authenticated or token expired)
+      if (error.isUnauthorized || error.status === 401) {
+        // Token might be expired or invalid, silently skip
+        return
+      }
+      // Only log other errors
       console.error('Error fetching unread count:', error)
     }
   }, [user])

@@ -3,8 +3,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.
 
 // Ensure we use /api prefix if not already present
 const getApiUrl = (endpoint: string) => {
-  const base = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
-  return `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  let base = API_BASE_URL;
+  // Remove trailing slash if present
+  if (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+  // Add /api if not already present
+  if (!base.endsWith('/api')) {
+    base = `${base}/api`;
+  }
+  // Ensure endpoint starts with /
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${base}${cleanEndpoint}`;
 };
 
 // Get stored token
@@ -41,14 +51,26 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   });
 
   if (!response.ok) {
+    // For 401 errors, return a specific error that can be handled gracefully
+    if (response.status === 401) {
+      const error = new Error('Unauthorized') as any;
+      error.status = 401;
+      error.isUnauthorized = true;
+      throw error;
+    }
+
     const errorText = await response.text();
     let errorData;
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      throw new Error(`API Error: ${response.status} - ${errorText}`);
+      const error = new Error(`API Error: ${response.status} - ${errorText}`) as any;
+      error.status = response.status;
+      throw error;
     }
-    throw new Error(errorData.message || `API Error: ${response.status}`);
+    const error = new Error(errorData.message || `API Error: ${response.status}`) as any;
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
