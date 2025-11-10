@@ -30,6 +30,14 @@ export function NotificationBell() {
 
   const [open, setOpen] = useState(false)
 
+  // Refresh notifications when dropdown opens
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen)
+    if (isOpen) {
+      fetchNotifications()
+    }
+  }
+
   // Get notification type color
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -85,7 +93,7 @@ export function NotificationBell() {
   const recentNotifications = notifications.slice(0, 10)
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -99,126 +107,124 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-96">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          <div className="flex gap-1">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleMarkAllRead}
-              >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Mark all read
-              </Button>
-            )}
-            <Link href="/dashboard/notifications">
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
-                <Settings className="h-3 w-3 mr-1" />
-                Settings
-              </Button>
-            </Link>
-          </div>
-        </DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-80">
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {unreadCount} unread
+            </Badge>
+          )}
+        </div>
         <DropdownMenuSeparator />
 
-        {loading && (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            Loading notifications...
-          </div>
-        )}
-
-        {!loading && recentNotifications.length === 0 && (
-          <div className="p-8 text-center">
-            <Bell className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No notifications yet</p>
-          </div>
-        )}
-
-        {!loading && recentNotifications.length > 0 && (
-          <ScrollArea className="h-[400px]">
-            {recentNotifications.map((notification) => (
+        <div className="max-h-96 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <span className="text-sm text-muted-foreground">Loading notifications...</span>
+            </div>
+          ) : recentNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4">
+              <Bell className="h-8 w-8 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground text-center">No notifications</span>
+              <span className="text-xs text-muted-foreground mt-1 text-center">You're all caught up!</span>
+            </div>
+          ) : (
+            recentNotifications.map((notification, index) => (
               <div key={notification.id}>
                 <DropdownMenuItem
-                  className={`flex-col items-start p-4 cursor-pointer ${
+                  className={`flex-col items-start p-3 cursor-pointer hover:bg-accent ${
                     !notification.isRead ? 'bg-accent/50' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
-                  asChild
                 >
-                  <div>
-                    <div className="flex w-full items-start justify-between gap-2">
-                      <div className="flex gap-2 flex-1">
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${getTypeColor(
-                            notification.type
-                          )}`}
-                        >
-                          <span className="text-sm font-semibold">
-                            {getTypeIcon(notification.type)}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium leading-tight">
-                              {notification.title}
-                            </p>
-                            {!notification.isRead && (
-                              <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {notification.message}
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <div className="flex gap-2 flex-1 min-w-0">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${getTypeColor(
+                          notification.type
+                        )}`}
+                      >
+                        <span className="text-sm font-semibold">
+                          {getTypeIcon(notification.type)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium leading-tight">
+                            {notification.title}
                           </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(notification.createdAt), {
-                                addSuffix: true,
-                              })}
-                            </span>
-                            {notification.actionLink && (
-                              <Link
-                                href={notification.actionLink}
-                                className="text-xs text-primary hover:underline"
-                                onClick={() => setOpen(false)}
-                              >
-                                {notification.actionText || 'View'}
-                              </Link>
-                            )}
-                          </div>
+                          {!notification.isRead && (
+                            <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {notification.message}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                          {notification.actionLink && (
+                            <Link
+                              href={notification.actionLink}
+                              className="text-xs text-primary hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpen(false)
+                              }}
+                            >
+                              {notification.actionText || 'View'}
+                            </Link>
+                          )}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={(e) => handleDelete(e, notification.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(e, notification.id)
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {index < recentNotifications.length - 1 && <DropdownMenuSeparator />}
               </div>
-            ))}
-          </ScrollArea>
-        )}
-
-        {!loading && notifications.length > 10 && (
+            ))
+          )}
+        </div>
+        {notifications.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link
-                href="/dashboard/notifications"
-                className="w-full cursor-pointer text-center text-sm font-medium"
-                onClick={() => setOpen(false)}
-              >
-                View all notifications ({notifications.length})
-              </Link>
-            </DropdownMenuItem>
+            <div className="flex items-center justify-between px-2 py-1">
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleMarkAllRead}
+                >
+                  <CheckCheck className="h-3 w-3 mr-1" />
+                  Mark all read
+                </Button>
+              )}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/notifications"
+                  className="w-full cursor-pointer text-center py-2"
+                  onClick={() => setOpen(false)}
+                >
+                  View all notifications
+                </Link>
+              </DropdownMenuItem>
+            </div>
           </>
         )}
       </DropdownMenuContent>

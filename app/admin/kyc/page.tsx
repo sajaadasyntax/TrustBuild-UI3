@@ -73,6 +73,34 @@ export default function AdminKycPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionNotes, setRejectionNotes] = useState('');
 
+  // Helper function to normalize document path for URL construction
+  // Converts absolute paths to relative paths and ensures proper encoding
+  const normalizeDocumentPath = (docPath: string | null): string => {
+    if (!docPath) return '';
+    
+    // If it's an absolute path, extract the relative part after /uploads/
+    // Example: /var/www/.../uploads/kyc/contractorId/file.jpg -> kyc/contractorId/file.jpg
+    const uploadsIndex = docPath.indexOf('/uploads/');
+    if (uploadsIndex !== -1) {
+      const relativePath = docPath.substring(uploadsIndex + '/uploads/'.length);
+      // Remove leading slashes and normalize
+      return relativePath.replace(/^\/+/, '').replace(/\\/g, '/');
+    }
+    
+    // If it's already a relative path, just normalize it
+    return docPath.replace(/^\/+/, '').replace(/\\/g, '/');
+  };
+
+  // Helper function to build document URL
+  const buildDocumentUrl = (docPath: string | null): string => {
+    if (!docPath) return '';
+    const normalizedPath = normalizeDocumentPath(docPath);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk/api';
+    // Remove trailing /api if present, then add /api/admin/kyc/documents
+    const baseUrl = apiUrl.replace(/\/api$/, '');
+    return `${baseUrl}/api/admin/kyc/documents/${encodeURIComponent(normalizedPath)}`;
+  };
+
   const fetchKycs = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -517,7 +545,7 @@ export default function AdminKycPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.idDocPath}`, '_blank')}
+                          onClick={() => window.open(buildDocumentUrl(selectedKyc.idDocPath), '_blank')}
                         >
                           <ExternalLink className="w-4 h-4 mr-1" />
                           View Document
@@ -527,7 +555,7 @@ export default function AdminKycPage() {
                           variant="outline"
                           onClick={() => {
                             const link = document.createElement('a');
-                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.idDocPath}`;
+                            link.href = buildDocumentUrl(selectedKyc.idDocPath);
                             link.download = `id-document-${selectedKyc.contractor.user.name}.pdf`;
                             link.click();
                           }}
@@ -562,7 +590,7 @@ export default function AdminKycPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.utilityDocPath}`, '_blank')}
+                          onClick={() => window.open(buildDocumentUrl(selectedKyc.utilityDocPath), '_blank')}
                         >
                           <ExternalLink className="w-4 h-4 mr-1" />
                           View Document
@@ -572,7 +600,7 @@ export default function AdminKycPage() {
                           variant="outline"
                           onClick={() => {
                             const link = document.createElement('a');
-                            link.href = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/kyc/documents/${selectedKyc.utilityDocPath}`;
+                            link.href = buildDocumentUrl(selectedKyc.utilityDocPath);
                             link.download = `utility-bill-${selectedKyc.contractor.user.name}.pdf`;
                             link.click();
                           }}

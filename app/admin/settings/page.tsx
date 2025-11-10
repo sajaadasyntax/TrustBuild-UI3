@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
   const [yearlyPrice, setYearlyPrice] = useState('899');
   
   // Free job allocation
-  const [freeJobAllocation, setFreeJobAllocation] = useState('0');
+  const [freeJobAllocation, setFreeJobAllocation] = useState('1');
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -76,7 +76,7 @@ export default function AdminSettingsPage() {
       
       if (settingsObject['FREE_JOB_ALLOCATION']) {
         const allocationValue = settingsObject['FREE_JOB_ALLOCATION'].value;
-        setFreeJobAllocation(allocationValue?.defaultAllocation?.toString() || '0');
+        setFreeJobAllocation(allocationValue?.defaultAllocation?.toString() || '1');
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -268,7 +268,7 @@ export default function AdminSettingsPage() {
               min="0"
               value={freeJobAllocation}
               onChange={(e) => setFreeJobAllocation(e.target.value)}
-              placeholder="0"
+              placeholder="1"
             />
           </div>
           <Button onClick={handleSaveFreeJobAllocation} disabled={saving}>
