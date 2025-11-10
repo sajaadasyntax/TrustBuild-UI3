@@ -27,7 +27,7 @@ function hasAnyPermission(userPermissions: string[] | null | undefined, required
 
 export function AdminNavigationNew() {
   const { admin, logout } = useAdminAuth()
-  const { notifications, unreadCount, loading, markAsRead, deleteNotification } = useAdminNotifications()
+  const { notifications, unreadCount, loading, markAsRead, deleteNotification, fetchNotifications } = useAdminNotifications()
   const pathname = usePathname()
 
   if (!admin) return null
@@ -274,7 +274,12 @@ export function AdminNavigationNew() {
         {/* Right Side - Notifications & User Menu */}
         <div className="ml-auto flex items-center space-x-4">
           {/* Notifications Bell */}
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => {
+            // Refresh notifications when dropdown opens
+            if (open) {
+              fetchNotifications()
+            }
+          }}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
@@ -289,22 +294,33 @@ export function AdminNavigationNew() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount} unread
+                  </Badge>
+                )}
+              </div>
               <DropdownMenuSeparator />
               <div className="max-h-96 overflow-y-auto">
                 {loading ? (
-                  <DropdownMenuItem disabled>
-                    <span className="text-sm text-muted-foreground">Loading...</span>
-                  </DropdownMenuItem>
+                  <div className="flex items-center justify-center py-8">
+                    <span className="text-sm text-muted-foreground">Loading notifications...</span>
+                  </div>
                 ) : notifications.length === 0 ? (
-                  <DropdownMenuItem disabled>
-                    <span className="text-sm text-muted-foreground">No notifications</span>
-                  </DropdownMenuItem>
+                  <div className="flex flex-col items-center justify-center py-8 px-4">
+                    <Bell className="h-8 w-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground text-center">No notifications</span>
+                    <span className="text-xs text-muted-foreground mt-1 text-center">You're all caught up!</span>
+                  </div>
                 ) : (
-                  notifications.slice(0, 5).map((notification) => (
+                  notifications.slice(0, 10).map((notification, index) => (
                     <div key={notification.id}>
                       <DropdownMenuItem
-                        className="flex-col items-start p-4 cursor-pointer"
+                        className={`flex-col items-start p-3 cursor-pointer hover:bg-accent ${
+                          !notification.isRead ? 'bg-accent/50' : ''
+                        }`}
                         onClick={() => {
                           if (notification.actionLink) {
                             window.location.href = notification.actionLink
@@ -316,7 +332,12 @@ export function AdminNavigationNew() {
                       >
                         <div className="flex w-full items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{notification.title}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-sm font-medium">{notification.title}</p>
+                              {!notification.isRead && (
+                                <div className="h-2 w-2 rounded-full bg-primary" />
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {notification.message}
                             </p>
@@ -326,35 +347,34 @@ export function AdminNavigationNew() {
                               })}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {!notification.isRead && (
-                              <Badge variant="secondary" className="text-xs">New</Badge>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deleteNotification(notification.id)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteNotification(notification.id)
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      {index < notifications.slice(0, 10).length - 1 && <DropdownMenuSeparator />}
                     </div>
                   ))
                 )}
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/admin/notifications" className="w-full cursor-pointer text-center">
-                  View all notifications
-                </Link>
-              </DropdownMenuItem>
+              {notifications.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/notifications" className="w-full cursor-pointer text-center py-2">
+                      View all notifications
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
