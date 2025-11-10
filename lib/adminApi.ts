@@ -658,6 +658,22 @@ export const adminApi = {
     });
     return response;
   },
+
+  // Settings
+  getCommissionRate: async () => {
+    const response = await adminApiRequest<any>('/admin/settings/commission/rate');
+    return response.data?.rate || 5.0;
+  },
+
+  getSubscriptionPricing: async () => {
+    const response = await adminApiRequest<any>('/admin/settings/subscription/pricing');
+    return response.data?.pricing || {
+      monthly: 49.99,
+      sixMonths: 269.94,
+      yearly: 479.88,
+      currency: 'GBP',
+    };
+  },
 };
 
 export default adminApi;

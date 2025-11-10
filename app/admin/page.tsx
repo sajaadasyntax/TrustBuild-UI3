@@ -42,6 +42,8 @@ export default function AdminPage() {
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [commissionRate, setCommissionRate] = useState<number | null>(null)
+  const [subscriptionPricing, setSubscriptionPricing] = useState<any>(null)
   
   // Redirect to login if not authenticated (only after auth check is complete)
   useEffect(() => {
@@ -64,6 +66,26 @@ export default function AdminPage() {
       setLoading(true)
       const dashboardData = await adminApi.getDashboardStats()
       setStats(dashboardData)
+      
+      // Fetch settings for Platform Settings card
+      try {
+        const [rate, pricing] = await Promise.all([
+          adminApi.getCommissionRate(),
+          adminApi.getSubscriptionPricing(),
+        ])
+        setCommissionRate(rate)
+        setSubscriptionPricing(pricing)
+      } catch (settingsError) {
+        console.error('Failed to fetch settings:', settingsError)
+        // Use defaults if fetch fails
+        setCommissionRate(5.0)
+        setSubscriptionPricing({
+          monthly: 49.99,
+          sixMonths: 269.94,
+          yearly: 479.88,
+          currency: 'GBP',
+        })
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -387,12 +409,23 @@ export default function AdminPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm">Commission Rate</span>
-                <Badge variant="outline">5%</Badge>
+                <Badge variant="outline">
+                  {commissionRate !== null ? `${commissionRate}%` : 'Loading...'}
+                </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm">Subscription Plans</span>
-                <Badge variant="outline">Active</Badge>
+                <Badge variant="outline">
+                  {subscriptionPricing ? 'Active' : 'Loading...'}
+                </Badge>
               </div>
+              {subscriptionPricing && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Monthly: £{subscriptionPricing.monthly}</div>
+                  <div>6-Month: £{subscriptionPricing.sixMonths}</div>
+                  <div>Yearly: £{subscriptionPricing.yearly}</div>
+                </div>
+              )}
               <Button className="w-full" asChild>
                 <Link href="/admin/settings">Manage Settings</Link>
               </Button>
