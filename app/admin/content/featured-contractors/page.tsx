@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
+import Link from "next/link"
 
 interface Contractor {
   id: string
@@ -260,10 +261,10 @@ export default function FeaturedContractorsPage() {
                       />
                     </div>
                     <Button variant="outline" size="sm" asChild>
-                    <a href={`/contractors/${contractor.id}`}>
+                      <Link href={`/admin/contractors/${contractor.id}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         View Profile
-                      </a>
+                      </Link>
                     </Button>
                   </div>
                 </div>
