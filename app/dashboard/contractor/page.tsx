@@ -87,10 +87,13 @@ export default function ContractorDashboard() {
       const applicationsData = await jobsApi.getMyApplications()
       setApplications(applicationsData)
 
-      // Fetch jobs (active and completed) from accepted applications
+      // Fetch jobs (active and completed) from accepted applications and won jobs
       const acceptedApplications = applicationsData.filter(app => app.status === 'ACCEPTED')
       const jobsFromApplications = acceptedApplications.map(app => app.job)
-      const activeJobsData = jobsFromApplications.filter(job => ['IN_PROGRESS', 'DISPUTED'].includes(job.status))
+      
+      // Also get jobs where contractor won (wonByContractorId)
+      // Note: This should be fetched from the backend, but for now we'll use applications
+      const activeJobsData = jobsFromApplications.filter(job => ['IN_PROGRESS', 'WON', 'DISPUTED'].includes(job.status))
       const completedJobsData = jobsFromApplications.filter(job => job.status === 'COMPLETED')
       
       setActiveJobs(activeJobsData)

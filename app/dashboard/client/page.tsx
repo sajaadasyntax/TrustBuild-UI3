@@ -90,6 +90,8 @@ export default function ClientDashboard() {
         return 'bg-blue-100 text-blue-800'
       case 'IN_PROGRESS':
         return 'bg-yellow-100 text-yellow-800'
+      case 'WON':
+        return 'bg-purple-100 text-purple-800'
       case 'DISPUTED':
         return 'bg-red-100 text-red-800'
       case 'COMPLETED':
@@ -104,6 +106,7 @@ export default function ClientDashboard() {
   const getJobProgress = (job: Job) => {
     if (job.status === 'COMPLETED') return 100
     if (job.status === 'IN_PROGRESS') return 65 // Could be calculated based on milestones
+    if (job.status === 'WON') return 50 // Contractor won, work may be starting
     if (job.status === 'POSTED') return 0
     return 0
   }
