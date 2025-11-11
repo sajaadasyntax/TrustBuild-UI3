@@ -18,6 +18,7 @@ import { CheckCheck, MapPin, Calendar, PoundSterling } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form"
+import { useAuth } from "@/contexts/AuthContext"
 
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
@@ -31,7 +32,6 @@ const formSchema = z.object({
   city: z.string().min(2, "Please enter a valid city"),
   postcode: z.string().min(5, "Please enter a valid postcode"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  email: z.string().email("Please enter a valid email address"),
   urgency: z.enum(["low", "medium", "high"]),
   timeline: z.enum(["asap", "week", "month", "flexible"]),
   notes: z.string().optional(),
@@ -42,6 +42,7 @@ type JobFormValues = z.infer<typeof formSchema>
 
 export default function PostJobPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [services, setServices] = useState<Service[]>([])
@@ -60,7 +61,6 @@ export default function PostJobPage() {
       city: "",
       postcode: "",
       phone: "",
-      email: "",
       urgency: "medium",
       timeline: "flexible",
       notes: "",
@@ -133,7 +133,7 @@ export default function PostJobPage() {
     if (step === 1) {
       fieldsToValidate = ['title', 'description', 'serviceId', 'jobSize']
     } else if (step === 2) {
-      fieldsToValidate = ['address', 'city', 'postcode', 'phone', 'email']
+      fieldsToValidate = ['address', 'city', 'postcode', 'phone']
     }
 
     const isValid = await form.trigger(fieldsToValidate)
@@ -150,6 +150,17 @@ export default function PostJobPage() {
     setIsSubmitting(true)
     
     try {
+      // Ensure user is authenticated
+      if (!user?.email) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to post a job.",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
       // Find the selected service to get its name for category
       const selectedService = services.find(service => service.id === data.serviceId)
       
@@ -171,7 +182,7 @@ export default function PostJobPage() {
         requirements: data.notes || undefined,
         // Additional fields for customer contact
         phone: data.phone,
-        email: data.email,
+        email: user.email, // Use authenticated user's email
       }
 
       console.log('Submitting job data:', jobPayload)
@@ -451,40 +462,32 @@ export default function PostJobPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">
-                    Phone Number <span className="text-destructive">*</span>
-                  </Label>
-                  <Input 
-                    id="phone" 
-                    type="tel"
-                    placeholder="07123 456789"
-                    {...form.register("phone")}
-                  />
-                  {form.formState.errors.phone && (
-                    <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">
-                    Contact Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input 
-                    id="email" 
-                    type="email"
-                    placeholder="john@example.com"
-                    {...form.register("email")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    This email will be used for job-related communications only
-                  </p>
-                  {form.formState.errors.email && (
-                    <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">
+                  Phone Number <span className="text-destructive">*</span>
+                </Label>
+                <Input 
+                  id="phone" 
+                  type="tel"
+                  placeholder="07123 456789"
+                  {...form.register("phone")}
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                )}
               </div>
+              
+              {user?.email && (
+                <div className="space-y-2">
+                  <Label>Contact Email</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                    <span className="text-sm font-medium">{user.email}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Your account email will be used for job-related communications
+                  </p>
+                </div>
+              )}
             </div>
           )}
           
