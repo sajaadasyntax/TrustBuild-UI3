@@ -52,6 +52,7 @@ export function DashboardNavigation() {
       return [
         ...baseItems,
         { label: "Jobs", href: "/jobs", icon: Briefcase },
+        { label: "Messages", href: "/dashboard/contractor/messages", icon: MessageSquare },
         { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
         { label: "Payments", href: "/dashboard/contractor/payments", icon: CreditCard },
         { label: "Commissions", href: "/dashboard/contractor/commissions", icon: BarChart3 },
