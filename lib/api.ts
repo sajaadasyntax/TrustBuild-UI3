@@ -2178,11 +2178,16 @@ export const paymentsApi = {
       body: JSON.stringify({ plan }),
     }),
 
-  getSubscriptionStatus: () =>
-    apiRequest<{
-      hasSubscription: boolean;
-      subscription: any;
-    }>('/subscriptions/current'),
+  getSubscriptionStatus: async () => {
+    const response = await apiRequest<{
+      status: string;
+      data: {
+        hasSubscription: boolean;
+        subscription: any;
+      };
+    }>('/subscriptions/current');
+    return response.data;
+  },
 
   cancelSubscription: () =>
     apiRequest<{
