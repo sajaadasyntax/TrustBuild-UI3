@@ -129,7 +129,7 @@ export interface Job {
   phone?: string;
   email?: string;
   urgency?: string;
-  status: 'DRAFT' | 'POSTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'AWAITING_FINAL_PRICE_CONFIRMATION';
+  status: 'DRAFT' | 'POSTED' | 'IN_PROGRESS' | 'WON' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED' | 'AWAITING_FINAL_PRICE_CONFIRMATION';
   startDate?: string;
   completionDate?: string;
   isUrgent: boolean;
