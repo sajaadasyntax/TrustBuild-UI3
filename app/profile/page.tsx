@@ -55,71 +55,72 @@ export default function ProfilePage() {
     confirmPassword: ""
   })
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!user) return
+  // Helper function to fetch and set profile data
+  const fetchProfileData = async () => {
+    if (!user) return
 
-      try {
-        setLoading(true)
+    try {
+      setLoading(true)
 
-        // Always fetch basic user data
-        const userData = await usersApi.getMe()
-        
-        let roleSpecificData = {}
+      // Always fetch basic user data
+      const userData = await usersApi.getMe()
+      
+      let roleSpecificData = {}
 
-        if (user.role === 'CONTRACTOR') {
-          try {
-            const contractorData = await contractorsApi.getMyProfile()
-            roleSpecificData = {
-              businessName: contractorData.businessName || "",
-              description: contractorData.description || "",
-              businessAddress: contractorData.businessAddress || "",
-              phone: contractorData.phone || "",
-              website: contractorData.website || "",
-              instagramHandle: contractorData.instagramHandle || "",
-              operatingArea: contractorData.operatingArea || "",
-              servicesProvided: contractorData.servicesProvided || "",
-              yearsExperience: contractorData.yearsExperience || "",
-              logoUrl: contractorData.logoUrl || "",
-              city: contractorData.city || "",
-              postcode: contractorData.postcode || ""
-            }
-          } catch (error) {
-            console.log("No contractor profile found, using empty data")
+      if (user.role === 'CONTRACTOR') {
+        try {
+          const contractorData = await contractorsApi.getMyProfile()
+          roleSpecificData = {
+            businessName: contractorData.businessName || "",
+            description: contractorData.description || "",
+            businessAddress: contractorData.businessAddress || "",
+            phone: contractorData.phone || "",
+            website: contractorData.website || "",
+            instagramHandle: contractorData.instagramHandle || "",
+            operatingArea: contractorData.operatingArea || "",
+            servicesProvided: contractorData.servicesProvided || "",
+            yearsExperience: contractorData.yearsExperience || "",
+            logoUrl: contractorData.logoUrl || "",
+            city: contractorData.city || "",
+            postcode: contractorData.postcode || ""
           }
-        } else if (user.role === 'CUSTOMER') {
-          try {
-            const customerData = await customersApi.getMyProfile()
-            roleSpecificData = {
-              phone: customerData.phone || "",
-              address: customerData.address || "",
-              city: customerData.city || "",
-              postcode: customerData.postcode || ""
-            }
-          } catch (error) {
-            console.log("No customer profile found, using empty data")
-          }
+        } catch (error) {
+          console.log("No contractor profile found, using empty data")
         }
-
-        setProfileData({
-          name: userData.name || "",
-          email: userData.email || "",
-          ...roleSpecificData
-        })
-
-      } catch (error) {
-        console.error('Error fetching profile data:', error)
-        toast({
-          title: "Error",
-          description: "Failed to load profile data. Please try again.",
-          variant: "destructive"
-        })
-      } finally {
-        setLoading(false)
+      } else if (user.role === 'CUSTOMER') {
+        try {
+          const customerData = await customersApi.getMyProfile()
+          roleSpecificData = {
+            phone: customerData.phone || "",
+            address: customerData.address || "",
+            city: customerData.city || "",
+            postcode: customerData.postcode || ""
+          }
+        } catch (error) {
+          console.log("No customer profile found, using empty data")
+        }
       }
-    }
 
+      setProfileData({
+        name: userData.name || "",
+        email: userData.email || "",
+        ...roleSpecificData
+      })
+
+    } catch (error) {
+      console.error('Error fetching profile data:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load profile data. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch user profile data on mount and when user changes
+  useEffect(() => {
     fetchProfileData()
   }, [user])
 
@@ -185,9 +186,16 @@ export default function ProfilePage() {
         email: profileData.email
       })
 
+      // Helper function to filter out empty strings and undefined values
+      const filterEmptyValues = (obj: Record<string, any>) => {
+        return Object.fromEntries(
+          Object.entries(obj).filter(([_, value]) => value !== undefined && value !== '')
+        )
+      }
+
       // Update role-specific data
       if (user.role === 'CONTRACTOR') {
-        const contractorUpdateData = {
+        const contractorUpdateData = filterEmptyValues({
           businessName: profileData.businessName,
           description: profileData.description,
           businessAddress: profileData.businessAddress,
@@ -200,39 +208,42 @@ export default function ProfilePage() {
           city: profileData.city,
           postcode: profileData.postcode,
           logoUrl: profileData.logoUrl
-        }
+        })
         
         console.log('Saving contractor profile with data:', contractorUpdateData)
         
         try {
           await contractorsApi.updateProfile(contractorUpdateData)
-        } catch (error) {
-          // If update fails, try to create profile
-          if (error instanceof Error && error.message.includes('not found')) {
+        } catch (error: any) {
+          // If update fails with 404, try to create profile
+          if (error?.status === 404 || (error instanceof Error && error.message.includes('not found'))) {
             await contractorsApi.createProfile(contractorUpdateData)
           } else {
             throw error
           }
         }
       } else if (user.role === 'CUSTOMER') {
-        const customerUpdateData = {
+        const customerUpdateData = filterEmptyValues({
           phone: profileData.phone,
           address: profileData.address,
           city: profileData.city,
           postcode: profileData.postcode
-        }
+        })
         
         try {
           await customersApi.updateProfile(customerUpdateData)
-        } catch (error) {
-          // If update fails, try to create profile
-          if (error instanceof Error && error.message.includes('not found')) {
+        } catch (error: any) {
+          // If update fails with 404, try to create profile
+          if (error?.status === 404 || (error instanceof Error && error.message.includes('not found'))) {
             await customersApi.createProfile(customerUpdateData)
           } else {
             throw error
           }
         }
       }
+
+      // Refresh profile data after successful save
+      await fetchProfileData()
 
       toast({
         title: "Success",
@@ -242,11 +253,7 @@ export default function ProfilePage() {
 
     } catch (error) {
       console.error('Error saving profile:', error)
-      toast({
-        title: "Error",
-        description: "Failed to save profile. Please try again.",
-        variant: "destructive"
-      })
+      handleApiError(error, 'Failed to save profile. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -752,7 +759,11 @@ export default function ProfilePage() {
           <div className="flex justify-end gap-2">
             <Button 
               variant="outline" 
-              onClick={() => setIsEditing(false)}
+              onClick={async () => {
+                setIsEditing(false)
+                // Reload original data when canceling
+                await fetchProfileData()
+              }}
               disabled={saving}
             >
               Cancel
