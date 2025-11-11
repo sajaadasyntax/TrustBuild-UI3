@@ -2653,6 +2653,10 @@ export const messagesApi = {
   getConversation: async (userId: string) => {
     return apiRequest<{ data: { messages: any[] } }>(`/messages/conversation/${userId}`);
   },
+
+  getAdmins: async () => {
+    return apiRequest<{ status: string; data: { admins: any[] } }>('/messages/admins');
+  },
 };
 
 // Default export - provides a simple API interface for components

@@ -638,7 +638,7 @@ export default function JobLeadAccessDialog({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Budget:</span>
                 <span className="font-medium">
-                  {formatCurrency(job.budget)}
+                  {formatCurrency(job.budget ?? 0)}
                 </span>
               </div>
               <div className="flex justify-between">

@@ -32,13 +32,27 @@ export default function SendMessageForm({
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [availableRecipients, setAvailableRecipients] = useState<any[]>([]);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     // Fetch available recipients (admins for customers/contractors)
-    // Note: In a real implementation, you'd fetch this from the API
-    // For now, we'll just allow manual input or pre-selected recipient
-  }, []);
+    if (!initialRecipientId && (user?.role === 'CUSTOMER' || user?.role === 'CONTRACTOR')) {
+      fetchAdmins();
+    }
+  }, [user, initialRecipientId]);
+
+  const fetchAdmins = async () => {
+    try {
+      setLoadingRecipients(true);
+      const response = await api.get<{ status: string; data: { admins: any[] } }>('/messages/admins');
+      setAvailableRecipients(response.data?.admins || []);
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+    } finally {
+      setLoadingRecipients(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,13 +132,30 @@ export default function SendMessageForm({
         <form onSubmit={handleSubmit} className="space-y-4">
           {!initialRecipientId ? (
             <div className="space-y-2">
-              <Label htmlFor="recipient">To (Admin)</Label>
-              <Input
-                id="recipient"
-                placeholder="Contact admin for assistance"
-                disabled
-                className="bg-muted"
-              />
+              <Label htmlFor="recipient">To (Admin) *</Label>
+              {loadingRecipients ? (
+                <div className="p-2 text-sm text-muted-foreground">Loading admins...</div>
+              ) : availableRecipients.length > 0 ? (
+                <Select value={recipientId} onValueChange={setRecipientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an administrator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRecipients.map((admin) => (
+                      <SelectItem key={admin.id} value={admin.id}>
+                        {admin.name} ({admin.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="recipient"
+                  placeholder="Contact admin for assistance"
+                  disabled
+                  className="bg-muted"
+                />
+              )}
               <p className="text-xs text-muted-foreground">
                 {user?.role === 'CUSTOMER' 
                   ? 'Messages can only be sent to administrators'

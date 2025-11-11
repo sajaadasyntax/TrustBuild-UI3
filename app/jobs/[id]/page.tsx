@@ -345,7 +345,7 @@ export default function JobDetailsPage() {
                   <>
                     <span className="flex items-center gap-1">
                       <DollarSign className="h-4 w-4" />
-                      {formatBudget(job.budget)}
+                      {formatBudget(job.budget ?? 0)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
@@ -439,7 +439,7 @@ export default function JobDetailsPage() {
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Budget</Label>
-                      <p className="text-muted-foreground">{formatBudget(job.budget)}</p>
+                      <p className="text-muted-foreground">{formatBudget(job.budget ?? 0)}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Location</Label>
@@ -495,7 +495,7 @@ export default function JobDetailsPage() {
                           </div>
                           <p className="text-sm text-green-700">
                             This job has no applications yet. You can accept it directly and start working immediately 
-                            for the posted budget of {formatBudget(job.budget)}.
+                            for the posted budget of {formatBudget(job.budget ?? 0)}.
                           </p>
                         </div>
                         
@@ -513,7 +513,7 @@ export default function JobDetailsPage() {
                             ) : (
                               <>
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Accept Job ({formatBudget(job.budget)})
+                                Accept Job ({formatBudget(job.budget ?? 0)})
                               </>
                             )}
                           </Button>

@@ -501,7 +501,7 @@ export default function ContractorDashboard() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {formatCurrency(job.budget ?? 0)}
                         </p>
                         <Button asChild size="sm" variant="outline">
                           <Link href={`/dashboard/contractor/jobs/${job.id}`}>
@@ -665,7 +665,7 @@ export default function ContractorDashboard() {
                       <div key={job.id} className="p-3 border rounded-lg">
                         <h4 className="font-medium mb-1">{job.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {formatCurrency(job.budget ?? 0)}
                         </p>
                       </div>
                     ))}
@@ -694,7 +694,7 @@ export default function ContractorDashboard() {
                       <div key={job.id} className="p-3 border rounded-lg">
                         <h4 className="font-medium mb-1">{job.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget)}
+                          {job.location} • {formatCurrency(job.budget ?? 0)}
                         </p>
                     </div>
                     ))}
