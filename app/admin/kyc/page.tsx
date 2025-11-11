@@ -55,8 +55,19 @@ interface KycRecord {
   };
 }
 
+// Helper function to check admin permissions
+function hasPermission(userPermissions: string[] | null | undefined, required: string): boolean {
+  if (!userPermissions) return false;
+  return userPermissions.includes(required);
+}
+
 export default function AdminKycPage() {
   const router = useRouter();
+  const { admin } = useAdminAuth();
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
+  const permissions = admin?.permissions || [];
+  const canApproveKyc = isSuperAdmin || hasPermission(permissions, 'kyc:approve');
+  const canWriteKyc = isSuperAdmin || hasPermission(permissions, 'kyc:write');
   const [kycs, setKycs] = useState<KycRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedKyc, setSelectedKyc] = useState<KycRecord | null>(null);
@@ -328,7 +339,7 @@ export default function AdminKycPage() {
                           <Eye className="w-4 h-4 mr-1" />
                           View Details
                         </Button>
-                        {kyc.status === 'SUBMITTED' && (
+                        {kyc.status === 'SUBMITTED' && canApproveKyc && (
                           <>
                             <Button
                               size="sm"
@@ -353,6 +364,9 @@ export default function AdminKycPage() {
                               Reject
                             </Button>
                           </>
+                        )}
+                        {kyc.status === 'SUBMITTED' && !canApproveKyc && (
+                          <span className="text-sm text-muted-foreground">Review only</span>
                         )}
                       </div>
                     </TableCell>

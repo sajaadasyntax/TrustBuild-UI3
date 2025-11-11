@@ -212,7 +212,7 @@ export default function AdminPage() {
       {/* Admin Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Contractor Management - requires contractors:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['contractors:read', 'contractors:write', 'contractors:approve'])) && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['contractors:read', 'contractors:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function AdminPage() {
         )}
 
         {/* Job Oversight - requires jobs:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['jobs:read', 'jobs:write', 'jobs:delete'])) && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['jobs:read', 'jobs:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -276,7 +276,7 @@ export default function AdminPage() {
         )}
 
         {/* Review Management - requires reviews:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['reviews:read', 'reviews:write', 'reviews:delete'])) && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['reviews:read', 'reviews:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export default function AdminPage() {
         )}
 
         {/* User Management - requires users:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['users:read', 'users:write', 'users:delete'])) && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['users:read', 'users:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -433,8 +433,8 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* KYC Review - requires kyc:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['kyc:read', 'kyc:write', 'kyc:approve'])) && (
+        {/* KYC Review - requires kyc:read (both SUPPORT and FINANCE can review, only FINANCE can approve) */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['kyc:read', 'kyc:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -553,8 +553,8 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* Disputes Management - requires disputes:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write', 'disputes:resolve'])) && (
+        {/* Disputes Management - requires disputes:read (both SUPPORT and FINANCE can manage disputes) */}
+        {(isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -62,8 +62,22 @@ const handleApiError = (error: any, defaultMessage: string) => {
   })
 }
 
+// Helper function to check admin permissions
+function hasPermission(userPermissions: string[] | null | undefined, required: string): boolean {
+  if (!userPermissions) return false;
+  return userPermissions.includes(required);
+}
+
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false;
+  return required.some(perm => userPermissions.includes(perm));
+}
+
 export default function AdminUsersPage() {
   const { admin, loading: authLoading } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
+  const canWriteUsers = isSuperAdmin || hasPermission(permissions, 'users:write')
   const [users, setUsers] = useState<User[]>([])
   const [admins, setAdmins] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -548,36 +562,40 @@ export default function AdminUsersPage() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          {user.isActive ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'deactivate', user.name)}
-                            >
-                              <UserX className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'activate', user.name)}
-                            >
-                              <UserCheck className="h-4 w-4" />
-                            </Button>
-                          )}
-                          
-                          {user.role !== 'ADMIN' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'delete', user.name)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        {canWriteUsers ? (
+                          <div className="flex gap-2">
+                            {user.isActive ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'deactivate', user.name)}
+                              >
+                                <UserX className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'activate', user.name)}
+                              >
+                                <UserCheck className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {user.role !== 'ADMIN' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'delete', user.name)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">View only</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

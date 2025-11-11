@@ -130,9 +130,24 @@ interface ContractorStats {
   topRatedContractors: any[];
 }
 
+// Helper function to check admin permissions
+function hasPermission(userPermissions: string[] | null | undefined, required: string): boolean {
+  if (!userPermissions) return false;
+  return userPermissions.includes(required);
+}
+
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false;
+  return required.some(perm => userPermissions.includes(perm));
+}
+
 export default function AdminContractors() {
   const router = useRouter()
   const { admin, loading: authLoading } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
+  const canWriteContractors = isSuperAdmin || hasPermission(permissions, 'contractors:write')
+  const canApproveContractors = isSuperAdmin || hasPermission(permissions, 'contractors:approve')
   const [contractors, setContractors] = useState<Contractor[]>([])
   const [pendingContractors, setPendingContractors] = useState<Contractor[]>([])
   const [stats, setStats] = useState<ContractorStats | null>(null)
@@ -786,7 +801,7 @@ export default function AdminContractors() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        {!contractor.profileApproved && (
+                        {!contractor.profileApproved && canApproveContractors && (
                           <Button
                             size="sm"
                             onClick={() => openDirectApprovalDialog(contractor)}
@@ -796,24 +811,26 @@ export default function AdminContractors() {
                             Quick Approve
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCreditDialog(contractor)}
-                          className="h-8 px-2"
-                        >
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          Credits: {contractor.creditsBalance || 0}
-                          {contractor.subscription?.status === 'active' ? (
-                            <Badge className="ml-1 bg-green-100 text-green-800 text-xs">
-                              Subscribed
-                            </Badge>
-                          ) : (
-                            <Badge className="ml-1 bg-gray-100 text-gray-600 text-xs">
-                              No Sub
-                            </Badge>
-                          )}
-                        </Button>
+                        {canWriteContractors && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openCreditDialog(contractor)}
+                            className="h-8 px-2"
+                          >
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Credits: {contractor.creditsBalance || 0}
+                            {contractor.subscription?.status === 'active' ? (
+                              <Badge className="ml-1 bg-green-100 text-green-800 text-xs">
+                                Subscribed
+                              </Badge>
+                            ) : (
+                              <Badge className="ml-1 bg-gray-100 text-gray-600 text-xs">
+                                No Sub
+                              </Badge>
+                            )}
+                          </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -830,7 +847,7 @@ export default function AdminContractors() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             
-                            {!contractor.profileApproved && (
+                            {!contractor.profileApproved && canApproveContractors && (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => openApprovalDialog(contractor, true)}
@@ -847,7 +864,7 @@ export default function AdminContractors() {
                               </>
                             )}
 
-                            {contractor.profileApproved && (contractor.status === 'VERIFIED' || contractor.status === 'ACTIVE') && (
+                            {canWriteContractors && contractor.profileApproved && (contractor.status === 'VERIFIED' || contractor.status === 'ACTIVE') && (
                               <DropdownMenuItem
                                 onClick={() => openStatusDialog(contractor, 'SUSPENDED')}
                               >
@@ -856,7 +873,7 @@ export default function AdminContractors() {
                               </DropdownMenuItem>
                             )}
 
-                            {contractor.status === 'SUSPENDED' && (
+                            {canWriteContractors && contractor.status === 'SUSPENDED' && (
                               <DropdownMenuItem
                                 onClick={() => openStatusDialog(contractor, 'ACTIVE')}
                               >
@@ -865,13 +882,17 @@ export default function AdminContractors() {
                               </DropdownMenuItem>
                             )}
 
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => openCreditDialog(contractor)}
-                            >
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Manage Credits
-                            </DropdownMenuItem>
+                            {canWriteContractors && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => openCreditDialog(contractor)}
+                                >
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  Manage Credits
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

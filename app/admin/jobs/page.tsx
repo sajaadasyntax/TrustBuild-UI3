@@ -26,8 +26,23 @@ interface JobStats {
   recentJobs: Job[];
 }
 
+// Helper function to check admin permissions
+function hasPermission(userPermissions: string[] | null | undefined, required: string): boolean {
+  if (!userPermissions) return false;
+  return userPermissions.includes(required);
+}
+
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false;
+  return required.some(perm => userPermissions.includes(perm));
+}
+
 export default function JobOversightPage() {
-  const { loading: authLoading } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
+  const canWriteJobs = isSuperAdmin || hasPermission(permissions, 'jobs:write')
+  const canWritePricing = isSuperAdmin || hasPermission(permissions, 'pricing:write')
   const [jobs, setJobs] = useState<Job[]>([])
   const [stats, setStats] = useState<JobStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -476,30 +491,36 @@ export default function JobOversightPage() {
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => openPriceDialog(job)}>
-                    <PoundSterling className="h-4 w-4 mr-1" />
-                    Edit Lead Price
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => openBudgetDialog(job)}>
-                    <DollarSign className="h-4 w-4 mr-1" />
-                    Edit Budget
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => openContractorLimitDialog(job)}>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Contractor Limit
-                  </Button>
-                  <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Change Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="POSTED">Posted</SelectItem>
-                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {job.isFlagged ? (
+                  {canWritePricing && (
+                    <Button variant="outline" size="sm" onClick={() => openPriceDialog(job)}>
+                      <PoundSterling className="h-4 w-4 mr-1" />
+                      Edit Lead Price
+                    </Button>
+                  )}
+                  {canWriteJobs && (
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => openBudgetDialog(job)}>
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Edit Budget
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openContractorLimitDialog(job)}>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Contractor Limit
+                      </Button>
+                      <Select onValueChange={(value) => handleStatusUpdate(job.id, value)}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Change Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="POSTED">Posted</SelectItem>
+                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                          <SelectItem value="COMPLETED">Completed</SelectItem>
+                          <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+                  {canWriteJobs && job.isFlagged ? (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -509,7 +530,7 @@ export default function JobOversightPage() {
                       <AlertTriangle className="h-4 w-4 mr-1" />
                       Unflag
                     </Button>
-                  ) : (
+                  ) : canWriteJobs ? (
                     <Button 
                       variant="outline" 
                       size="sm"

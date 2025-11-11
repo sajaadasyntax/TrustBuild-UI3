@@ -52,8 +52,17 @@ const handleApiError = (error: any, defaultMessage: string) => {
   })
 }
 
+// Helper function to check admin permissions
+function hasPermission(userPermissions: string[] | null | undefined, required: string): boolean {
+  if (!userPermissions) return false;
+  return userPermissions.includes(required);
+}
+
 export default function ReviewManagementPage() {
-  const { loading: authLoading } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
+  const canWriteReviews = isSuperAdmin || hasPermission(permissions, 'reviews:write')
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
@@ -412,7 +421,7 @@ export default function ReviewManagementPage() {
                     <Eye className="h-4 w-4 mr-1" />
                     View Job Details
                   </Button>
-                  {!review.flagReason && (
+                  {canWriteReviews && !review.flagReason && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -423,7 +432,7 @@ export default function ReviewManagementPage() {
                       Flag Review
                     </Button>
                   )}
-                  {!review.isVerified && !review.flagReason && (
+                  {canWriteReviews && !review.isVerified && !review.flagReason && (
                     <>
                       <Button 
                         size="sm" 
