@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +29,7 @@ export function AdminNavigationNew() {
   const { admin, logout } = useAdminAuth()
   const { notifications, unreadCount, loading, markAsRead, deleteNotification, fetchNotifications } = useAdminNotifications()
   const pathname = usePathname()
+  const router = useRouter()
 
   if (!admin) return null
 
@@ -321,12 +322,13 @@ export function AdminNavigationNew() {
                         className={`flex-col items-start p-3 cursor-pointer hover:bg-accent ${
                           !notification.isRead ? 'bg-accent/50' : ''
                         }`}
-                        onClick={() => {
-                          if (notification.actionLink) {
-                            window.location.href = notification.actionLink
-                          }
+                        onClick={async () => {
                           if (!notification.isRead) {
-                            markAsRead(notification.id)
+                            await markAsRead(notification.id)
+                          }
+                          if (notification.actionLink) {
+                            // Use Next.js router for client-side navigation
+                            router.push(notification.actionLink)
                           }
                         }}
                       >

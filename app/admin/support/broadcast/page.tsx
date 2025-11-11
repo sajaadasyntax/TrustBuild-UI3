@@ -100,10 +100,26 @@ export default function BroadcastNotificationPage() {
   };
 
   const handleSelectAll = () => {
-    if (selectedUsers.length === filteredUsers.length) {
-      setSelectedUsers([]);
+    // Get currently visible/filtered user IDs
+    const filteredUserIds = filteredUsers.map(u => u.id);
+    
+    // Check if all filtered users are already selected
+    const allFilteredSelected = filteredUserIds.every(id => selectedUsers.includes(id));
+    
+    if (allFilteredSelected) {
+      // Deselect only the filtered users
+      setSelectedUsers(prev => prev.filter(id => !filteredUserIds.includes(id)));
     } else {
-      setSelectedUsers(filteredUsers.map(u => u.id));
+      // Select all filtered users (merge with existing selections)
+      setSelectedUsers(prev => {
+        const newSelection = [...prev];
+        filteredUserIds.forEach(id => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
     }
   };
 
@@ -276,13 +292,6 @@ export default function BroadcastNotificationPage() {
                   <span className="text-sm font-medium">
                     Selected: {selectedUsers.length} user(s)
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectAll}
-                  >
-                    {selectedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
-                  </Button>
                 </div>
                 <Button
                   className="w-full"
@@ -328,15 +337,35 @@ export default function BroadcastNotificationPage() {
                     className="pl-9"
                   />
                 </div>
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="CUSTOMER">Customers</option>
-                  <option value="CONTRACTOR">Contractors</option>
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="CUSTOMER">Customers</option>
+                    <option value="CONTRACTOR">Contractors</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="whitespace-nowrap"
+                  >
+                    {filteredUsers.every(u => selectedUsers.includes(u.id)) 
+                      ? 'Deselect Filtered' 
+                      : 'Select All Filtered'}
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground flex items-center justify-between">
+                  <span>
+                    Showing {filteredUsers.length} of {users.length} users
+                  </span>
+                  <span>
+                    {selectedUsers.length} selected
+                  </span>
+                </div>
               </div>
 
               {/* Users List */}

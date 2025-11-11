@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Bell, Check, CheckCheck, Trash2, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,6 +30,7 @@ export function NotificationBell() {
   } = useNotifications()
 
   const [open, setOpen] = useState(false)
+  const router = useRouter()
 
   // Refresh notifications when dropdown opens
   const handleOpenChange = (isOpen: boolean) => {
@@ -78,6 +80,8 @@ export function NotificationBell() {
     }
     if (notification.actionLink) {
       setOpen(false)
+      // Use Next.js router for client-side navigation
+      router.push(notification.actionLink)
     }
   }
 
@@ -168,16 +172,9 @@ export function NotificationBell() {
                             })}
                           </span>
                           {notification.actionLink && (
-                            <Link
-                              href={notification.actionLink}
-                              className="text-xs text-primary hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setOpen(false)
-                              }}
-                            >
+                            <span className="text-xs text-primary">
                               {notification.actionText || 'View'}
-                            </Link>
+                            </span>
                           )}
                         </div>
                       </div>
