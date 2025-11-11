@@ -461,8 +461,8 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* Support Tickets - requires support:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])) && (
+        {/* Support Tickets - SUPPORT_ADMIN access */}
+        {(isSuperAdmin || admin?.role === 'SUPPORT_ADMIN' || hasAnyPermission(permissions, ['support:read', 'support:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -659,7 +659,7 @@ export const contractorsApi = {
     description?: string;
     imageUrl: string;
     projectType?: string;
-    completedAt?: string;
+    projectDate?: string;
   }): Promise<PortfolioItem> => {
     const response = await apiRequest<{ data: { portfolioItem: PortfolioItem } }>(`/contractors/me/portfolio`, {
       method: 'POST',
