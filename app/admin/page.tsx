@@ -366,7 +366,7 @@ export default function AdminPage() {
         )}
 
         {/* Payment Management - FINANCE_ADMIN access */}
-        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -498,7 +498,7 @@ export default function AdminPage() {
         )}
 
         {/* Invoices Management - FINANCE_ADMIN access */}
-        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -526,7 +526,7 @@ export default function AdminPage() {
         )}
 
         {/* Pricing & Credits - FINANCE_ADMIN access */}
-        {(admin?.role === 'SUPER_ADMIN' || admin?.role === 'FINANCE_ADMIN') && (
+        {(isSuperAdmin || hasAnyPermission(permissions, ['pricing:read', 'pricing:write', 'contractors:read', 'contractors:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

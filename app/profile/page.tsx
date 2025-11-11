@@ -4,14 +4,15 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2, Lock, Eye, EyeOff } from "lucide-react"
+import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2, Lock, Eye, EyeOff, Image as ImageIcon, Plus, X, Edit2, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { usersApi, contractorsApi, customersApi, uploadApi, handleApiError } from "@/lib/api"
+import { usersApi, contractorsApi, customersApi, uploadApi, handleApiError, PortfolioItem } from "@/lib/api"
 import { toast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface ProfileData {
   // User fields
@@ -54,6 +55,20 @@ export default function ProfilePage() {
     newPassword: "",
     confirmPassword: ""
   })
+  
+  // Portfolio management state
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [loadingPortfolio, setLoadingPortfolio] = useState(false)
+  const [uploadingPortfolio, setUploadingPortfolio] = useState(false)
+  const [showAddPortfolioDialog, setShowAddPortfolioDialog] = useState(false)
+  const [editingPortfolioItem, setEditingPortfolioItem] = useState<PortfolioItem | null>(null)
+  const [newPortfolioItem, setNewPortfolioItem] = useState({
+    title: "",
+    description: "",
+    imageUrl: "",
+    projectDate: ""
+  })
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Helper function to fetch and set profile data
   const fetchProfileData = async () => {
@@ -83,6 +98,10 @@ export default function ProfilePage() {
             logoUrl: contractorData.logoUrl || "",
             city: contractorData.city || "",
             postcode: contractorData.postcode || ""
+          }
+          // Fetch portfolio items
+          if (contractorData.portfolio) {
+            setPortfolioItems(contractorData.portfolio)
           }
         } catch (error) {
           console.log("No contractor profile found, using empty data")
@@ -122,7 +141,167 @@ export default function ProfilePage() {
   // Fetch user profile data on mount and when user changes
   useEffect(() => {
     fetchProfileData()
+    if (user?.role === 'CONTRACTOR') {
+      fetchPortfolioItems()
+    }
   }, [user])
+  
+  // Fetch portfolio items
+  const fetchPortfolioItems = async () => {
+    if (!user || user.role !== 'CONTRACTOR') return
+    
+    try {
+      setLoadingPortfolio(true)
+      const contractorData = await contractorsApi.getMyProfile()
+      setPortfolioItems(contractorData.portfolio || [])
+    } catch (error) {
+      console.error('Error fetching portfolio:', error)
+    } finally {
+      setLoadingPortfolio(false)
+    }
+  }
+  
+  // Handle portfolio image upload
+  const handlePortfolioImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (PNG, JPG, etc.)",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      const uploadResult = await uploadApi.uploadFile(file)
+      setNewPortfolioItem(prev => ({ ...prev, imageUrl: uploadResult.url }))
+      
+      toast({
+        title: "Image uploaded successfully",
+        description: "Image ready to add to portfolio"
+      })
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+  
+  // Handle add portfolio item
+  const handleAddPortfolioItem = async () => {
+    if (!newPortfolioItem.title || !newPortfolioItem.imageUrl) {
+      toast({
+        title: "Error",
+        description: "Title and image are required",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    if (portfolioItems.length >= 20) {
+      toast({
+        title: "Limit reached",
+        description: "Maximum of 20 portfolio items allowed. Please delete some items first.",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    try {
+      setUploadingPortfolio(true)
+      const item = await contractorsApi.addPortfolioItem({
+        title: newPortfolioItem.title,
+        description: newPortfolioItem.description || undefined,
+        imageUrl: newPortfolioItem.imageUrl,
+        projectDate: newPortfolioItem.projectDate || undefined
+      })
+      
+      setPortfolioItems(prev => [...prev, item])
+      setNewPortfolioItem({ title: "", description: "", imageUrl: "", projectDate: "" })
+      setShowAddPortfolioDialog(false)
+      
+      toast({
+        title: "Success",
+        description: `Portfolio item added. You have ${portfolioItems.length + 1} of 20 items.`
+      })
+    } catch (error) {
+      handleApiError(error, 'Failed to add portfolio item')
+    } finally {
+      setUploadingPortfolio(false)
+    }
+  }
+  
+  // Handle delete portfolio item
+  const handleDeletePortfolioItem = async (itemId: string) => {
+    if (!confirm('Are you sure you want to delete this portfolio item?')) return
+    
+    try {
+      await contractorsApi.deletePortfolioItem(itemId)
+      setPortfolioItems(prev => prev.filter(item => item.id !== itemId))
+      toast({
+        title: "Success",
+        description: "Portfolio item deleted successfully"
+      })
+    } catch (error) {
+      handleApiError(error, 'Failed to delete portfolio item')
+    }
+  }
+  
+  // Handle update portfolio item
+  const handleUpdatePortfolioItem = async () => {
+    if (!editingPortfolioItem) return
+    
+    if (!editingPortfolioItem.title || !editingPortfolioItem.imageUrl) {
+      toast({
+        title: "Error",
+        description: "Title and image are required",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    try {
+      setUploadingPortfolio(true)
+      const updated = await contractorsApi.updatePortfolioItem(editingPortfolioItem.id, {
+        title: editingPortfolioItem.title,
+        description: editingPortfolioItem.description,
+        imageUrl: editingPortfolioItem.imageUrl,
+        projectDate: editingPortfolioItem.projectDate
+      })
+      
+      setPortfolioItems(prev => prev.map(item => item.id === updated.id ? updated : item))
+      setEditingPortfolioItem(null)
+      
+      toast({
+        title: "Success",
+        description: "Portfolio item updated successfully"
+      })
+    } catch (error) {
+      handleApiError(error, 'Failed to update portfolio item')
+    } finally {
+      setUploadingPortfolio(false)
+    }
+  }
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
     setProfileData(prev => ({
@@ -587,6 +766,79 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Portfolio Management */}
+            <Card className="mb-8">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5" />
+                      Portfolio & Work Photos
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Upload up to 20 personal and work photos to showcase your projects ({portfolioItems.length}/20)
+                    </CardDescription>
+                  </div>
+                  {portfolioItems.length < 20 && (
+                    <Button
+                      onClick={() => {
+                        setNewPortfolioItem({ title: "", description: "", imageUrl: "", projectDate: "" })
+                        setShowAddPortfolioDialog(true)
+                      }}
+                      size="sm"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Photo
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingPortfolio ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : portfolioItems.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No portfolio items yet</p>
+                    <p className="text-sm mt-1">Add photos to showcase your work</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {portfolioItems.map((item) => (
+                      <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setEditingPortfolioItem(item)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeletePortfolioItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                          <p className="text-white text-sm font-medium truncate">{item.title}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </>
         )}
 
@@ -786,6 +1038,228 @@ export default function ProfilePage() {
             </Button>
           </div>
         )}
+        
+        {/* Add Portfolio Item Dialog */}
+        <Dialog open={showAddPortfolioDialog} onOpenChange={setShowAddPortfolioDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Portfolio Photo</DialogTitle>
+              <DialogDescription>
+                Upload a personal or work photo to showcase your projects
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="portfolio-image">Image *</Label>
+                {newPortfolioItem.imageUrl ? (
+                  <div className="mt-2 relative">
+                    <img
+                      src={newPortfolioItem.imageUrl}
+                      alt="Preview"
+                      className="w-full h-64 object-cover rounded-lg border"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => setNewPortfolioItem(prev => ({ ...prev, imageUrl: "" }))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    <Input
+                      id="portfolio-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePortfolioImageUpload}
+                      disabled={uploadingImage}
+                      className="cursor-pointer"
+                    />
+                    {uploadingImage && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Uploading image...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <Label htmlFor="portfolio-title">Title *</Label>
+                <Input
+                  id="portfolio-title"
+                  value={newPortfolioItem.title}
+                  onChange={(e) => setNewPortfolioItem(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g., Kitchen Renovation, Bathroom Fitting"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="portfolio-description">Description (Optional)</Label>
+                <Textarea
+                  id="portfolio-description"
+                  value={newPortfolioItem.description}
+                  onChange={(e) => setNewPortfolioItem(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Brief description of the project..."
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="portfolio-date">Project Date (Optional)</Label>
+                <Input
+                  id="portfolio-date"
+                  type="date"
+                  value={newPortfolioItem.projectDate}
+                  onChange={(e) => setNewPortfolioItem(prev => ({ ...prev, projectDate: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddPortfolioDialog(false)
+                  setNewPortfolioItem({ title: "", description: "", imageUrl: "", projectDate: "" })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddPortfolioItem}
+                disabled={uploadingPortfolio || !newPortfolioItem.title || !newPortfolioItem.imageUrl}
+              >
+                {uploadingPortfolio ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Photo
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Edit Portfolio Item Dialog */}
+        <Dialog open={!!editingPortfolioItem} onOpenChange={(open) => !open && setEditingPortfolioItem(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Portfolio Photo</DialogTitle>
+              <DialogDescription>
+                Update the details of your portfolio item
+              </DialogDescription>
+            </DialogHeader>
+            {editingPortfolioItem && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Image</Label>
+                  <div className="mt-2 relative">
+                    <img
+                      src={editingPortfolioItem.imageUrl}
+                      alt={editingPortfolioItem.title}
+                      className="w-full h-64 object-cover rounded-lg border"
+                    />
+                    <div className="mt-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          
+                          try {
+                            setUploadingImage(true)
+                            const uploadResult = await uploadApi.uploadFile(file)
+                            setEditingPortfolioItem(prev => prev ? { ...prev, imageUrl: uploadResult.url } : null)
+                            toast({
+                              title: "Image uploaded successfully",
+                              description: "Image updated"
+                            })
+                          } catch (error) {
+                            handleApiError(error, 'Failed to upload image')
+                          } finally {
+                            setUploadingImage(false)
+                          }
+                        }}
+                        disabled={uploadingImage}
+                        className="cursor-pointer"
+                      />
+                      {uploadingImage && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading image...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-portfolio-title">Title *</Label>
+                  <Input
+                    id="edit-portfolio-title"
+                    value={editingPortfolioItem.title}
+                    onChange={(e) => setEditingPortfolioItem(prev => prev ? { ...prev, title: e.target.value } : null)}
+                    placeholder="e.g., Kitchen Renovation, Bathroom Fitting"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-portfolio-description">Description (Optional)</Label>
+                  <Textarea
+                    id="edit-portfolio-description"
+                    value={editingPortfolioItem.description || ""}
+                    onChange={(e) => setEditingPortfolioItem(prev => prev ? { ...prev, description: e.target.value } : null)}
+                    placeholder="Brief description of the project..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-portfolio-date">Project Date (Optional)</Label>
+                  <Input
+                    id="edit-portfolio-date"
+                    type="date"
+                    value={editingPortfolioItem.projectDate ? new Date(editingPortfolioItem.projectDate).toISOString().split('T')[0] : ""}
+                    onChange={(e) => setEditingPortfolioItem(prev => prev ? { ...prev, projectDate: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEditingPortfolioItem(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdatePortfolioItem}
+                disabled={uploadingPortfolio || !editingPortfolioItem?.title || !editingPortfolioItem?.imageUrl}
+              >
+                {uploadingPortfolio ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
