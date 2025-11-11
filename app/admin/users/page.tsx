@@ -265,6 +265,17 @@ export default function AdminUsersPage() {
   }
 
   const handleAdminStatusToggle = async (adminId: string, newStatus: boolean, adminName: string) => {
+    // Prevent disabling Main Super Admin
+    const targetAdmin = admins.find(a => a.id === adminId)
+    if (targetAdmin?.isMainSuperAdmin && newStatus === false) {
+      toast({
+        title: "Action Not Allowed",
+        description: "The Main Super Admin cannot be disabled",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       await adminApi.updateAdmin(adminId, { isActive: newStatus })
       
@@ -700,7 +711,7 @@ export default function AdminUsersPage() {
                               {new Date(adminUser.createdAt).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
-                              {adminUser.id !== admin.id && (
+                              {adminUser.id !== admin.id && !adminUser.isMainSuperAdmin && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -718,6 +729,11 @@ export default function AdminUsersPage() {
                                     </>
                                   )}
                                 </Button>
+                              )}
+                              {adminUser.isMainSuperAdmin && (
+                                <Badge variant="outline" className="text-xs">
+                                  Protected
+                                </Badge>
                               )}
                             </TableCell>
                           </TableRow>
