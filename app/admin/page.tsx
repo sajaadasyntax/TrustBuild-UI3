@@ -63,46 +63,62 @@ export default function AdminPage() {
   const isFinanceAdmin = admin?.role === 'FINANCE_ADMIN'
   
   // Helper function to check permissions with role-based fallback
-  // If permissions array is empty, fall back to role-based access
+  // Works like SUPER_ADMIN - always uses role-based permissions as fallback
   const hasPermissionOrRole = (requiredPerms: string[]): boolean => {
     // SUPER_ADMIN has all permissions
     if (isSuperAdmin) return true
     
-    // If permissions exist and are not empty, use permission-based check
-    if (permissions && permissions.length > 0) {
-      return hasAnyPermission(permissions, requiredPerms)
-    }
+    // Define role-based permissions
+    const supportAdminPerms = [
+      'users:read', 'users:write',
+      'contractors:read', 'contractors:write',
+      'kyc:read', 'kyc:write',
+      'jobs:read', 'jobs:write',
+      'reviews:read', 'reviews:write',
+      'content:read', 'content:write',
+      'support:read', 'support:write',
+      'pricing:read', 'pricing:write',
+      'disputes:read', 'disputes:write'
+    ]
     
-    // Fallback to role-based access if permissions are empty
-    // SUPPORT_ADMIN should have access to: users, contractors, kyc, jobs, reviews, content, support, pricing, disputes
+    const financeAdminPerms = [
+      'users:read', 'users:write',
+      'contractors:read', 'contractors:write',
+      'contractors:approve',
+      'kyc:read', 'kyc:write',
+      'kyc:approve',
+      'jobs:read', 'jobs:write',
+      'payments:read', 'payments:write',
+      'payments:refund',
+      'settings:read', 'settings:write',
+      'pricing:read', 'pricing:write',
+      'disputes:read', 'disputes:write',
+      'disputes:resolve',
+      'final_price:read', 'final_price:write'
+    ]
+    
+    // For SUPPORT_ADMIN and FINANCE_ADMIN: check permissions first, then fall back to role-based
     if (isSupportAdmin) {
-      const supportAdminPerms = [
-        'users:read', 'users:write',
-        'contractors:read', 'contractors:write',
-        'kyc:read', 'kyc:write',
-        'jobs:read', 'jobs:write',
-        'reviews:read', 'reviews:write',
-        'content:read', 'content:write',
-        'support:read', 'support:write',
-        'pricing:read', 'pricing:write',
-        'disputes:read', 'disputes:write'
-      ]
+      // If permissions exist and include the required permission, use them
+      if (permissions && permissions.length > 0 && hasAnyPermission(permissions, requiredPerms)) {
+        return true
+      }
+      // Otherwise, use role-based permissions
       return requiredPerms.some(perm => supportAdminPerms.includes(perm))
     }
     
-    // FINANCE_ADMIN should have access to: users, contractors, kyc, jobs, payments, settings, pricing, disputes
     if (isFinanceAdmin) {
-      const financeAdminPerms = [
-        'users:read', 'users:write',
-        'contractors:read', 'contractors:write',
-        'kyc:read', 'kyc:write',
-        'jobs:read', 'jobs:write',
-        'payments:read', 'payments:write',
-        'settings:read', 'settings:write',
-        'pricing:read', 'pricing:write',
-        'disputes:read', 'disputes:write'
-      ]
+      // If permissions exist and include the required permission, use them
+      if (permissions && permissions.length > 0 && hasAnyPermission(permissions, requiredPerms)) {
+        return true
+      }
+      // Otherwise, use role-based permissions
       return requiredPerms.some(perm => financeAdminPerms.includes(perm))
+    }
+    
+    // For other roles, check permissions array only
+    if (permissions && permissions.length > 0) {
+      return hasAnyPermission(permissions, requiredPerms)
     }
     
     return false
