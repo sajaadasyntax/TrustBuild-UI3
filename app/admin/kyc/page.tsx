@@ -45,6 +45,8 @@ interface KycRecord {
   dueBy: string | null;
   idDocPath: string | null;
   utilityDocPath: string | null;
+  insuranceDocPath: string | null;
+  companyDocPath: string | null;
   companyNumber: string | null;
   contractor: {
     id: string;
@@ -586,7 +588,7 @@ export default function AdminKycPage() {
                 {/* Utility Bill */}
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">Utility Bill</h4>
+                    <h4 className="font-medium">Utility Bill (Proof of Address)</h4>
                     {selectedKyc.utilityDocPath ? (
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         <FileText className="w-3 h-3 mr-1" />
@@ -617,6 +619,96 @@ export default function AdminKycPage() {
                             const link = document.createElement('a');
                             link.href = buildDocumentUrl(selectedKyc.utilityDocPath);
                             link.download = `utility-bill-${selectedKyc.contractor.user.name}.pdf`;
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Insurance Document */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Public Liability Insurance Certificate</h4>
+                    {selectedKyc.insuranceDocPath ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <FileText className="w-3 h-3 mr-1" />
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-red-600 border-red-600">
+                        Not provided
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedKyc.insuranceDocPath && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">Document uploaded successfully</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(buildDocumentUrl(selectedKyc.insuranceDocPath), '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Document
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = buildDocumentUrl(selectedKyc.insuranceDocPath);
+                            link.download = `insurance-certificate-${selectedKyc.contractor.user.name}.pdf`;
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Company Document */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Company Registration Documents</h4>
+                    {selectedKyc.companyDocPath ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <FileText className="w-3 h-3 mr-1" />
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 border-gray-500">
+                        Optional
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedKyc.companyDocPath && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">Document uploaded successfully</p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(buildDocumentUrl(selectedKyc.companyDocPath), '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Document
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = buildDocumentUrl(selectedKyc.companyDocPath);
+                            link.download = `company-documents-${selectedKyc.contractor.user.name}.pdf`;
                             link.click();
                           }}
                         >
