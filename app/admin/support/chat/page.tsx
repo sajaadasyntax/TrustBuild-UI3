@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,8 +88,9 @@ interface UserDetails {
   };
 }
 
-export default function AdminChatPage() {
+export default function AdminChatPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { admin, loading: authLoading } = useAdminAuth();
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
   const permissions = admin?.permissions || [];
@@ -174,6 +175,41 @@ export default function AdminChatPage() {
       fetchConversations();
     }
   }, [authLoading, fetchConversations]);
+
+  // Handle userId query parameter from notifications
+  useEffect(() => {
+    const userId = searchParams.get('userId');
+    if (userId && conversations.length > 0 && !selectedConversation && !authLoading) {
+      // Find conversation with this user
+      const conversation = conversations.find(
+        (conv) => conv.otherUser.id === userId
+      );
+      if (conversation) {
+        setSelectedConversation(conversation);
+        const otherUserId = conversation.otherUser.id;
+        fetchConversation(otherUserId);
+        // Remove query parameter from URL
+        router.replace('/admin/support/chat');
+      } else {
+        // If conversation doesn't exist, try to fetch user and create conversation
+        fetchConversation(userId).then(() => {
+          // Create a temporary conversation object
+          const tempConversation: Conversation = {
+            id: `${admin?.id}-${userId}`,
+            participant1: admin,
+            participant2: { id: userId },
+            otherUser: { id: userId },
+            lastMessage: null,
+            messageCount: 0,
+            unreadCount: 0,
+            lastMessageAt: new Date().toISOString(),
+          };
+          setSelectedConversation(tempConversation);
+          router.replace('/admin/support/chat');
+        });
+      }
+    }
+  }, [searchParams, conversations, selectedConversation, admin, router, authLoading, fetchConversation]);
 
   const fetchConversation = useCallback(async (userId: string) => {
     try {
@@ -650,6 +686,20 @@ export default function AdminChatPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AdminChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="container py-32">
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    }>
+      <AdminChatPageContent />
+    </Suspense>
   );
 }
 

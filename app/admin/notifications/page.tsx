@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bell, Check, CheckCheck, Trash2, Filter, BellOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,6 +26,7 @@ interface Notification {
 }
 
 export default function AdminNotificationsPage() {
+  const router = useRouter()
   const { admin, loading: authLoading } = useAdminAuth()
   const { toast } = useToast()
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -125,7 +127,8 @@ export default function AdminNotificationsPage() {
       await handleMarkAsRead(notification.id)
     }
     if (notification.actionLink) {
-      window.location.href = notification.actionLink
+      // Use Next.js router for client-side navigation
+      router.push(notification.actionLink)
     }
   }
 
