@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,8 +42,40 @@ const handleApiError = (error: any, defaultMessage: string) => {
   })
 }
 
+// Helper function to check admin permissions
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false
+  return required.some(perm => userPermissions.includes(perm))
+}
+
 export default function FinalPriceConfirmationsPage() {
-  const { loading: authLoading } = useAdminAuth()
+  const { admin, loading: authLoading } = useAdminAuth()
+  const router = useRouter()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
+  
+  // Route guard - check if admin has access to final price confirmations
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessFinalPrice = isSuperAdmin || hasAnyPermission(permissions, ['final_price:read', 'final_price:write'])
+      if (!canAccessFinalPrice) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Final Price Confirmations page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessFinalPrice = isSuperAdmin || hasAnyPermission(permissions, ['final_price:read', 'final_price:write'])
+    if (!canAccessFinalPrice) {
+      return null
+    }
+  }
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)

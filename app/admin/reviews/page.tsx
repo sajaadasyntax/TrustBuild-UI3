@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Search, Star, Eye, AlertTriangle, CheckCircle, X, Flag, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -60,9 +61,33 @@ function hasPermission(userPermissions: string[] | null | undefined, required: s
 
 export default function ReviewManagementPage() {
   const { admin, loading: authLoading } = useAdminAuth()
+  const router = useRouter()
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
   const permissions = admin?.permissions || []
   const canWriteReviews = isSuperAdmin || hasPermission(permissions, 'reviews:write')
+  
+  // Route guard - check if admin has access to reviews
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessReviews = isSuperAdmin || hasPermission(permissions, 'reviews:read') || hasPermission(permissions, 'reviews:write')
+      if (!canAccessReviews) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Reviews page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessReviews = isSuperAdmin || hasPermission(permissions, 'reviews:read') || hasPermission(permissions, 'reviews:write')
+    if (!canAccessReviews) {
+      return null
+    }
+  }
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")

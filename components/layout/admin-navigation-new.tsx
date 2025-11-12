@@ -44,6 +44,10 @@ export function AdminNavigationNew() {
   const canAccessFinance = isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])
   const canAccessContent = isSuperAdmin || hasAnyPermission(permissions, ['content:read', 'content:write'])
   const canAccessSettings = isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])
+  const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+  const canAccessDisputes = isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])
+  const canAccessReviews = isSuperAdmin || hasAnyPermission(permissions, ['reviews:read', 'reviews:write'])
+  const canAccessFinalPrice = isSuperAdmin || hasAnyPermission(permissions, ['final_price:read', 'final_price:write'])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -128,18 +132,22 @@ export function AdminNavigationNew() {
                     All Jobs
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/final-price-confirmations" className="cursor-pointer">
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Final Prices
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/reviews" className="cursor-pointer">
-                    <Star className="mr-2 h-4 w-4" />
-                    Reviews
-                  </Link>
-                </DropdownMenuItem>
+                {canAccessFinalPrice && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/final-price-confirmations" className="cursor-pointer">
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Final Prices
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {canAccessReviews && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/reviews" className="cursor-pointer">
+                      <Star className="mr-2 h-4 w-4" />
+                      Reviews
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -185,38 +193,44 @@ export function AdminNavigationNew() {
             </DropdownMenu>
           )}
 
-          {/* Support Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`px-3 py-2 h-auto font-medium ${
-                  pathname.startsWith("/admin/disputes") || pathname.startsWith("/admin/support")
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground/60"
-                }`}
-              >
-                <LifeBuoy className="h-4 w-4 mr-2" />
-                Support
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>Support & Help</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/admin/disputes" className="cursor-pointer">
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Disputes
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/support" className="cursor-pointer">
-                  <LifeBuoy className="mr-2 h-4 w-4" />
-                  Support Tickets
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Support Dropdown - Only show if admin has support or disputes permissions */}
+          {(canAccessSupport || canAccessDisputes) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={`px-3 py-2 h-auto font-medium ${
+                    pathname.startsWith("/admin/disputes") || pathname.startsWith("/admin/support")
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/60"
+                  }`}
+                >
+                  <LifeBuoy className="h-4 w-4 mr-2" />
+                  Support
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Support & Help</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {canAccessDisputes && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/disputes" className="cursor-pointer">
+                      <AlertTriangle className="mr-2 h-4 w-4" />
+                      Disputes
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {canAccessSupport && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/support" className="cursor-pointer">
+                      <LifeBuoy className="mr-2 h-4 w-4" />
+                      Support Tickets
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* More Dropdown */}
           <DropdownMenu>

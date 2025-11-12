@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { AlertTriangle, CheckCircle, Clock, Search, Filter, Eye, MessageSquare } from 'lucide-react';
 
 interface Dispute {
@@ -78,9 +79,41 @@ interface DisputeStats {
   byType: any[];
 }
 
+// Helper function to check admin permissions
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false
+  return required.some(perm => userPermissions.includes(perm))
+}
+
 export default function AdminDisputesPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { admin, loading: authLoading } = useAdminAuth();
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
+  const permissions = admin?.permissions || [];
+  
+  // Route guard - check if admin has access to disputes
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessDisputes = isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])
+      if (!canAccessDisputes) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Disputes page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router, toast])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessDisputes = isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])
+    if (!canAccessDisputes) {
+      return null
+    }
+  }
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [stats, setStats] = useState<DisputeStats | null>(null);
   const [loading, setLoading] = useState(true);

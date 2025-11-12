@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { adminApi } from '@/lib/adminApi';
+
 import { 
   Loader2, 
   Search, 
@@ -28,6 +30,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+
+// Helper function to check admin permissions
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false
+  return required.some(perm => userPermissions.includes(perm))
+}
 
 interface Conversation {
   id: string;
@@ -81,7 +89,10 @@ interface UserDetails {
 }
 
 export default function AdminChatPage() {
+  const router = useRouter();
   const { admin, loading: authLoading } = useAdminAuth();
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
+  const permissions = admin?.permissions || [];
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -99,6 +110,29 @@ export default function AdminChatPage() {
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Route guard - check if admin has access to support
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+      if (!canAccessSupport) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Support Chat page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router, toast])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+    if (!canAccessSupport) {
+      return null
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

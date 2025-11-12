@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { adminApi } from '@/lib/adminApi';
+
 import { 
   Loader2, 
   Search, 
@@ -44,8 +46,18 @@ interface User {
   };
 }
 
+// Helper function to check admin permissions
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false
+  return required.some(perm => userPermissions.includes(perm))
+}
+
 export default function BroadcastNotificationPage() {
+  const router = useRouter();
   const { admin, loading: authLoading } = useAdminAuth();
+  const { toast } = useToast();
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN';
+  const permissions = admin?.permissions || [];
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +69,29 @@ export default function BroadcastNotificationPage() {
   const [notificationType, setNotificationType] = useState('INFO');
   const [actionLink, setActionLink] = useState('');
   const [actionText, setActionText] = useState('');
-  const { toast } = useToast();
+  
+  // Route guard - check if admin has access to support
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+      if (!canAccessSupport) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Broadcast page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router, toast])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+    if (!canAccessSupport) {
+      return null
+    }
+  }
 
   const fetchUsers = useCallback(async () => {
     try {

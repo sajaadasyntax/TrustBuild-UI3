@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Users, MessageSquare, Clock, CheckCircle, AlertTriangle, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { adminApi } from "@/lib/adminApi"
 import { useToast } from "@/hooks/use-toast"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
+
+// Helper function to check admin permissions
+function hasAnyPermission(userPermissions: string[] | null | undefined, required: string[]): boolean {
+  if (!userPermissions) return false
+  return required.some(perm => userPermissions.includes(perm))
+}
 
 interface SupportTicket {
   id: string
@@ -27,6 +35,10 @@ interface SupportTicket {
 }
 
 export default function CustomerSupportPage() {
+  const router = useRouter()
+  const { admin, loading: authLoading } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
+  const permissions = admin?.permissions || []
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
@@ -39,6 +51,29 @@ export default function CustomerSupportPage() {
     averageResponseTime: "2.5 hours",
   })
   const { toast } = useToast()
+  
+  // Route guard - check if admin has access to support
+  useEffect(() => {
+    if (!authLoading && admin) {
+      const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+      if (!canAccessSupport) {
+        router.push('/admin')
+        toast({
+          title: "Access Denied",
+          description: "You do not have permission to access the Support page.",
+          variant: "destructive",
+        })
+      }
+    }
+  }, [admin, authLoading, isSuperAdmin, permissions, router, toast])
+  
+  // Don't render if no access
+  if (!authLoading && admin) {
+    const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
+    if (!canAccessSupport) {
+      return null
+    }
+  }
 
   useEffect(() => {
     fetchTickets()
