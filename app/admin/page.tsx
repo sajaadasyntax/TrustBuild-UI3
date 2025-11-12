@@ -59,6 +59,54 @@ export default function AdminPage() {
   // SUPER_ADMIN has all permissions by default
   const isSuperAdmin = admin?.role === 'SUPER_ADMIN'
   const permissions = admin?.permissions || []
+  const isSupportAdmin = admin?.role === 'SUPPORT_ADMIN'
+  const isFinanceAdmin = admin?.role === 'FINANCE_ADMIN'
+  
+  // Helper function to check permissions with role-based fallback
+  // If permissions array is empty, fall back to role-based access
+  const hasPermissionOrRole = (requiredPerms: string[]): boolean => {
+    // SUPER_ADMIN has all permissions
+    if (isSuperAdmin) return true
+    
+    // If permissions exist and are not empty, use permission-based check
+    if (permissions && permissions.length > 0) {
+      return hasAnyPermission(permissions, requiredPerms)
+    }
+    
+    // Fallback to role-based access if permissions are empty
+    // SUPPORT_ADMIN should have access to: users, contractors, kyc, jobs, reviews, content, support, pricing, disputes
+    if (isSupportAdmin) {
+      const supportAdminPerms = [
+        'users:read', 'users:write',
+        'contractors:read', 'contractors:write',
+        'kyc:read', 'kyc:write',
+        'jobs:read', 'jobs:write',
+        'reviews:read', 'reviews:write',
+        'content:read', 'content:write',
+        'support:read', 'support:write',
+        'pricing:read', 'pricing:write',
+        'disputes:read', 'disputes:write'
+      ]
+      return requiredPerms.some(perm => supportAdminPerms.includes(perm))
+    }
+    
+    // FINANCE_ADMIN should have access to: users, contractors, kyc, jobs, payments, settings, pricing, disputes
+    if (isFinanceAdmin) {
+      const financeAdminPerms = [
+        'users:read', 'users:write',
+        'contractors:read', 'contractors:write',
+        'kyc:read', 'kyc:write',
+        'jobs:read', 'jobs:write',
+        'payments:read', 'payments:write',
+        'settings:read', 'settings:write',
+        'pricing:read', 'pricing:write',
+        'disputes:read', 'disputes:write'
+      ]
+      return requiredPerms.some(perm => financeAdminPerms.includes(perm))
+    }
+    
+    return false
+  }
   
 
   const fetchDashboardStats = useCallback(async () => {
@@ -212,7 +260,7 @@ export default function AdminPage() {
       {/* Admin Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Contractor Management - requires contractors:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['contractors:read', 'contractors:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['contractors:read', 'contractors:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +292,7 @@ export default function AdminPage() {
         )}
 
         {/* Job Oversight - requires jobs:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['jobs:read', 'jobs:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['jobs:read', 'jobs:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -276,7 +324,7 @@ export default function AdminPage() {
         )}
 
         {/* Review Management - requires reviews:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['reviews:read', 'reviews:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['reviews:read', 'reviews:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -308,7 +356,7 @@ export default function AdminPage() {
         )}
 
         {/* User Management - requires users:read */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['users:read', 'users:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['users:read', 'users:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -340,7 +388,7 @@ export default function AdminPage() {
         )}
 
         {/* Content Moderation - SUPPORT_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['content:read', 'content:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['content:read', 'content:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -366,7 +414,7 @@ export default function AdminPage() {
         )}
 
         {/* Payment Management - FINANCE_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['payments:read', 'payments:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -395,7 +443,7 @@ export default function AdminPage() {
         )}
 
         {/* Platform Settings - FINANCE_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['settings:read', 'settings:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -434,7 +482,7 @@ export default function AdminPage() {
         )}
 
         {/* KYC Review - requires kyc:read (both SUPPORT and FINANCE can review, only FINANCE can approve) */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['kyc:read', 'kyc:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['kyc:read', 'kyc:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -462,7 +510,7 @@ export default function AdminPage() {
         )}
 
         {/* Support Tickets - SUPPORT_ADMIN access */}
-        {(isSuperAdmin || admin?.role === 'SUPPORT_ADMIN' || hasAnyPermission(permissions, ['support:read', 'support:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['support:read', 'support:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -498,7 +546,7 @@ export default function AdminPage() {
         )}
 
         {/* Invoices Management - FINANCE_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['payments:read', 'payments:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -526,7 +574,7 @@ export default function AdminPage() {
         )}
 
         {/* Pricing & Credits - FINANCE_ADMIN access */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['pricing:read', 'pricing:write', 'contractors:read', 'contractors:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['pricing:read', 'pricing:write', 'contractors:read', 'contractors:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -554,7 +602,7 @@ export default function AdminPage() {
         )}
 
         {/* Disputes Management - requires disputes:read (both SUPPORT and FINANCE can manage disputes) */}
-        {(isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])) && (
+        {(isSuperAdmin || hasPermissionOrRole(['disputes:read', 'disputes:write'])) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
