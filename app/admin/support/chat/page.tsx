@@ -176,6 +176,24 @@ function AdminChatPageContent() {
     }
   }, [authLoading, fetchConversations]);
 
+  const fetchConversation = useCallback(async (userId: string) => {
+    try {
+      setMessagesLoading(true);
+      const response = await adminApi.getConversationWithUser(userId);
+      setMessages(response.data?.messages || []);
+      setUserDetails(response.data?.user || null);
+    } catch (error: any) {
+      console.error('Failed to fetch conversation:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to load conversation',
+        variant: 'destructive',
+      });
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, [toast]);
+
   // Handle userId query parameter from notifications
   useEffect(() => {
     const userId = searchParams.get('userId');
@@ -210,24 +228,6 @@ function AdminChatPageContent() {
       }
     }
   }, [searchParams, conversations, selectedConversation, admin, router, authLoading, fetchConversation]);
-
-  const fetchConversation = useCallback(async (userId: string) => {
-    try {
-      setMessagesLoading(true);
-      const response = await adminApi.getConversationWithUser(userId);
-      setMessages(response.data?.messages || []);
-      setUserDetails(response.data?.user || null);
-    } catch (error: any) {
-      console.error('Failed to fetch conversation:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to load conversation',
-        variant: 'destructive',
-      });
-    } finally {
-      setMessagesLoading(false);
-    }
-  }, [toast]);
 
   const handleSelectConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
