@@ -88,7 +88,7 @@ interface UserDetails {
   };
 }
 
-export default function AdminChatPageContent() {
+function AdminChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { admin, loading: authLoading } = useAdminAuth();
