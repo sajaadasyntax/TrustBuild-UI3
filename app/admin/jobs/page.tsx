@@ -539,7 +539,7 @@ export default function JobOversightPage() {
                       <AlertTriangle className="h-4 w-4 mr-1" />
                       Flag
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </CardHeader>

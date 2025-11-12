@@ -6,6 +6,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import {
   Table,
   TableBody,
