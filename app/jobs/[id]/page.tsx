@@ -271,6 +271,8 @@ export default function JobDetailsPage() {
     })
     return
 
+    if (!job) return
+
     try {
       setApplying(true)
       await jobsApi.acceptDirectly(job.id, {
