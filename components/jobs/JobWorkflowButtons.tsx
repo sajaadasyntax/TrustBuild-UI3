@@ -592,7 +592,7 @@ export default function JobWorkflowButtons({
               <DialogFooter className="flex-col sm:flex-row gap-2">
                 <Button
                   variant="destructive"
-                  onClick={() => handleConfirmCompletion(false)}
+                  onClick={() => handleConfirmCompletion('decline')}
                   disabled={loading}
                   className="w-full sm:w-auto"
                 >
@@ -600,7 +600,7 @@ export default function JobWorkflowButtons({
                 </Button>
                 <Button
                   variant="default"
-                  onClick={() => handleConfirmCompletion(true)}
+                  onClick={() => handleConfirmCompletion('confirm')}
                   disabled={loading}
                   className="w-full sm:w-auto"
                 >
