@@ -2033,6 +2033,33 @@ export const adminApi = {
     });
     return response.data.job;
   },
+
+  // Admin override: Lock/unlock job
+  adminLockJob: async (jobId: string, locked: boolean, reason: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/lock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ locked, reason }),
+    });
+    return response.data.job;
+  },
+
+  // Admin override: Mark job as completed
+  adminMarkCompleted: async (jobId: string, finalAmount: number, reason: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/mark-completed`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finalAmount, reason }),
+    });
+    return response.data.job;
+  },
+
+  // Admin override: Allow contractor to request review
+  adminAllowReviewRequest: async (jobId: string, reason: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/allow-review-request`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+    return response.data.job;
+  },
 };
 
 // Payment API
