@@ -342,7 +342,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 </div>
               </div>
               
-              {hasAccess && job.customer && (
+              {(hasAccess || myApplication) && job.customer && (
                 <div className="space-y-4">
                   <h4 className="font-semibold">Customer Contact</h4>
                   <div className="space-y-2">

@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Trophy, CheckCircle, AlertCircle } from 'lucide-react';
-import api from '@/lib/api';
+import { jobsApi } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
 interface JobWorkflowButtonsProps {
@@ -26,6 +26,9 @@ interface JobWorkflowButtonsProps {
   isCustomer: boolean;
   isWonByMe?: boolean;
   finalAmount?: number;
+  contractorProposedAmount?: number;
+  hasApplied?: boolean;
+  contractorName?: string;
   onUpdate: () => void;
 }
 
@@ -37,29 +40,35 @@ export default function JobWorkflowButtons({
   isCustomer,
   isWonByMe = false,
   finalAmount,
+  contractorProposedAmount,
+  hasApplied = false,
+  contractorName,
   onUpdate,
 }: JobWorkflowButtonsProps) {
-  const [showMarkWonDialog, setShowMarkWonDialog] = useState(false);
+  const [showClaimWonDialog, setShowClaimWonDialog] = useState(false);
   const [showMarkCompletedDialog, setShowMarkCompletedDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showConfirmWinnerDialog, setShowConfirmWinnerDialog] = useState(false);
+  const [showPriceChangeDialog, setShowPriceChangeDialog] = useState(false);
   const [completionAmount, setCompletionAmount] = useState('');
+  const [suggestedPrice, setSuggestedPrice] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Contractor: Mark job as Won
-  const handleMarkAsWon = async () => {
+  // Contractor: Claim "I won the job" - sends notification but doesn't close job
+  const handleClaimWon = async () => {
     try {
       setLoading(true);
-      await api.patch(`/jobs/${jobId}/mark-won`, {});
+      await jobsApi.claimWon(jobId);
       toast({
         title: 'Success',
-        description: 'Job marked as won. Customer has been notified.',
+        description: 'Customer has been notified. They will confirm if you won the job.',
       });
-      setShowMarkWonDialog(false);
+      setShowClaimWonDialog(false);
       onUpdate();
     } catch (error: any) {
-      console.error('Error marking job as won:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to mark job as won';
+      console.error('Error claiming job as won:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to claim job as won';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -70,8 +79,8 @@ export default function JobWorkflowButtons({
     }
   };
 
-  // Contractor: Mark job as Completed with amount
-  const handleMarkAsCompleted = async () => {
+  // Contractor: Enter final agreed price & request completion
+  const handleEnterFinalPrice = async () => {
     const amount = parseFloat(completionAmount);
     
     if (!amount || amount <= 0) {
@@ -85,19 +94,17 @@ export default function JobWorkflowButtons({
 
     try {
       setLoading(true);
-      await api.patch(`/jobs/${jobId}/mark-completed`, {
-        finalAmount: amount,
-      });
+      await jobsApi.markAsCompleted(jobId, amount);
       toast({
         title: 'Success',
-        description: 'Job marked as completed. Customer will be asked to confirm.',
+        description: 'Final price submitted. Customer will be asked to confirm.',
       });
       setShowMarkCompletedDialog(false);
       setCompletionAmount('');
       onUpdate();
     } catch (error: any) {
-      console.error('Error marking job as completed:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to mark job as completed';
+      console.error('Error submitting final price:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to submit final price';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -108,25 +115,87 @@ export default function JobWorkflowButtons({
     }
   };
 
-  // Customer: Confirm job completion
-  const handleConfirmCompletion = async (confirmed: boolean) => {
+  // Customer: Confirm contractor winner
+  const handleConfirmWinner = async () => {
     try {
       setLoading(true);
-      await api.patch(`/jobs/${jobId}/confirm-job-completion`, {
-        confirmed,
-        feedback: confirmed ? feedback : feedback || 'Disputed',
+      await jobsApi.confirmWinner(jobId);
+      toast({
+        title: 'Success',
+        description: 'Contractor confirmed. Job is now in progress and applications are closed.',
       });
+      setShowConfirmWinnerDialog(false);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error confirming winner:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to confirm winner';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Customer: Suggest price change
+  const handleSuggestPriceChange = async () => {
+    const amount = parseFloat(suggestedPrice);
+    
+    if (!amount || amount <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await jobsApi.suggestPriceChange(jobId, amount, feedback || 'Price change suggested');
+      toast({
+        title: 'Success',
+        description: 'Price change suggestion sent to contractor.',
+      });
+      setShowPriceChangeDialog(false);
+      setSuggestedPrice('');
+      setFeedback('');
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error suggesting price change:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to suggest price change';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Customer: Confirm job completion and price
+  const handleConfirmCompletion = async (action: 'confirm' | 'decline' | 'suggest') => {
+    try {
+      setLoading(true);
       
-      if (confirmed) {
+      if (action === 'confirm') {
+        await jobsApi.confirmJobCompletionNew(jobId, true, feedback || 'Job completed successfully');
         toast({
           title: 'Success',
           description: 'Job completion confirmed. Commission has been applied.',
         });
-      } else {
+      } else if (action === 'decline') {
+        await jobsApi.confirmJobCompletionNew(jobId, false, feedback || 'Job completion declined');
         toast({
           title: 'Job Disputed',
           description: 'The job has been marked as disputed. Admin will review.',
         });
+      } else if (action === 'suggest') {
+        await handleSuggestPriceChange();
+        return; // handleSuggestPriceChange already handles loading state
       }
       
       setShowConfirmDialog(false);
@@ -148,40 +217,46 @@ export default function JobWorkflowButtons({
   return (
     <div className="space-y-3">
       {/* Contractor Buttons */}
-      {isContractor && isWonByMe && (
+      {isContractor && (
         <>
-          {/* Mark as Won Button */}
-          {(jobStatus === 'POSTED' || jobStatus === 'IN_PROGRESS') && (
+          {/* Step 2: "I won the job" button - Available to any contractor who applied */}
+          {hasApplied && jobStatus === 'POSTED' && !isWonByMe && (
             <>
               <Button
-                onClick={() => setShowMarkWonDialog(true)}
+                onClick={() => setShowClaimWonDialog(true)}
                 className="w-full"
                 variant="default"
               >
                 <Trophy className="h-4 w-4 mr-2" />
-                Mark as Won
+                I won the job
               </Button>
 
-              <Dialog open={showMarkWonDialog} onOpenChange={setShowMarkWonDialog}>
+              <Dialog open={showClaimWonDialog} onOpenChange={setShowClaimWonDialog}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Mark Job as Won</DialogTitle>
+                    <DialogTitle>Claim "I won the job"</DialogTitle>
                     <DialogDescription>
-                      This will notify the customer that you have won the job and will be completing
-                      it.
+                      This will notify the customer that you claim to have won the job. 
+                      The job will remain open until the customer confirms.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="py-4">
                     <p className="text-sm text-muted-foreground">
                       Job: <span className="font-semibold">{jobTitle}</span>
                     </p>
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-800">
+                        <strong>Note:</strong> The customer will receive a notification asking them to confirm. 
+                        The job will stay open for other contractors until confirmation.
+                      </p>
+                    </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowMarkWonDialog(false)}>
+                    <Button variant="outline" onClick={() => setShowClaimWonDialog(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleMarkAsWon} disabled={loading}>
-                      {loading ? 'Processing...' : 'Confirm'}
+                    <Button onClick={handleClaimWon} disabled={loading}>
+                      {loading ? 'Processing...' : 'Claim Job'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -189,8 +264,8 @@ export default function JobWorkflowButtons({
             </>
           )}
 
-          {/* Mark as Completed Button */}
-          {(jobStatus === 'WON' || jobStatus === 'IN_PROGRESS') && (
+          {/* Step 4: Enter final agreed price & request completion - Only for confirmed winner */}
+          {isWonByMe && jobStatus === 'IN_PROGRESS' && (
             <>
               <Button
                 onClick={() => setShowMarkCompletedDialog(true)}
@@ -198,20 +273,21 @@ export default function JobWorkflowButtons({
                 variant="default"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Mark as Completed
+                Enter final agreed price & request completion
               </Button>
 
               <Dialog open={showMarkCompletedDialog} onOpenChange={setShowMarkCompletedDialog}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Mark Job as Completed</DialogTitle>
+                    <DialogTitle>Enter Final Agreed Price</DialogTitle>
                     <DialogDescription>
-                      Enter the final amount for this job. The customer will be asked to confirm.
+                      Enter the final amount you charged for this completed job. 
+                      The customer will be asked to confirm.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Final Amount (£)</Label>
+                      <Label htmlFor="amount">Final Agreed Price (£)</Label>
                       <Input
                         id="amount"
                         type="number"
@@ -233,14 +309,228 @@ export default function JobWorkflowButtons({
                     >
                       Cancel
                     </Button>
-                    <Button onClick={handleMarkAsCompleted} disabled={loading}>
-                      {loading ? 'Processing...' : 'Mark as Completed'}
+                    <Button onClick={handleEnterFinalPrice} disabled={loading}>
+                      {loading ? 'Processing...' : 'Submit Final Price'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </>
           )}
+        </>
+      )}
+
+      {/* Customer Buttons */}
+      {/* Step 3: Customer confirms contractor winner */}
+      {isCustomer && jobStatus === 'POSTED' && contractorName && (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900 mb-1">
+                  Contractor Claims They Won
+                </h4>
+                <p className="text-sm text-blue-800 mb-3">
+                  {contractorName} claims that they won your job. Please confirm if this is correct.
+                </p>
+                <Button
+                  onClick={() => setShowConfirmWinnerDialog(true)}
+                  variant="default"
+                  size="sm"
+                >
+                  Review & Confirm
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Dialog open={showConfirmWinnerDialog} onOpenChange={setShowConfirmWinnerDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Winning Contractor</DialogTitle>
+                <DialogDescription>
+                  Confirm if {contractorName} won your job. Once confirmed, the job will be in progress and applications will close.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Job Title:</p>
+                  <p className="font-semibold">{jobTitle}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Contractor:</p>
+                  <p className="font-semibold">{contractorName}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  By confirming, the job will move to "In Progress" and no other contractors will be able to apply.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmWinnerDialog(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleConfirmWinner}
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Confirm Winner'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+
+      {/* Step 5: Customer confirms price */}
+      {isCustomer && jobStatus === 'AWAITING_FINAL_PRICE_CONFIRMATION' && contractorProposedAmount && (
+        <>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-yellow-900 mb-1">
+                  Final Price Confirmation Required
+                </h4>
+                <p className="text-sm text-yellow-800 mb-3">
+                  The contractor has submitted a final price of £{contractorProposedAmount.toFixed(2)}. 
+                  Please confirm, decline, or suggest a different amount.
+                </p>
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  variant="default"
+                  size="sm"
+                >
+                  Review & Confirm
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Confirm Final Price</DialogTitle>
+                <DialogDescription>
+                  Review the contractor's proposed final price and choose an action
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Job Title:</p>
+                  <p className="font-semibold">{jobTitle}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Proposed Final Price:</p>
+                  <p className="text-2xl font-bold">£{contractorProposedAmount.toFixed(2)}</p>
+                </div>
+                
+                <div className="space-y-3">
+                  <p className="font-medium text-sm">What would you like to do?</p>
+                  
+                  <div className="space-y-2">
+                    <Button
+                      variant="default"
+                      className="w-full justify-start"
+                      onClick={() => handleConfirmCompletion('confirm')}
+                      disabled={loading}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Confirm this price
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setShowPriceChangeDialog(true)}
+                      disabled={loading}
+                    >
+                      Suggest a different price
+                    </Button>
+                    
+                    <Button
+                      variant="destructive"
+                      className="w-full justify-start"
+                      onClick={() => handleConfirmCompletion('decline')}
+                      disabled={loading}
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Decline this price
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="feedback">Feedback (Optional)</Label>
+                  <Textarea
+                    id="feedback"
+                    placeholder="Add any comments..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Price Change Suggestion Dialog */}
+          <Dialog open={showPriceChangeDialog} onOpenChange={setShowPriceChangeDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Suggest Price Change</DialogTitle>
+                <DialogDescription>
+                  Enter the amount you think is appropriate for this job
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="suggested-price">Suggested Price (£)</Label>
+                  <Input
+                    id="suggested-price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Enter suggested amount..."
+                    value={suggestedPrice}
+                    onChange={(e) => setSuggestedPrice(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Current proposed price: £{contractorProposedAmount.toFixed(2)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price-feedback">Reason (Optional)</Label>
+                  <Textarea
+                    id="price-feedback"
+                    placeholder="Explain why you're suggesting this amount..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPriceChangeDialog(false);
+                    setSuggestedPrice('');
+                  }}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleConfirmCompletion('suggest')}
+                  disabled={loading || !suggestedPrice}
+                >
+                  {loading ? 'Processing...' : 'Submit Suggestion'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
 

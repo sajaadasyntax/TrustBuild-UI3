@@ -261,6 +261,15 @@ export default function JobDetailsPage() {
       return
     }
 
+    // Contractors must provide their own estimate, not use customer budget
+    // For direct acceptance, prompt contractor to provide their quote
+    // This should open a dialog or form for contractor to enter their estimate
+    toast({
+      title: "Provide Your Quote",
+      description: "Please apply for this job with your own quote. You cannot accept jobs without providing your estimated cost.",
+      variant: "default"
+    })
+    return
 
     try {
       setApplying(true)
@@ -533,7 +542,7 @@ export default function JobDetailsPage() {
             )}
 
 
-            {canApply() && !canAcceptDirectly() && (
+            {canApply() && (
               <Card>
                 <CardHeader>
                   <CardTitle>Apply for this Job</CardTitle>
@@ -775,7 +784,7 @@ export default function JobDetailsPage() {
                     <span className="font-medium">{job.applications?.length || 0}</span>
                   </div>
                   
-                  {!canApply() && !canAcceptDirectly() && user?.role === 'CONTRACTOR' && (
+                  {!canApply() && user?.role === 'CONTRACTOR' && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {job.applications?.some(app => app.contractor?.userId === user.id) ? (
                         <>

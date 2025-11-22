@@ -45,11 +45,28 @@ export default function ContractorDashboard() {
 
   const [subscription, setSubscription] = useState<any>(null)
   const [subscriptionLoading, setSubscriptionLoading] = useState(false)
+  const [pendingCommissions, setPendingCommissions] = useState<any[]>([])
+  const [commissionLoading, setCommissionLoading] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
     fetchSubscriptionData()
+    fetchPendingCommissions()
   }, [])
+
+  const fetchPendingCommissions = async () => {
+    try {
+      setCommissionLoading(true)
+      const response = await paymentsApi.getCommissionPayments({ status: 'PENDING', page: 1, limit: 10 })
+      // Handle different response structures
+      const commissions = response.data?.commissions || response.commissions || []
+      setPendingCommissions(commissions.filter((comm: any) => comm.status === 'PENDING' || comm.status === 'OVERDUE'))
+    } catch (error) {
+      console.error('Failed to fetch pending commissions:', error)
+    } finally {
+      setCommissionLoading(false)
+    }
+  }
 
   const fetchSubscriptionData = async () => {
     try {
@@ -239,6 +256,27 @@ export default function ContractorDashboard() {
 
       {/* KYC Status Banner */}
       <KycStatusBanner />
+
+      {/* Commission Reminder Banner - Always visible if there are pending commissions */}
+      {pendingCommissions.length > 0 && (
+        <Alert className="mb-6 border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800">Commission Payment Due</AlertTitle>
+          <AlertDescription className="text-orange-700">
+            You have {pendingCommissions.length} pending commission payment{pendingCommissions.length > 1 ? 's' : ''} totaling{' '}
+            {new Intl.NumberFormat('en-GB', {
+              style: 'currency',
+              currency: 'GBP'
+            }).format(
+              pendingCommissions.reduce((sum, comm) => sum + (Number(comm.totalAmount) || 0), 0)
+            )}
+            .{' '}
+            <Link href="/dashboard/contractor/commissions" className="font-semibold underline">
+              View and pay now
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex flex-col-reverse md:flex-row gap-6 mb-8">
         <div className="md:w-2/3 space-y-6">

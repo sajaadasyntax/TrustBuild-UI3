@@ -24,8 +24,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const [updating, setUpdating] = useState(false)
   const [applications, setApplications] = useState<JobApplication[]>([])
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
-  const [showSelectionDialog, setShowSelectionDialog] = useState(false)
-  const [contractorToSelect, setContractorToSelect] = useState<JobApplication | null>(null)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [showFinalPriceConfirmation, setShowFinalPriceConfirmation] = useState(false)
 
@@ -52,57 +50,8 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     }
   }, [job.id, fetchApplications])
 
-  const handleSelectContractor = (application: JobApplication) => {
-    setContractorToSelect(application)
-    setShowSelectionDialog(true)
-  }
-
-  const confirmContractorSelection = async () => {
-    if (!contractorToSelect) return
-
-    try {
-      setUpdating(true)
-      await jobsApi.selectContractor(job.id, contractorToSelect.contractorId)
-      
-      toast({
-        title: "Contractor Selected!",
-        description: `${contractorToSelect.contractor?.user?.name} has been selected for this job.`,
-      })
-      
-      setSelectedContractor(contractorToSelect.contractorId)
-      setShowSelectionDialog(false)
-      setContractorToSelect(null)
-      onJobUpdate()
-    } catch (error) {
-      handleApiError(error, 'Failed to select contractor')
-    } finally {
-      setUpdating(false)
-    }
-  }
-
-  const handleChangeContractor = (application: JobApplication) => {
-    setContractorToSelect(application)
-    setShowSelectionDialog(true)
-  }
-
-  const handleAcceptApplication = async (application: JobApplication) => {
-    try {
-      setUpdating(true)
-      await jobsApi.acceptApplication(job.id, application.id)
-      
-      toast({
-        title: "Application Accepted!",
-        description: `${application.contractor?.user?.name}'s application has been accepted. You can now select them as your contractor.`,
-      })
-      
-      // Refresh applications
-      await fetchApplications()
-    } catch (error) {
-      handleApiError(error, 'Failed to accept application')
-    } finally {
-      setUpdating(false)
-    }
-  }
+  // Removed handleSelectContractor, confirmContractorSelection, handleChangeContractor, and handleAcceptApplication
+  // Customers can only view applications and contractor profiles, not select/accept contractors
 
   const handleStartWork = async () => {
     if (!selectedContractor) return
@@ -332,9 +281,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                       <div className="text-sm text-gray-500">
                         Purchased: {new Date(contractor.purchasedAt).toLocaleDateString()}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Amount: {formatCurrency(contractor.paidAmount || 0)}
-                      </div>
+                      {/* Customer should not see contractor payment amount */}
                     </div>
                   </div>
 
@@ -444,42 +391,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
                             Selected Contractor
                           </Badge>
-                          {job.status === 'POSTED' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleChangeContractor(application)}
-                            >
-                              Change Selection
-                            </Button>
-                          )}
                         </div>
-                      ) : job.status === 'POSTED' && !selectedContractor ? (
-                        <div className="flex gap-2">
-                          {application.status === 'PENDING' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAcceptApplication(application)}
-                            >
-                              Accept Application
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => handleSelectContractor(application)}
-                            size="sm"
-                          >
-                            Select This Contractor
-                          </Button>
-                        </div>
-                      ) : job.status === 'POSTED' && selectedContractor ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleChangeContractor(application)}
-                          size="sm"
-                        >
-                          Change to This Contractor
-                        </Button>
                       ) : null}
                     </div>
                   </div>
@@ -599,63 +511,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           )}
         </div>
 
-        {/* Selection Confirmation Dialog */}
-        <Dialog open={showSelectionDialog} onOpenChange={setShowSelectionDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {selectedContractor ? 'Change Contractor Selection' : 'Select Contractor'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            {contractorToSelect && (
-              <div className="py-4">
-                <p className="mb-4">
-                  {selectedContractor 
-                    ? `Change your selection to ${contractorToSelect.contractor?.user?.name}?`
-                    : `Select ${contractorToSelect.contractor?.user?.name} for this job?`
-                  }
-                </p>
-                
-                <div className="space-y-2">
-                  <div><strong>Contractor:</strong> {contractorToSelect.contractor?.user?.name}</div>
-                  <div><strong>Business:</strong> {contractorToSelect.contractor?.businessName}</div>
-                  <div><strong>Proposed Rate:</strong> {formatCurrency(contractorToSelect.proposedRate)}</div>
-                  <div><strong>Timeline:</strong> {contractorToSelect.timeline || 'Not specified'}</div>
-                </div>
-              </div>
-            )}
-            
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowSelectionDialog(false)}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              {contractorToSelect?.contractor?.id && (
-                <Button
-                  variant="secondary"
-                  asChild
-                  className="w-full sm:w-auto"
-                >
-                  <Link href={`/contractors/${contractorToSelect.contractor.id}`} target="_blank">
-                    View Profile & Reviews
-                  </Link>
-                </Button>
-              )}
-              <Button
-                onClick={confirmContractorSelection}
-                disabled={updating}
-                className="w-full sm:w-auto"
-              >
-                {updating ? 'Selecting...' : 'Confirm Selection'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        
         {/* Review Dialog */}
         {job.wonByContractorId && (
           <WriteReviewDialog

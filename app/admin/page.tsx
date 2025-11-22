@@ -454,6 +454,12 @@ export default function AdminPage() {
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/admin/payments?tab=subscriptions">Subscriptions</Link>
               </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/unpaid-commissions">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Unpaid Commissions
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         )}

@@ -722,6 +722,167 @@ export default function JobOversightPage() {
                   ))}
                 </ul>
               </div>
+
+              {/* Admin Override Controls */}
+              {canWriteJobs && (
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                    Admin Override Controls
+                  </h3>
+                  <div className="space-y-3">
+                    {/* Approve Winner */}
+                    {selectedJob.status === 'POSTED' && selectedJob.applications && selectedJob.applications.length > 0 && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Approve Contractor Winner</p>
+                        <Select value={selectedContractorId} onValueChange={setSelectedContractorId}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select contractor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedJob.applications.map(app => (
+                              <SelectItem key={app.id} value={app.contractorId}>
+                                {app.contractor?.businessName || app.contractor?.user?.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          className="mt-2 w-full"
+                          size="sm"
+                          onClick={async () => {
+                            if (!selectedContractorId) {
+                              toast({ title: "Error", description: "Please select a contractor", variant: "destructive" });
+                              return;
+                            }
+                            try {
+                              await adminApi.adminApproveWinner(selectedJob.id, selectedContractorId, 'Admin override');
+                              toast({ title: "Success", description: "Contractor approved as winner" });
+                              fetchJobs();
+                              setShowDetails(false);
+                            } catch (error) {
+                              handleApiError(error, 'Failed to approve winner');
+                            }
+                          }}
+                          disabled={assigning}
+                        >
+                          {assigning ? 'Processing...' : 'Approve Winner'}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Lock/Unlock Job */}
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm font-medium mb-2">Lock/Unlock Job</p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Locking prevents contractors from applying. Unlocking allows applications again.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await adminApi.adminLockJob(selectedJob.id, true, 'Admin override - Job locked');
+                              toast({ title: "Success", description: "Job locked" });
+                              fetchJobs();
+                              setShowDetails(false);
+                            } catch (error) {
+                              handleApiError(error, 'Failed to lock job');
+                            }
+                          }}
+                        >
+                          Lock Job
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await adminApi.adminLockJob(selectedJob.id, false, 'Admin override - Job unlocked');
+                              toast({ title: "Success", description: "Job unlocked" });
+                              fetchJobs();
+                              setShowDetails(false);
+                            } catch (error) {
+                              handleApiError(error, 'Failed to unlock job');
+                            }
+                          }}
+                        >
+                          Unlock Job
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Mark as Completed */}
+                    {selectedJob.status === 'IN_PROGRESS' && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Mark Job as Completed</p>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Final amount"
+                          className="mb-2"
+                          onChange={(e) => setEditingBudget({ ...editingBudget, budget: parseFloat(e.target.value) || 0 })}
+                        />
+                        <Textarea
+                          placeholder="Reason for override"
+                          rows={2}
+                          className="mb-2"
+                          value={editingBudget.reason}
+                          onChange={(e) => setEditingBudget({ ...editingBudget, reason: e.target.value })}
+                        />
+                        <Button
+                          className="w-full"
+                          size="sm"
+                          onClick={async () => {
+                            if (!editingBudget.budget || !editingBudget.reason) {
+                              toast({ title: "Error", description: "Please provide amount and reason", variant: "destructive" });
+                              return;
+                            }
+                            try {
+                              await adminApi.adminMarkCompleted(selectedJob.id, editingBudget.budget, editingBudget.reason);
+                              toast({ title: "Success", description: "Job marked as completed" });
+                              fetchJobs();
+                              setShowDetails(false);
+                            } catch (error) {
+                              handleApiError(error, 'Failed to mark job as completed');
+                            }
+                          }}
+                        >
+                          Mark as Completed
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Allow Review Request */}
+                    {selectedJob.status === 'COMPLETED' && (
+                      <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Allow Contractor to Request Review</p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Use this if the customer is inactive and the contractor needs to request a review.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={async () => {
+                            try {
+                              await adminApi.adminAllowReviewRequest(selectedJob.id, 'Admin override - Allowing review request');
+                              toast({ title: "Success", description: "Contractor can now request review" });
+                              fetchJobs();
+                              setShowDetails(false);
+                            } catch (error) {
+                              handleApiError(error, 'Failed to allow review request');
+                            }
+                          }}
+                        >
+                          Allow Review Request
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

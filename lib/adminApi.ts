@@ -353,6 +353,42 @@ export const adminApi = {
     return response;
   },
 
+  // Admin override: Approve contractor winner
+  adminApproveWinner: async (jobId: string, contractorId: string, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/approve-winner`, {
+      method: 'PATCH',
+      body: JSON.stringify({ contractorId, reason }),
+    });
+    return response;
+  },
+
+  // Admin override: Lock/unlock job
+  adminLockJob: async (jobId: string, locked: boolean, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/lock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ locked, reason }),
+    });
+    return response;
+  },
+
+  // Admin override: Mark job as completed
+  adminMarkCompleted: async (jobId: string, finalAmount: number, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/mark-completed`, {
+      method: 'PATCH',
+      body: JSON.stringify({ finalAmount, reason }),
+    });
+    return response;
+  },
+
+  // Admin override: Allow contractor to request review
+  adminAllowReviewRequest: async (jobId: string, reason: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/allow-review-request`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+    return response;
+  },
+
   // Get jobs awaiting final price confirmation
   getJobsAwaitingFinalPriceConfirmation: async () => {
     const response = await adminApiRequest<any>('/admin/jobs/awaiting-final-price');
@@ -711,6 +747,11 @@ export const adminApi = {
       method: 'POST',
     });
     return response;
+  },
+
+  // Get unpaid commissions for admin
+  getUnpaidCommissions: async (): Promise<{ data: { commissions: any[] } }> => {
+    return adminApiRequest<{ data: { commissions: any[] } }>('/admin/unpaid-commissions');
   },
 };
 

@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext"
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
-  budget: z.string().min(1, "Budget is required").refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Budget must be a positive number"),
+  budget: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) > 0), "Budget must be a positive number"),
   serviceId: z.string().min(1, "Please select a service category"),
   jobSize: z.enum(["SMALL", "MEDIUM", "LARGE"], {
     required_error: "Please select a job size",
@@ -172,7 +172,7 @@ export default function PostJobPage() {
         description: data.description,
         category: selectedService?.name || 'General Construction',
         location: `${data.address}, ${data.city}`,
-        budget: parseFloat(data.budget),
+        budget: data.budget ? parseFloat(data.budget) : undefined,
         urgent: data.urgency === 'high',
         serviceId: isFallbackService ? undefined : data.serviceId,
         jobSize: data.jobSize,
@@ -340,17 +340,20 @@ export default function PostJobPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="budget">
-                  Budget (£) <span className="text-destructive">*</span>
+                  Budget (£) <span className="text-muted-foreground text-xs">(Optional)</span>
                 </Label>
                 <Input 
                   id="budget" 
                   type="number"
-                  placeholder="e.g., 5000"
+                  placeholder="e.g., 5000 (optional)"
                   {...form.register("budget")}
                 />
                 {form.formState.errors.budget && (
                   <p className="text-sm text-destructive">{form.formState.errors.budget.message}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  You can post a job without specifying a budget. Contractors can propose their own pricing.
+                </p>
               </div>
 
                 <FormField

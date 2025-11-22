@@ -1060,6 +1060,31 @@ export const jobsApi = {
       method: 'PATCH',
     }),
 
+  // Contractor claims "I won the job" - sends notification but doesn't close job
+  claimWon: async (jobId: string): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/claim-won`, {
+      method: 'PATCH',
+    });
+    return response.data.job;
+  },
+
+  // Customer confirms contractor winner
+  confirmWinner: async (jobId: string): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/confirm-winner`, {
+      method: 'PATCH',
+    });
+    return response.data.job;
+  },
+
+  // Customer suggests price change
+  suggestPriceChange: async (jobId: string, suggestedAmount: number, feedback?: string): Promise<Job> => {
+    const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/suggest-price-change`, {
+      method: 'PATCH',
+      body: JSON.stringify({ suggestedAmount, feedback }),
+    });
+    return response.data.job;
+  },
+
   // Complete job with final amount (contractor only)
   completeJobWithAmount: (jobId: string, finalAmount: number) =>
     apiRequest(`/jobs/${jobId}/complete-with-amount`, {
