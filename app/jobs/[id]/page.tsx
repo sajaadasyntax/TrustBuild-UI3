@@ -271,14 +271,14 @@ export default function JobDetailsPage() {
     })
     return
 
-    if (!job) return
-
+    // Unreachable code - kept for potential future use
+    // job is already checked for null at the start of the function
     try {
       setApplying(true)
-      await jobsApi.acceptDirectly(job.id, {
+      await jobsApi.acceptDirectly(job!.id, {
         proposal: 'Quick job acceptance - ready to start immediately',
-        estimatedCost: job.budget || 0,
-        timeline: job.urgency || 'As discussed'
+        estimatedCost: job!.budget || 0,
+        timeline: job!.urgency || 'As discussed'
       })
       
       toast({
@@ -286,7 +286,7 @@ export default function JobDetailsPage() {
         description: "You have successfully accepted this job and it's now in progress.",
       })
       
-      await fetchJob(job.id)
+      await fetchJob(job!.id)
     } catch (error) {
       handleApiError(error, 'Failed to accept job')
     } finally {
