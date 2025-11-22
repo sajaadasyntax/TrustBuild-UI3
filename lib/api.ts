@@ -2024,6 +2024,15 @@ export const adminApi = {
       method: 'PATCH',
       body: JSON.stringify({ maxContractorsPerJob, reason }),
     }),
+
+  // Admin override: Approve contractor winner
+  adminApproveWinner: async (jobId: string, contractorId: string, reason: string): Promise<Job> => {
+    const response = await apiRequest<{ data: { job: Job } }>(`/admin/jobs/${jobId}/approve-winner`, {
+      method: 'PATCH',
+      body: JSON.stringify({ contractorId, reason }),
+    });
+    return response.data.job;
+  },
 };
 
 // Payment API
