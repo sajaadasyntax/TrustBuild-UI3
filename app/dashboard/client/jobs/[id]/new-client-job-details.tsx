@@ -482,7 +482,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
           contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
           hasApplied={false}
-          contractorName={job.wonByContractor?.user?.name || job.wonByContractor?.businessName || undefined}
+          contractorName={job.wonByContractor?.businessName || job.wonByContractor?.user?.name || undefined}
           onUpdate={onJobUpdate}
         />
 

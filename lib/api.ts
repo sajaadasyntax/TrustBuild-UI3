@@ -147,6 +147,7 @@ export interface Job {
     user?: {
       name: string;
     };
+    businessName?: string;
   };
   
   // Final price workflow fields
