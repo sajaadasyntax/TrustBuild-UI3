@@ -669,7 +669,7 @@ export default function JobLeadAccessDialog({
             </div>
           )}
 
-          {/* Credit Balance Display - Only for subscribers */}
+          {/* Credit Balance Display */}
           {hasSubscription ? (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
@@ -697,6 +697,29 @@ export default function JobLeadAccessDialog({
                 </div>
               )}
             </div>
+          ) : creditsBalance > 0 ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-green-900">Free Trial Credit Available</h4>
+                  <p className="text-sm text-green-700">
+                    You have {creditsBalance} free trial {creditsBalance === 1 ? 'credit' : 'credits'} available
+                  </p>
+                  {job.jobSize === 'SMALL' ? (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Can be used for SMALL jobs only
+                    </p>
+                  ) : (
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠ Free trial credits can only be used for SMALL jobs. This job requires payment or subscription.
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 border border-green-200">
+                  <span className="text-2xl font-bold text-green-900">{creditsBalance}</span>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
               <div className="flex items-center">
@@ -704,9 +727,9 @@ export default function JobLeadAccessDialog({
                   <AlertCircle className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-orange-800">Credits Available for Subscribers</h4>
+                  <h4 className="font-medium text-orange-800">No Free Credits Available</h4>
                   <p className="text-sm text-orange-700">
-                    Subscribe to access credit features and get 3 free credits every week!
+                    Subscribe to get 3 free credits every week, or pay with card to access this job.
                   </p>
                 </div>
               </div>
@@ -834,33 +857,93 @@ export default function JobLeadAccessDialog({
               <div className="space-y-4">
                 <h3 className="font-semibold">Choose Payment Method</h3>
                 
-                {/* Credits Option - Disabled for non-subscribers */}
-                <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 opacity-60">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        disabled
-                        className="w-4 h-4 text-gray-400"
-                      />
-                      <div>
-                        <div className="font-medium text-gray-500 flex items-center gap-2">
-                          Use Credit (Subscribers Only)
-                          <Badge className="bg-gray-100 text-gray-600 text-xs">
-                            Subscribe Required
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Subscribe to access credit features
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          ✓ 5% commission after completion
+                {/* Credits Option - Available for non-subscribers with free trial credits on SMALL jobs */}
+                {creditsBalance > 0 && job.jobSize === 'SMALL' ? (
+                  <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    paymentMethod === 'CREDIT' ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                  }`}
+                  onClick={() => setPaymentMethod('CREDIT')}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          checked={paymentMethod === 'CREDIT'}
+                          onChange={() => setPaymentMethod('CREDIT')}
+                          className="w-4 h-4 text-green-600"
+                        />
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            Use Free Trial Credit
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              Free Access
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Use 1 free trial credit (SMALL jobs only)
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            ✓ 5% commission after completion
+                          </div>
                         </div>
                       </div>
+                      <div className="text-lg font-semibold text-green-600">FREE</div>
                     </div>
-                    <div className="text-lg font-semibold text-gray-400">1 Credit</div>
                   </div>
-                </div>
+                ) : creditsBalance > 0 && job.jobSize !== 'SMALL' ? (
+                  <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 opacity-60">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          disabled
+                          className="w-4 h-4 text-gray-400"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-500 flex items-center gap-2">
+                            Use Free Trial Credit
+                            <Badge className="bg-gray-100 text-gray-600 text-xs">
+                              SMALL Jobs Only
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Free trial credits can only be used for SMALL jobs
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Subscribe or pay with card for {job.jobSize} jobs
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-lg font-semibold text-gray-400">1 Credit</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 opacity-60">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          disabled
+                          className="w-4 h-4 text-gray-400"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-500 flex items-center gap-2">
+                            Use Credit (Subscribers Only)
+                            <Badge className="bg-gray-100 text-gray-600 text-xs">
+                              Subscribe Required
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Subscribe to access credit features
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            ✓ 5% commission after completion
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-lg font-semibold text-gray-400">1 Credit</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Card Payment Option */}
                 <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
@@ -909,7 +992,7 @@ export default function JobLeadAccessDialog({
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                {hasSubscription && paymentMethod === 'CREDIT' ? (
+                {(hasSubscription || (creditsBalance > 0 && job.jobSize === 'SMALL')) && paymentMethod === 'CREDIT' ? (
                   <Button 
                     onClick={handleCreditPayment} 
                     disabled={processingPayment || creditsBalance < 1}
