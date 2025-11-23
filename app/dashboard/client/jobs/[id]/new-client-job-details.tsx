@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
 import { FinalPriceConfirmationDialog } from "@/components/jobs/FinalPriceConfirmationDialog"
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
+import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
 
 interface ClientJobDetailsProps {
   job: Job
@@ -469,6 +470,21 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             </CardContent>
           </Card>
         )}
+
+        {/* Job Workflow Buttons - Handles Step 3 (Customer confirms winner) and Step 5 (Customer confirms price) */}
+        <JobWorkflowButtons
+          jobId={job.id}
+          jobStatus={job.status}
+          jobTitle={job.title}
+          isContractor={false}
+          isCustomer={true}
+          isWonByMe={false}
+          finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
+          contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
+          hasApplied={false}
+          contractorName={job.wonByContractor?.user?.name || job.wonByContractor?.businessName || undefined}
+          onUpdate={onJobUpdate}
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-4">

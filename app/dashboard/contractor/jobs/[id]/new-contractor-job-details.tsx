@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import JobLeadAccessDialog from "@/components/JobLeadAccessDialog"
 import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDialog"
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
+import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
 import Link from 'next/link'
 
 interface ContractorJobDetailsProps {
@@ -466,6 +467,21 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
             </CardContent>
           </Card>
         )}
+
+        {/* Job Workflow Buttons - Handles Step 2 (Contractor claims "I won") and Step 4 (Enter final price) */}
+        <JobWorkflowButtons
+          jobId={job.id}
+          jobStatus={job.status}
+          jobTitle={job.title}
+          isContractor={true}
+          isCustomer={false}
+          isWonByMe={isJobWinner}
+          finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
+          contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
+          hasApplied={!!myApplication}
+          contractorName={undefined}
+          onUpdate={() => onJobUpdate(job.id)}
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-4">
