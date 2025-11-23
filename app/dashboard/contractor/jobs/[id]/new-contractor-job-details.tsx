@@ -13,6 +13,7 @@ import JobLeadAccessDialog from "@/components/JobLeadAccessDialog"
 import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDialog"
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
 import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
+import JobApplicationDialog from '@/components/jobs/JobApplicationDialog'
 import Link from 'next/link'
 
 interface ContractorJobDetailsProps {
@@ -32,6 +33,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [reviewRequest, setReviewRequest] = useState('')
   const [showReviewRequest, setShowReviewRequest] = useState(false)
   const [showFinalPriceDialog, setShowFinalPriceDialog] = useState(false)
+  const [showApplicationDialog, setShowApplicationDialog] = useState(false)
 
   // Get the application for this contractor
   const myApplication = job.applications?.find(app => 
@@ -41,7 +43,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   useEffect(() => {
     fetchContractorData()
     checkJobAccess()
-  }, [job.id])
+  }, [job.id, job.jobAccess]) // Refresh when job or jobAccess changes
 
   const fetchContractorData = async () => {
     try {
@@ -117,11 +119,14 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
       return
     }
 
-    // Redirect to application form or handle application logic
-    toast({
-      title: "Application Started",
-      description: "Redirecting to application form...",
-    })
+    // Open application dialog
+    setShowApplicationDialog(true)
+  }
+
+  const handleApplicationSuccess = async () => {
+    // Refresh job data to get updated applications
+    await onJobUpdate(job.id)
+    await checkJobAccess()
   }
 
   const handleCompleteJob = async () => {
@@ -295,6 +300,26 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Access Granted Notice - Show when contractor has access but hasn't applied */}
+        {hasAccess && !myApplication && job.status === 'POSTED' && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+                <div>
+                  <h3 className="font-semibold text-green-800">Access Granted!</h3>
+                  <p className="text-green-700">
+                    You now have access to this job. View customer contact details below and submit your application.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={handleApplyForJob} className="mt-2">
+                Apply for This Job
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -567,6 +592,16 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           isOpen={showFinalPriceDialog}
           onClose={() => setShowFinalPriceDialog(false)}
           onSuccess={() => onJobUpdate(job.id)}
+        />
+
+        {/* Job Application Dialog */}
+        <JobApplicationDialog
+          isOpen={showApplicationDialog}
+          onClose={() => setShowApplicationDialog(false)}
+          onSuccess={handleApplicationSuccess}
+          jobId={job.id}
+          jobTitle={job.title}
+          jobBudget={job.budget ? Number(job.budget) : undefined}
         />
       </div>
     </div>
