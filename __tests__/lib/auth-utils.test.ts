@@ -8,17 +8,16 @@ describe('Auth Utils', () => {
   beforeEach(() => {
     // Clear mocks before each test
     jest.clearAllMocks()
-    localStorage.clear()
-    sessionStorage.clear()
+    ;(localStorage.clear as jest.Mock).mockClear()
+    ;(localStorage.getItem as jest.Mock).mockClear()
+    ;(localStorage.setItem as jest.Mock).mockClear()
+    ;(localStorage.removeItem as jest.Mock).mockClear()
+    ;(sessionStorage.clear as jest.Mock).mockClear()
+    ;(sessionStorage.removeItem as jest.Mock).mockClear()
   })
 
   describe('clearAllAuthData', () => {
     it('should clear all authentication data from localStorage', () => {
-      // Set up test data
-      localStorage.setItem('auth_token', 'test-token')
-      localStorage.setItem('refresh_token', 'test-refresh')
-      localStorage.setItem('user', JSON.stringify({ id: '123' }))
-
       clearAllAuthData()
 
       const authKeys = [
@@ -31,10 +30,15 @@ describe('Auth Utils', () => {
         'refreshToken',
       ]
 
+      // Verify that removeItem was called for each auth key
       authKeys.forEach(key => {
         expect(localStorage.removeItem).toHaveBeenCalledWith(key)
         expect(sessionStorage.removeItem).toHaveBeenCalledWith(key)
       })
+      
+      // Should be called 7 times for each storage (7 keys)
+      expect(localStorage.removeItem).toHaveBeenCalledTimes(7)
+      expect(sessionStorage.removeItem).toHaveBeenCalledTimes(7)
     })
 
     it('should handle being called in SSR environment', () => {
@@ -57,14 +61,19 @@ describe('Auth Utils', () => {
 
   describe('debugAuthState', () => {
     it('should log auth state to console', () => {
-      const consoleSpy = jest.spyOn(console, 'log')
-      
-      localStorage.setItem('auth_token', 'test-token')
-      localStorage.setItem('user', JSON.stringify({ id: '123' }))
+      // Mock localStorage.getItem to return test values
+      ;(localStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'test-token'
+        if (key === 'user') return JSON.stringify({ id: '123' })
+        return null
+      })
 
       debugAuthState()
 
-      expect(consoleSpy).toHaveBeenCalled()
+      // Verify getItem was called for auth keys
+      expect(localStorage.getItem).toHaveBeenCalledWith('auth_token')
+      expect(localStorage.getItem).toHaveBeenCalledWith('refresh_token')
+      expect(localStorage.getItem).toHaveBeenCalledWith('user')
     })
 
     it('should handle being called in SSR environment', () => {

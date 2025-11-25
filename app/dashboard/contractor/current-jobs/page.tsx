@@ -69,7 +69,7 @@ export default function ContractorCurrentJobs() {
 
   if (loading) {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
@@ -85,7 +85,7 @@ export default function ContractorCurrentJobs() {
   }
 
   return (
-    <div className="container py-32">
+    <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">Current Jobs</h1>

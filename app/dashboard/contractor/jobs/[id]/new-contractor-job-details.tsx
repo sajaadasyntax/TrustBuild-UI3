@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,24 +50,35 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     ? (job.wonByContractorId === contractor.id || job.wonByContractorId === myApplication?.contractorId)
     : false
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 Application Debug:', {
-      hasApplications: !!job.applications?.length,
-      applicationsCount: job.applications?.length || 0,
-      contractorId: contractor?.id,
-      userId: user?.id,
-      myApplication: !!myApplication,
-      jobStatus: job.status,
-      isWonByMe: isJobWinner,
-      hasApplied: !!myApplication,
-      shouldShowButton: !!myApplication && job.status === 'POSTED' && !isJobWinner
-    })
-  }
+  // Debug logging - Enhanced
+  console.log('🔍 Application Debug:', {
+    hasApplications: !!job.applications?.length,
+    applicationsCount: job.applications?.length || 0,
+    contractorId: contractor?.id,
+    userId: user?.id,
+    myApplication: !!myApplication,
+    myApplicationDetails: myApplication ? {
+      id: myApplication.id,
+      contractorId: myApplication.contractorId,
+      status: myApplication.status,
+      appliedAt: myApplication.appliedAt
+    } : null,
+    jobStatus: job.status,
+    isWonByMe: isJobWinner,
+    hasApplied: !!myApplication,
+    shouldShowIWonButton: !!myApplication && job.status === 'POSTED' && !isJobWinner,
+    allApplications: job.applications?.map(app => ({
+      id: app.id,
+      contractorId: app.contractorId,
+      contractorUserId: app.contractor?.userId,
+      status: app.status
+    }))
+  })
 
   useEffect(() => {
     fetchContractorData()
     checkJobAccess()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job.id, job.jobAccess, job.applications]) // Refresh when job, jobAccess, or applications change
 
   const fetchContractorData = async () => {
@@ -251,7 +262,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
   if (checkingAccess) {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
@@ -263,8 +274,38 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   }
 
   return (
-    <div className="container py-32">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+        {/* Debug Panel - Remove this after debugging */}
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="text-sm">🔧 Debug Panel (Remove after fixing)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-2">
+            <p><strong>Contractor ID:</strong> {contractor?.id || 'null'}</p>
+            <p><strong>User ID:</strong> {user?.id || 'null'}</p>
+            <p><strong>Job Status:</strong> {job.status}</p>
+            <p><strong>Has Access:</strong> {hasAccess ? 'Yes' : 'No'}</p>
+            <p><strong>My Application:</strong> {myApplication ? 'Found' : 'Not Found'}</p>
+            {myApplication && (
+              <>
+                <p><strong>Application Contractor ID:</strong> {myApplication.contractorId}</p>
+                <p><strong>Application Status:</strong> {myApplication.status}</p>
+              </>
+            )}
+            <p><strong>Is Job Winner:</strong> {isJobWinner ? 'Yes' : 'No'}</p>
+            <p><strong>Won By Contractor ID:</strong> {job.wonByContractorId || 'null'}</p>
+            <p><strong>Applications Count:</strong> {job.applications?.length || 0}</p>
+            <p><strong>Should Show &quot;I Won&quot; Button:</strong> {(!!myApplication && job.status === 'POSTED' && !isJobWinner) ? 'YES ✅' : 'NO ❌'}</p>
+            <p><strong>Conditions:</strong></p>
+            <ul className="list-disc pl-5">
+              <li>hasApplied (!!myApplication): {!!myApplication ? '✅' : '❌'}</li>
+              <li>jobStatus === &apos;POSTED&apos;: {job.status === 'POSTED' ? '✅' : '❌'}</li>
+              <li>!isWonByMe: {!isJobWinner ? '✅' : '❌'}</li>
+            </ul>
+          </CardContent>
+        </Card>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

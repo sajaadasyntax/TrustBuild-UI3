@@ -27,11 +27,22 @@ export default function Page() {
       console.log('📋 Job data received:', {
         id: jobData.id,
         title: jobData.title,
+        status: jobData.status,
         hasCustomer: !!jobData.customer,
         customerName: jobData.customer?.user?.name,
         customerPhone: jobData.customer?.phone,
         customerEmail: jobData.customer?.user?.email,
-        hasAccess: jobData.hasAccess
+        hasAccess: jobData.hasAccess,
+        applicationsCount: jobData.applications?.length || 0,
+        applications: jobData.applications?.map(app => ({
+          id: app.id,
+          contractorId: app.contractorId,
+          contractorUserId: app.contractor?.userId,
+          contractorName: app.contractor?.user?.name,
+          status: app.status
+        })),
+        wonByContractorId: jobData.wonByContractorId,
+        jobAccessCount: jobData.jobAccess?.length || 0
       })
       
       // Allow contractors who have purchased access OR are assigned to view the job
@@ -61,7 +72,7 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
@@ -74,7 +85,7 @@ export default function Page() {
 
   if (!job) {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Job not found or not assigned</h1>
         </div>

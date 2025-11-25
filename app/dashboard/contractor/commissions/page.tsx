@@ -206,7 +206,7 @@ export default function ContractorCommissions() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-6 w-6 animate-spin mr-2" />
           <span>Loading...</span>
@@ -217,7 +217,7 @@ export default function ContractorCommissions() {
 
   if (user.role !== 'CONTRACTOR') {
     return (
-      <div className="container py-32">
+      <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
         <Card>
           <CardContent className="text-center py-12">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
@@ -232,7 +232,7 @@ export default function ContractorCommissions() {
   }
 
   return (
-    <div className="container py-32">
+    <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Commission Payments</h1>
         <p className="text-muted-foreground">

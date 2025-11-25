@@ -100,7 +100,7 @@ export default function InvoiceDetailPage() {
   }
 
   return (
-    <div className="container py-10 space-y-6">
+    <div className="container px-4 py-6 md:py-10 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => router.back()}>

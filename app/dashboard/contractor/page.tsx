@@ -193,8 +193,8 @@ export default function ContractorDashboard() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -213,8 +213,8 @@ export default function ContractorDashboard() {
   }
 
   return (
-    <div className="container py-32">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="container px-4 py-6 md:py-12 lg:py-16 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
         <div>
           <h1 className="text-3xl font-bold">Contractor Dashboard</h1>
           <p className="text-muted-foreground">Manage your jobs and find new opportunities</p>
