@@ -34,16 +34,20 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [showReviewRequest, setShowReviewRequest] = useState(false)
   const [showFinalPriceDialog, setShowFinalPriceDialog] = useState(false)
   const [showApplicationDialog, setShowApplicationDialog] = useState(false)
+  const [myApplication, setMyApplication] = useState<any>(null)
 
   // Get the application for this contractor
   // Match by contractorId (from application) or contractor.userId or contractor.user.id
   // Note: contractor state is set async, so we check multiple ways
-  const myApplication = job.applications?.find(app => {
-    if (contractor?.id && app.contractorId === contractor.id) return true
-    if (user?.id && app.contractor?.userId === user.id) return true
-    if (user?.id && app.contractor?.user?.id === user.id) return true
-    return false
-  })
+  useEffect(() => {
+    const foundApp = job.applications?.find(app => {
+      if (contractor?.id && app.contractorId === contractor.id) return true
+      if (user?.id && app.contractor?.userId === user.id) return true
+      if (user?.id && app.contractor?.user?.id === user.id) return true
+      return false
+    })
+    setMyApplication(foundApp || null)
+  }, [job.applications, contractor?.id, user?.id])
 
   // Check if this contractor won the job - match by contractor ID or application contractorId
   const isJobWinner = contractor?.id 
@@ -277,32 +281,83 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
       <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
         {/* Debug Panel - Remove this after debugging */}
-        <Card className="border-purple-200 bg-purple-50">
-          <CardHeader>
-            <CardTitle className="text-sm">🔧 Debug Panel (Remove after fixing)</CardTitle>
+        <Card className="border-4 border-purple-500 bg-purple-100 shadow-lg">
+          <CardHeader className="bg-purple-200">
+            <CardTitle className="text-lg font-bold text-purple-900">🔧 DEBUG PANEL - CHECK THIS FIRST</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs space-y-2">
-            <p><strong>Contractor ID:</strong> {contractor?.id || 'null'}</p>
-            <p><strong>User ID:</strong> {user?.id || 'null'}</p>
-            <p><strong>Job Status:</strong> {job.status}</p>
-            <p><strong>Has Access:</strong> {hasAccess ? 'Yes' : 'No'}</p>
-            <p><strong>My Application:</strong> {myApplication ? 'Found' : 'Not Found'}</p>
-            {myApplication && (
-              <>
-                <p><strong>Application Contractor ID:</strong> {myApplication.contractorId}</p>
-                <p><strong>Application Status:</strong> {myApplication.status}</p>
-              </>
-            )}
-            <p><strong>Is Job Winner:</strong> {isJobWinner ? 'Yes' : 'No'}</p>
-            <p><strong>Won By Contractor ID:</strong> {job.wonByContractorId || 'null'}</p>
-            <p><strong>Applications Count:</strong> {job.applications?.length || 0}</p>
-            <p><strong>Should Show &quot;I Won&quot; Button:</strong> {(!!myApplication && job.status === 'POSTED' && !isJobWinner) ? 'YES ✅' : 'NO ❌'}</p>
-            <p><strong>Conditions:</strong></p>
-            <ul className="list-disc pl-5">
-              <li>hasApplied (!!myApplication): {!!myApplication ? '✅' : '❌'}</li>
-              <li>jobStatus === &apos;POSTED&apos;: {job.status === 'POSTED' ? '✅' : '❌'}</li>
-              <li>!isWonByMe: {!isJobWinner ? '✅' : '❌'}</li>
-            </ul>
+          <CardContent className="p-4 space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p><strong>Contractor ID:</strong> {contractor?.id || '⏳ Loading...'}</p>
+                <p><strong>User ID:</strong> {user?.id || 'null'}</p>
+                <p><strong>Job Status:</strong> <span className="font-bold">{job.status}</span></p>
+                <p><strong>Has Access:</strong> {hasAccess ? '✅ Yes' : '❌ No'}</p>
+              </div>
+              <div>
+                <p><strong>My Application:</strong> {myApplication ? '✅ Found' : '❌ Not Found'}</p>
+                {myApplication && (
+                  <>
+                    <p><strong>App Contractor ID:</strong> {myApplication.contractorId}</p>
+                    <p><strong>App Status:</strong> {myApplication.status}</p>
+                  </>
+                )}
+                <p><strong>Is Job Winner:</strong> {isJobWinner ? '✅ Yes' : '❌ No'}</p>
+                <p><strong>Won By Contractor ID:</strong> {job.wonByContractorId || 'null'}</p>
+              </div>
+            </div>
+            <div className="border-t-2 border-purple-300 pt-3">
+              <p><strong>Applications Count:</strong> {job.applications?.length || 0}</p>
+              {job.applications && job.applications.length > 0 && (
+                <div className="mt-2">
+                  <p><strong>All Applications:</strong></p>
+                  <ul className="list-disc pl-5 text-xs">
+                    {job.applications.map((app, idx) => (
+                      <li key={idx}>
+                        App #{idx + 1}: ContractorID={app.contractorId}, UserID={app.contractor?.userId || 'N/A'}, Status={app.status}
+                        {contractor?.id === app.contractorId && ' ← THIS IS YOU!'}
+                        {user?.id === app.contractor?.userId && ' ← THIS IS YOU (by userId)!'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="border-t-2 border-purple-300 pt-3 bg-yellow-50 p-3 rounded">
+              <p className="font-bold text-lg">
+                Should Show &quot;I Won&quot; Button: 
+                <span className={(!!myApplication && job.status === 'POSTED' && !isJobWinner) ? 'text-green-600' : 'text-red-600'}>
+                  {(!!myApplication && job.status === 'POSTED' && !isJobWinner) ? ' YES ✅' : ' NO ❌'}
+                </span>
+              </p>
+              <p className="mt-2"><strong>Conditions Check:</strong></p>
+              <ul className="list-disc pl-5 mt-1">
+                <li>hasApplied (!!myApplication): {!!myApplication ? '✅ TRUE' : '❌ FALSE'}</li>
+                <li>jobStatus === &apos;POSTED&apos;: {job.status === 'POSTED' ? '✅ TRUE' : `❌ FALSE (current: ${job.status})`}</li>
+                <li>!isWonByMe: {!isJobWinner ? '✅ TRUE' : '❌ FALSE'}</li>
+              </ul>
+              {/* Test Button - Should appear if conditions are met */}
+              {(!!myApplication && job.status === 'POSTED' && !isJobWinner) && (
+                <div className="mt-3 p-3 bg-green-100 border-2 border-green-500 rounded">
+                  <p className="font-bold text-green-800 mb-2">✅ TEST BUTTON (This should match the real button below):</p>
+                  <Button 
+                    onClick={() => {
+                      const dialog = document.querySelector('[role="dialog"]')
+                      if (!dialog) {
+                        // Manually trigger the claim won dialog
+                        console.log('Would trigger claim won dialog')
+                        toast({
+                          title: 'Test',
+                          description: 'Button logic is working! Check JobWorkflowButtons below.'
+                        })
+                      }
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    🏆 I WON THE JOB (TEST)
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -566,19 +621,31 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
         )}
 
         {/* Job Workflow Buttons - Handles Step 2 (Contractor claims "I won") and Step 4 (Enter final price) */}
-        <JobWorkflowButtons
-          jobId={job.id}
-          jobStatus={job.status}
-          jobTitle={job.title}
-          isContractor={true}
-          isCustomer={false}
-          isWonByMe={isJobWinner}
-          finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
-          contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
-          hasApplied={!!myApplication}
-          contractorName={undefined}
-          onUpdate={() => onJobUpdate(job.id)}
-        />
+        <Card className="border-2 border-blue-300 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-sm">JobWorkflowButtons Component</CardTitle>
+            <p className="text-xs text-gray-600">
+              Props: hasApplied={!!myApplication ? 'true' : 'false'}, 
+              jobStatus={job.status}, 
+              isWonByMe={isJobWinner ? 'true' : 'false'}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <JobWorkflowButtons
+              jobId={job.id}
+              jobStatus={job.status}
+              jobTitle={job.title}
+              isContractor={true}
+              isCustomer={false}
+              isWonByMe={isJobWinner}
+              finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
+              contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
+              hasApplied={!!myApplication}
+              contractorName={undefined}
+              onUpdate={() => onJobUpdate(job.id)}
+            />
+          </CardContent>
+        </Card>
 
         {/* Action Buttons */}
         <div className="flex gap-4">
