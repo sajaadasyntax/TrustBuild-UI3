@@ -92,10 +92,10 @@ export default function JobApplicationDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Apply for Job</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl">Apply for Job</DialogTitle>
+          <DialogDescription className="text-sm">
             Submit your application for: <span className="font-semibold">{jobTitle}</span>
           </DialogDescription>
         </DialogHeader>

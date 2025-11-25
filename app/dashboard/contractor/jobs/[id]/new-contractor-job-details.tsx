@@ -45,6 +45,11 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     return false
   })
 
+  // Check if this contractor won the job - match by contractor ID or application contractorId
+  const isJobWinner = contractor?.id 
+    ? (job.wonByContractorId === contractor.id || job.wonByContractorId === myApplication?.contractorId)
+    : false
+
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
     console.log('🔍 Application Debug:', {
@@ -144,9 +149,16 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   }
 
   const handleApplicationSuccess = async () => {
+    console.log('🎉 Application submitted successfully - refreshing data...')
+    
+    // Add small delay to ensure backend has processed the application
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
     // Refresh job data to get updated applications
     await onJobUpdate(job.id)
     await checkJobAccess()
+    
+    console.log('✅ Data refresh completed after application')
   }
 
   const handleCompleteJob = async () => {
@@ -232,10 +244,6 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>
   }
 
-  // Check if this contractor won the job - match by contractor ID or application contractorId
-  const isJobWinner = contractor?.id 
-    ? (job.wonByContractorId === contractor.id || job.wonByContractorId === myApplication?.contractorId)
-    : false
   const canCompleteJob = job.status === 'IN_PROGRESS' && isJobWinner
   const canProposeFinalPrice = job.status === 'IN_PROGRESS' && isJobWinner
   const canRequestReview = job.status === 'COMPLETED' && isJobWinner
@@ -470,7 +478,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                       Job completed but not confirmed?
                     </p>
                     <p className="text-sm text-orange-700">
-                      If you've completed the work but the customer hasn't confirmed, 
+                      If you have completed the work but the customer has not confirmed, 
                       you can open a dispute for commission payment.
                     </p>
                   </div>

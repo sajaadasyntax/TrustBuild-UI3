@@ -1,0 +1,5 @@
+# E2E Testing dependencies for web frontend
+# Install with: npm install --save-dev
+
+@playwright/test@^1.40.0
+

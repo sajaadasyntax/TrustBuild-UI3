@@ -232,10 +232,10 @@ export default function JobWorkflowButtons({
               </Button>
 
               <Dialog open={showClaimWonDialog} onOpenChange={setShowClaimWonDialog}>
-                <DialogContent>
+                <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Claim "I won the job"</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-lg sm:text-xl">Claim "I won the job"</DialogTitle>
+                    <DialogDescription className="text-sm">
                       This will notify the customer that you claim to have won the job. 
                       The job will remain open until the customer confirms.
                     </DialogDescription>
@@ -277,10 +277,10 @@ export default function JobWorkflowButtons({
               </Button>
 
               <Dialog open={showMarkCompletedDialog} onOpenChange={setShowMarkCompletedDialog}>
-                <DialogContent>
+                <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Enter Final Agreed Price</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-lg sm:text-xl">Enter Final Agreed Price</DialogTitle>
+                    <DialogDescription className="text-sm">
                       Enter the final amount you charged for this completed job. 
                       The customer will be asked to confirm.
                     </DialogDescription>
@@ -346,10 +346,10 @@ export default function JobWorkflowButtons({
           </div>
 
           <Dialog open={showConfirmWinnerDialog} onOpenChange={setShowConfirmWinnerDialog}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Confirm Winning Contractor</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-lg sm:text-xl">Confirm Winning Contractor</DialogTitle>
+                <DialogDescription className="text-sm">
                   Confirm if {contractorName} won your job. Once confirmed, the job will be in progress and applications will close.
                 </DialogDescription>
               </DialogHeader>
@@ -477,10 +477,10 @@ export default function JobWorkflowButtons({
 
           {/* Price Change Suggestion Dialog */}
           <Dialog open={showPriceChangeDialog} onOpenChange={setShowPriceChangeDialog}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Suggest Price Change</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-lg sm:text-xl">Suggest Price Change</DialogTitle>
+                <DialogDescription className="text-sm">
                   Enter the amount you think is appropriate for this job
                 </DialogDescription>
               </DialogHeader>
@@ -560,10 +560,10 @@ export default function JobWorkflowButtons({
           </div>
 
           <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Confirm Job Completion</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-lg sm:text-xl">Confirm Job Completion</DialogTitle>
+                <DialogDescription className="text-sm">
                   Please review the job completion and amount
                 </DialogDescription>
               </DialogHeader>
