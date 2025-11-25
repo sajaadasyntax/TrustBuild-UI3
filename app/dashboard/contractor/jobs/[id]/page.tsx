@@ -34,13 +34,18 @@ export default function Page() {
         hasAccess: jobData.hasAccess
       })
       
-      // Check if contractor is assigned to this job (either accepted application or won the job)
+      // Allow contractors who have purchased access OR are assigned to view the job
+      // This allows contractors to apply and claim "I won the job" after purchasing access
       const contractor = await contractorsApi.getMyProfile()
+      const hasAccess = jobData.hasAccess || jobData.jobAccess?.some(access => 
+        access.contractorId === contractor.id
+      )
       const isAssigned = jobData.applications?.some(app => 
         app.contractor?.userId === user?.id && app.status === 'ACCEPTED'
       ) || jobData.wonByContractorId === contractor.id
       
-      if (!isAssigned) {
+      // Allow access if contractor has purchased access OR is assigned
+      if (!hasAccess && !isAssigned) {
         router.push('/dashboard/contractor')
         return
       }

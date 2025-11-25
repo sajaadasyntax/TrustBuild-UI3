@@ -36,14 +36,34 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [showApplicationDialog, setShowApplicationDialog] = useState(false)
 
   // Get the application for this contractor
-  const myApplication = job.applications?.find(app => 
-    app.contractor?.userId === user?.id
-  )
+  // Match by contractorId (from application) or contractor.userId or contractor.user.id
+  // Note: contractor state is set async, so we check multiple ways
+  const myApplication = job.applications?.find(app => {
+    if (contractor?.id && app.contractorId === contractor.id) return true
+    if (user?.id && app.contractor?.userId === user.id) return true
+    if (user?.id && app.contractor?.user?.id === user.id) return true
+    return false
+  })
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Application Debug:', {
+      hasApplications: !!job.applications?.length,
+      applicationsCount: job.applications?.length || 0,
+      contractorId: contractor?.id,
+      userId: user?.id,
+      myApplication: !!myApplication,
+      jobStatus: job.status,
+      isWonByMe: isJobWinner,
+      hasApplied: !!myApplication,
+      shouldShowButton: !!myApplication && job.status === 'POSTED' && !isJobWinner
+    })
+  }
 
   useEffect(() => {
     fetchContractorData()
     checkJobAccess()
-  }, [job.id, job.jobAccess]) // Refresh when job or jobAccess changes
+  }, [job.id, job.jobAccess, job.applications]) // Refresh when job, jobAccess, or applications change
 
   const fetchContractorData = async () => {
     try {
@@ -212,7 +232,10 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>
   }
 
-  const isJobWinner = job.wonByContractorId === myApplication?.contractorId
+  // Check if this contractor won the job - match by contractor ID or application contractorId
+  const isJobWinner = contractor?.id 
+    ? (job.wonByContractorId === contractor.id || job.wonByContractorId === myApplication?.contractorId)
+    : false
   const canCompleteJob = job.status === 'IN_PROGRESS' && isJobWinner
   const canProposeFinalPrice = job.status === 'IN_PROGRESS' && isJobWinner
   const canRequestReview = job.status === 'COMPLETED' && isJobWinner
