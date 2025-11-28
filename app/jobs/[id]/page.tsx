@@ -22,10 +22,11 @@ import {
   Send,
   Lock
 } from 'lucide-react'
-import { jobsApi, handleApiError, Job } from '@/lib/api'
+import { jobsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import JobLeadAccessDialog from '@/components/JobLeadAccessDialog'
+import ContractorJobProgress from '@/components/jobs/ContractorJobProgress'
 
 export default function JobDetailsPage() {
   const params = useParams()
@@ -85,7 +86,6 @@ export default function JobDetailsPage() {
     try {
       setCheckingAccess(true)
       const accessData = await jobsApi.checkAccess(jobId)
-      console.log('Job Access Check Result:', accessData) // Debug log
       setHasAccess(accessData.hasAccess)
     } catch (error) {
       console.error('Error checking job access:', error)
@@ -133,15 +133,7 @@ export default function JobDetailsPage() {
   }
 
   const handleApply = async () => {
-    console.log('🚀 Starting application submission...', {
-      job: job?.id,
-      user: user?.id,
-      hasAccess,
-      application
-    });
-
     if (!job || !user) {
-      console.error('❌ Missing job or user');
       return;
     }
 
@@ -165,7 +157,6 @@ export default function JobDetailsPage() {
 
     try {
       setApplying(true);
-      console.log('📤 Submitting application via API...');
       await jobsApi.apply(job.id, {
         proposal: application.proposal,
         estimatedCost: parseInt(application.estimatedCost),
@@ -173,7 +164,6 @@ export default function JobDetailsPage() {
         questions: application.questions
       });
       
-      console.log('✅ Application submitted successfully');
       toast({
         title: "Application submitted!",
         description: "Your application has been sent to the customer.",
@@ -235,64 +225,22 @@ export default function JobDetailsPage() {
     return !hasApplied
   }
 
-  const canAcceptDirectly = () => {
+  // Find contractor's application for this job
+  const getMyApplication = (): JobApplication | null => {
+    if (!job || !user || user.role !== 'CONTRACTOR') return null
+    return job.applications?.find(app => app.contractor?.userId === user.id) || null
+  }
+
+  // Check if contractor is the job winner
+  const getIsJobWinner = (): boolean => {
     if (!job || !user) return false
-    if (user.role !== 'CONTRACTOR') return false
-    if (job.status !== 'POSTED') return false
-    
-    // Check if job already has accepted applications
-    const hasAcceptedApplication = job.applications?.some(app => app.status === 'ACCEPTED')
-    if (hasAcceptedApplication) return false
-    
-    // Check if contractor has already applied
-    const hasApplied = job.applications?.some(app => 
-      app.contractor?.userId === user.id
-    )
-    
-    return !hasApplied
+    const myApp = getMyApplication()
+    if (!myApp) return false
+    return job.wonByContractorId === myApp.contractorId
   }
 
-  const handleQuickAccept = async () => {
-    if (!job || !user) return
-
-    // Check if contractor has access
-    if (!hasAccess) {
-      setShowAccessDialog(true)
-      return
-    }
-
-    // Contractors must provide their own estimate, not use customer budget
-    // For direct acceptance, prompt contractor to provide their quote
-    // This should open a dialog or form for contractor to enter their estimate
-    toast({
-      title: "Provide Your Quote",
-      description: "Please apply for this job with your own quote. You cannot accept jobs without providing your estimated cost.",
-      variant: "default"
-    })
-    return
-
-    // Unreachable code - kept for potential future use
-    // job is already checked for null at the start of the function
-    try {
-      setApplying(true)
-      await jobsApi.acceptDirectly(job!.id, {
-        proposal: 'Quick job acceptance - ready to start immediately',
-        estimatedCost: job!.budget || 0,
-        timeline: job!.urgency || 'As discussed'
-      })
-      
-      toast({
-        title: "Job accepted!",
-        description: "You have successfully accepted this job and it's now in progress.",
-      })
-      
-      await fetchJob(job!.id)
-    } catch (error) {
-      handleApiError(error, 'Failed to accept job')
-    } finally {
-      setApplying(false)
-    }
-  }
+  const myApplication = getMyApplication()
+  const isJobWinner = getIsJobWinner()
 
 
   // Helper function to show restricted content for contractors without access
@@ -471,78 +419,22 @@ export default function JobDetailsPage() {
               </Card>
             )}
 
-            {canAcceptDirectly() && job.budget && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Accept this Job</CardTitle>
-                  <CardDescription>
-                    This job is available for immediate acceptance at the posted budget.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {showRestrictedContent() ? (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
-                          <Lock className="h-4 w-4" />
-                          Access Required
-                        </div>
-                        <p className="text-sm text-blue-700 mb-3">
-                          Pay the access fee to view customer details and apply for this job.
-                        </p>
-                        <Button 
-                          onClick={() => setShowAccessDialog(true)}
-                          size="sm"
-                        >
-                          Pay Access Fee
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 text-green-800 font-medium mb-2">
-                            <CheckCircle className="h-4 w-4" />
-                            Quick Accept Available
-                          </div>
-                          <p className="text-sm text-green-700">
-                            This job has no applications yet. You can accept it directly and start working immediately 
-                            for the posted budget of {formatBudget(job.budget ?? 0)}.
-                          </p>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={handleQuickAccept}
-                            disabled={applying}
-                            className="flex-1"
-                          >
-                            {applying ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Accepting...
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Accept Job ({formatBudget(job.budget ?? 0)})
-                              </>
-                            )}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setShowApplicationForm(true)}
-                            disabled={applying}
-                          >
-                            Apply with Custom Quote
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Job Progress Tracker for Contractors */}
+            {user?.role === 'CONTRACTOR' && (
+              <ContractorJobProgress
+                job={job}
+                hasAccess={hasAccess}
+                myApplication={myApplication}
+                isJobWinner={isJobWinner}
+                onClaimWon={() => {
+                  // Navigate to dashboard to use full workflow
+                  router.push(`/dashboard/contractor/jobs/${job.id}`)
+                }}
+                onProposeFinalPrice={() => {
+                  router.push(`/dashboard/contractor/jobs/${job.id}`)
+                }}
+              />
             )}
-
 
             {canApply() && (
               <Card>
@@ -578,10 +470,7 @@ export default function JobDetailsPage() {
                       </Button>
                     </div>
                                   ) : !showApplicationForm ? (
-                    <Button onClick={() => {
-                      console.log('📝 Opening application form...');
-                      setShowApplicationForm(true);
-                    }}>
+                    <Button onClick={() => setShowApplicationForm(true)}>
                       Apply Now
                     </Button>
                   ) : (
@@ -701,7 +590,6 @@ export default function JobDetailsPage() {
                           }
 
                           try {
-                            console.log(`🔍 Jobs Page - Calling completeJobWithAmount with jobId: ${job.id}, using budget as finalAmount: ${finalAmount}`)
                             await jobsApi.completeJobWithAmount(job.id, Number(finalAmount))
                             toast({
                               title: "Job completed!",
