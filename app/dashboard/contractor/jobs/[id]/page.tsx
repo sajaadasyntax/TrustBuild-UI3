@@ -1,75 +1,92 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { NewContractorJobDetails } from "./new-contractor-job-details"
-import { jobsApi, contractorsApi, handleApiError, Job } from '@/lib/api'
-import { useAuth } from '@/contexts/AuthContext'
+import { jobsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
 
-export default function Page() {
+/**
+ * Check if contractor has access to view this job
+ * Access is granted if:
+ * 1. API indicates hasAccess = true
+ * 2. Contractor has a record in jobAccess
+ * 3. Contractor has an accepted application
+ * 4. Contractor is the job winner
+ */
+function checkJobAccessPermission(
+  job: Job,
+  contractor: Contractor
+): boolean {
+  // Check API-level access flag
+  if (job.hasAccess) return true
+  
+  // Check jobAccess records
+  const hasJobAccess = job.jobAccess?.some(
+    access => access.contractorId === contractor.id
+  )
+  if (hasJobAccess) return true
+  
+  // Check if contractor has an application (any status - they've already paid for access)
+  const hasApplication = job.applications?.some(
+    app => app.contractorId === contractor.id
+  )
+  if (hasApplication) return true
+  
+  // Check if contractor is the winner
+  if (job.wonByContractorId === contractor.id) return true
+  
+  return false
+}
+
+export default function ContractorJobPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useAuth()
   const [job, setJob] = useState<Job | null>(null)
+  const [contractor, setContractor] = useState<Contractor | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchJob(params.id as string)
-    }
-  }, [params.id])
-
-  const fetchJob = async (jobId: string) => {
+  const fetchJob = useCallback(async (jobId: string) => {
     try {
       setLoading(true)
-      console.log('🔄 Fetching job data for:', jobId)
-      const jobData = await jobsApi.getById(jobId)
-      console.log('📋 Job data received:', {
-        id: jobData.id,
-        title: jobData.title,
-        status: jobData.status,
-        hasCustomer: !!jobData.customer,
-        customerName: jobData.customer?.user?.name,
-        customerPhone: jobData.customer?.phone,
-        customerEmail: jobData.customer?.user?.email,
-        hasAccess: jobData.hasAccess,
-        applicationsCount: jobData.applications?.length || 0,
-        applications: jobData.applications?.map(app => ({
-          id: app.id,
-          contractorId: app.contractorId,
-          contractorUserId: app.contractor?.userId,
-          contractorName: app.contractor?.user?.name,
-          status: app.status
-        })),
-        wonByContractorId: jobData.wonByContractorId,
-        jobAccessCount: jobData.jobAccess?.length || 0
-      })
+      setError(null)
       
-      // Allow contractors who have purchased access OR are assigned to view the job
-      // This allows contractors to apply and claim "I won the job" after purchasing access
-      const contractor = await contractorsApi.getMyProfile()
-      const hasAccess = jobData.hasAccess || jobData.jobAccess?.some(access => 
-        access.contractorId === contractor.id
-      )
-      const isAssigned = jobData.applications?.some(app => 
-        app.contractor?.userId === user?.id && app.status === 'ACCEPTED'
-      ) || jobData.wonByContractorId === contractor.id
+      // Fetch job data and contractor profile in parallel
+      const [jobData, contractorData] = await Promise.all([
+        jobsApi.getById(jobId),
+        contractorsApi.getMyProfile()
+      ])
       
-      // Allow access if contractor has purchased access OR is assigned
-      if (!hasAccess && !isAssigned) {
+      setContractor(contractorData)
+      
+      // Check access permission
+      const hasPermission = checkJobAccessPermission(jobData, contractorData)
+      
+      if (!hasPermission) {
+        // Redirect to contractor dashboard if no access
         router.push('/dashboard/contractor')
         return
       }
       
       setJob(jobData)
-    } catch (error) {
-      handleApiError(error, 'Failed to fetch job details')
+    } catch (err) {
+      handleApiError(err, 'Failed to fetch job details')
+      setError('Failed to load job details')
+      // Redirect on error
       router.push('/dashboard/contractor')
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
+  useEffect(() => {
+    const jobId = params.id as string
+    if (jobId) {
+      fetchJob(jobId)
+    }
+  }, [params.id, fetchJob])
+
+  // Loading state
   if (loading) {
     return (
       <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
@@ -77,17 +94,30 @@ export default function Page() {
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
             <div className="h-64 bg-gray-300 rounded mb-6"></div>
+            <div className="h-32 bg-gray-300 rounded"></div>
           </div>
         </div>
       </div>
     )
   }
 
-  if (!job) {
+  // Error state
+  if (error || !job) {
     return (
       <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Job not found or not assigned</h1>
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">
+            {error || 'Job not found'}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            The job you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to view it.
+          </p>
+          <button
+            onClick={() => router.push('/dashboard/contractor')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </div>
     )
@@ -95,100 +125,3 @@ export default function Page() {
 
   return <NewContractorJobDetails job={job} onJobUpdate={fetchJob} />
 }
-
-// Legacy mock data for reference
-const legacyMockJobs = [
-  {
-    id: "job1",
-    title: "Living Room Redesign",
-    status: "IN_PROGRESS" as const,
-    description: "Complete living room redesign including new furniture, paint, and flooring. The space is approximately 300 square feet.",
-    budget: "£4,500",
-    location: "London, UK",
-    startedAt: "2024-03-15",
-    customer: {
-      name: "John Smith",
-      rating: 4.8,
-      completedJobs: 3,
-      joinedAt: "2023",
-    },
-    progress: 65,
-    timeline: "3-4 weeks",
-    milestones: [
-      {
-        id: "milestone1",
-        title: "Initial Consultation",
-        status: "COMPLETED" as const,
-        completedAt: "2024-03-15",
-      },
-      {
-        id: "milestone2",
-        title: "Design Approval",
-        status: "COMPLETED" as const,
-        completedAt: "2024-03-18",
-      },
-      {
-        id: "milestone3",
-        title: "Furniture Delivery",
-        status: "IN_PROGRESS" as const,
-        dueDate: "2024-03-25",
-      },
-      {
-        id: "milestone4",
-        title: "Installation",
-        status: "PENDING" as const,
-        dueDate: "2024-03-28",
-      },
-    ],
-  },
-  {
-    id: "job2",
-    title: "Kitchen Renovation",
-    status: "IN_PROGRESS" as const,
-    description: "Complete kitchen renovation including new cabinets, countertops, appliances, and flooring. The space is approximately 200 square feet.",
-    budget: "£5,000",
-    location: "London, UK",
-    startedAt: "2024-03-10",
-    customer: {
-      name: "Sarah Johnson",
-      rating: 4.9,
-      completedJobs: 5,
-      joinedAt: "2022",
-    },
-    progress: 45,
-    timeline: "4-6 weeks",
-    milestones: [
-      {
-        id: "milestone1",
-        title: "Initial Consultation",
-        status: "COMPLETED" as const,
-        completedAt: "2024-03-10",
-      },
-      {
-        id: "milestone2",
-        title: "Design Approval",
-        status: "COMPLETED" as const,
-        completedAt: "2024-03-13",
-      },
-      {
-        id: "milestone3",
-        title: "Demolition",
-        status: "COMPLETED" as const,
-        completedAt: "2024-03-15",
-      },
-      {
-        id: "milestone4",
-        title: "Cabinetry Installation",
-        status: "IN_PROGRESS" as const,
-        dueDate: "2024-03-25",
-      },
-    ],
-  },
-]
-
-// No longer needed with dynamic API data
-// export function generateStaticParams() {
-//   return mockJobs.map((job) => ({
-//     id: job.id,
-//   }))
-// } 

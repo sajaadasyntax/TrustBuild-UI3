@@ -33,15 +33,16 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       const applicationsData = await jobsApi.getApplications(job.id)
       setApplications(applicationsData)
       
-      // Check if there's already a selected contractor
+      // Check if there's already a selected contractor (winner)
       const winner = applicationsData.find(app => 
         job.wonByContractorId && app.contractorId === job.wonByContractorId
       )
       if (winner) {
         setSelectedContractor(winner.contractorId)
       }
-    } catch (error) {
-      console.error('Failed to fetch applications:', error)
+    } catch {
+      // Failed to load applications - the page will show empty state
+      setApplications([])
     }
   }, [job.id, job.wonByContractorId])
 
