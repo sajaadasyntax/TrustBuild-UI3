@@ -14,6 +14,7 @@ import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
 import { FinalPriceConfirmationDialog } from "@/components/jobs/FinalPriceConfirmationDialog"
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
 import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
+import CustomerJobProgress from '@/components/jobs/CustomerJobProgress'
 
 interface ClientJobDetailsProps {
   job: Job
@@ -180,6 +181,18 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             </div>
           </CardContent>
         </Card>
+
+        {/* Job Progress Tracker - Shows customer where they are in the workflow */}
+        <CustomerJobProgress
+          job={job}
+          applications={applications}
+          hasSelectedContractor={!!selectedContractor}
+          onConfirmWinner={() => {
+            // This is handled by JobWorkflowButtons below
+          }}
+          onConfirmPrice={() => setShowFinalPriceConfirmation(true)}
+          onWriteReview={() => setShowReviewDialog(true)}
+        />
 
         {/* Job Details */}
         <Card>

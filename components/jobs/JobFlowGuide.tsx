@@ -10,78 +10,39 @@ import {
   CheckCircle, 
   Hammer, 
   PoundSterling, 
-  Star 
+  Star,
+  Unlock
 } from "lucide-react"
+import { JOB_FLOW_STEPS, type Actor } from "@/lib/constants/job-flow"
+
+// Map step IDs to icons
+const STEP_ICONS: Record<string, React.ReactNode> = {
+  'browse': <Search className="h-5 w-5" />,
+  'purchase-access': <Unlock className="h-5 w-5" />,
+  'apply': <FileText className="h-5 w-5" />,
+  'contact-negotiate': <Phone className="h-5 w-5" />,
+  'claim-win': <Trophy className="h-5 w-5" />,
+  'confirm-winner': <CheckCircle className="h-5 w-5" />,
+  'work-in-progress': <Hammer className="h-5 w-5" />,
+  'submit-final-price': <PoundSterling className="h-5 w-5" />,
+  'confirm-price': <CheckCircle className="h-5 w-5" />,
+  'leave-review': <Star className="h-5 w-5" />,
+}
 
 interface FlowStep {
   icon: React.ReactNode
   title: string
   description: string
-  actor: 'contractor' | 'customer' | 'both'
+  actor: Actor
 }
 
-const FLOW_STEPS: FlowStep[] = [
-  {
-    icon: <Search className="h-5 w-5" />,
-    title: "1. Browse Jobs",
-    description: "Contractor browses available jobs in their area and category",
-    actor: 'contractor'
-  },
-  {
-    icon: <PoundSterling className="h-5 w-5" />,
-    title: "2. Purchase Access",
-    description: "Contractor purchases access to view customer contact details",
-    actor: 'contractor'
-  },
-  {
-    icon: <FileText className="h-5 w-5" />,
-    title: "3. Submit Application",
-    description: "Contractor submits quote and cover letter",
-    actor: 'contractor'
-  },
-  {
-    icon: <Phone className="h-5 w-5" />,
-    title: "4. Contact & Negotiate",
-    description: "Contractor contacts customer directly to discuss job and win business",
-    actor: 'both'
-  },
-  {
-    icon: <Trophy className="h-5 w-5" />,
-    title: "5. Claim Win",
-    description: "Once agreed, contractor clicks 'I Won the Job' to notify customer",
-    actor: 'contractor'
-  },
-  {
-    icon: <CheckCircle className="h-5 w-5" />,
-    title: "6. Confirm Winner",
-    description: "Customer confirms the contractor as the winner",
-    actor: 'customer'
-  },
-  {
-    icon: <Hammer className="h-5 w-5" />,
-    title: "7. Complete Work",
-    description: "Contractor completes the agreed work",
-    actor: 'contractor'
-  },
-  {
-    icon: <PoundSterling className="h-5 w-5" />,
-    title: "8. Submit Final Price",
-    description: "Contractor enters the final agreed amount",
-    actor: 'contractor'
-  },
-  {
-    icon: <CheckCircle className="h-5 w-5" />,
-    title: "9. Confirm & Pay",
-    description: "Customer confirms job completion and payment is processed",
-    actor: 'customer'
-  },
-  {
-    icon: <Star className="h-5 w-5" />,
-    title: "10. Leave Review",
-    description: "Customer leaves a review for the contractor",
-    actor: 'customer'
-  }
-]
+// Convert shared constants to display format
+const FLOW_STEPS: FlowStep[] = JOB_FLOW_STEPS.map(step => ({
+  icon: STEP_ICONS[step.id] || <CheckCircle className="h-5 w-5" />,
+  title: `${step.stepNumber}. ${step.title}`,
+  description: step.description,
+  actor: step.actor,
+}))
 
 interface JobFlowGuideProps {
   currentStep?: number
