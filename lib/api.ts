@@ -1064,7 +1064,7 @@ export const jobsApi = {
   // Contractor claims "I won the job" - sends notification but doesn't close job
   claimWon: async (jobId: string): Promise<Job> => {
     const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/claim-won`, {
-      method: 'PATCH',
+      method: 'POST',
     });
     return response.data.job;
   },
