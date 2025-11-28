@@ -14,6 +14,7 @@ import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDi
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
 import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
 import JobApplicationDialog from '@/components/jobs/JobApplicationDialog'
+import ContractorJobProgress from '@/components/jobs/ContractorJobProgress'
 import Link from 'next/link'
 
 interface ContractorJobDetailsProps {
@@ -360,6 +361,18 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
             </CardContent>
           </Card>
         )}
+
+        {/* Job Progress Tracker - Shows contractor where they are in the workflow */}
+        <ContractorJobProgress
+          job={job}
+          hasAccess={hasAccess}
+          myApplication={myApplication}
+          isJobWinner={isJobWinner}
+          onClaimWon={() => {
+            // This will be handled by JobWorkflowButtons, but we show the guidance here
+          }}
+          onProposeFinalPrice={() => setShowFinalPriceDialog(true)}
+        />
 
         {/* Job Details */}
         <Card>
