@@ -20,7 +20,7 @@ import { Job, JobApplication } from "@/lib/api"
 interface ContractorJobProgressProps {
   job: Job
   hasAccess: boolean
-  myApplication: JobApplication | null
+  myApplication?: JobApplication | null  // Now optional - we no longer require applications
   isJobWinner: boolean
   onClaimWon?: () => void
   onProposeFinalPrice?: () => void
@@ -53,47 +53,36 @@ export function ContractorJobProgress({
   const getWorkflowSteps = (): WorkflowStep[] => {
     const steps: WorkflowStep[] = []
     
-    // Step 1: Purchase Access
+    // Step 1: Purchase Job Access
     steps.push({
       id: 'access',
-      title: 'Purchase Job Access',
+      title: 'Buy Job Access',
       description: hasAccess 
-        ? 'You have access to this job' 
-        : 'Purchase access to view customer details and apply',
+        ? 'You have access to this job and customer contact details' 
+        : 'Purchase access to view customer contact details',
       icon: <CheckCircle2 className="h-5 w-5" />,
       status: hasAccess ? 'completed' : 'current',
     })
     
-    // Step 2: Apply to Job
-    steps.push({
-      id: 'apply',
-      title: 'Submit Application',
-      description: myApplication 
-        ? `Applied on ${new Date(myApplication.appliedAt).toLocaleDateString()} for £${myApplication.proposedRate}`
-        : 'Submit your proposal and quote to the customer',
-      icon: <CheckCircle2 className="h-5 w-5" />,
-      status: myApplication ? 'completed' : (hasAccess ? 'current' : 'upcoming'),
-    })
-    
-    // Step 3: Contact Customer (THE KEY MISSING STEP IN UX)
-    const hasAppliedAndPosted = myApplication && job.status === 'POSTED' && !isJobWinner
+    // Step 2: Contact Customer & Win the Job (combining old steps 2 & 3)
+    const hasAccessAndPosted = hasAccess && job.status === 'POSTED' && !isJobWinner
     steps.push({
       id: 'contact',
-      title: 'Contact Customer & Win the Job',
+      title: 'Call Customer & Win the Job',
       description: isJobWinner 
-        ? 'You have been confirmed as the winner!'
-        : 'Reach out to the customer directly to discuss the job and win their business',
+        ? 'Customer confirmed you as the winner! 🎉'
+        : 'Call the customer directly to discuss the job and agree on terms',
       icon: <Phone className="h-5 w-5" />,
       status: isJobWinner 
         ? 'completed' 
-        : (hasAppliedAndPosted ? 'current' : 'upcoming'),
-      tips: hasAppliedAndPosted ? [
-        '📞 Call or email the customer using the contact details above',
-        '💬 Discuss the job requirements in detail',
-        '🤝 Negotiate the final price and timeline',
-        '✅ Once they agree to hire you, come back and click "I Won the Job"'
+        : (hasAccessAndPosted ? 'current' : 'upcoming'),
+      tips: hasAccessAndPosted ? [
+        '📞 Call the customer using the contact details shown above',
+        '💬 Discuss job details, timeline, and your approach',
+        '💰 Agree on the price directly with the customer',
+        '✅ Once they agree to hire you, click "I Won the Job" below'
       ] : undefined,
-      action: hasAppliedAndPosted ? {
+      action: hasAccessAndPosted ? {
         label: 'I Won the Job',
         onClick: onClaimWon,
         variant: 'default'
@@ -293,18 +282,18 @@ export function ContractorJobProgress({
         })}
         
         {/* Important Note */}
-        {myApplication && job.status === 'POSTED' && !isJobWinner && (
+        {hasAccess && job.status === 'POSTED' && !isJobWinner && (
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-amber-900 mb-1">
-                  Important: Contact the Customer!
+                  📞 Call the Customer Now!
                 </h4>
                 <p className="text-sm text-amber-800">
-                  After applying, you need to <strong>reach out to the customer directly</strong> using 
-                  the contact details provided above. Discuss the job, agree on terms, and when they 
-                  choose you, come back here and click &quot;I Won the Job&quot;.
+                  <strong>Call the customer directly</strong> using the contact details shown above. 
+                  Discuss the job requirements, agree on price and timeline, and when they choose you, 
+                  come back here and click <strong>&quot;I Won the Job&quot;</strong>.
                 </p>
               </div>
             </div>

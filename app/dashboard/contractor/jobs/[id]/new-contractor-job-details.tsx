@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle } from "lucide-react"
+import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, PhoneCall, MessageCircle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor, JobApplication } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -13,7 +13,6 @@ import JobLeadAccessDialog from "@/components/JobLeadAccessDialog"
 import { FinalPriceProposalDialog } from "@/components/jobs/FinalPriceProposalDialog"
 import { CreateDisputeDialog } from '@/components/disputes/CreateDisputeDialog'
 import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
-import JobApplicationDialog from '@/components/jobs/JobApplicationDialog'
 import ContractorJobProgress from '@/components/jobs/ContractorJobProgress'
 import Link from 'next/link'
 
@@ -65,7 +64,6 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [reviewRequest, setReviewRequest] = useState('')
   const [showReviewRequest, setShowReviewRequest] = useState(false)
   const [showFinalPriceDialog, setShowFinalPriceDialog] = useState(false)
-  const [showApplicationDialog, setShowApplicationDialog] = useState(false)
 
   // Memoized application lookup - single source of truth
   const myApplication = useMemo(() => 
@@ -139,26 +137,11 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     // Small delay for backend processing
     await new Promise(resolve => setTimeout(resolve, 300))
     await onJobUpdate(job.id)
-  }, [job.id, onJobUpdate])
-
-  const handleApplyForJob = () => {
-    if (!hasAccess) {
-      toast({
-        title: "Access Required",
-        description: "You need to purchase job access before applying.",
-        variant: "destructive"
-      })
-      setShowAccessDialog(true)
-      return
-    }
-    setShowApplicationDialog(true)
-  }
-
-  const handleApplicationSuccess = useCallback(async () => {
-    // Small delay for backend processing
-    await new Promise(resolve => setTimeout(resolve, 300))
-    await onJobUpdate(job.id)
-    await checkJobAccess()
+    
+    toast({
+      title: "Access Granted! 🎉",
+      description: "You can now see the customer's contact details. Call them directly to discuss the job!",
+    })
   }, [job.id, onJobUpdate])
 
   const handleCompleteJob = async () => {
@@ -322,22 +305,69 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </Card>
         )}
 
-        {/* Access Granted Notice - Show when contractor has access but hasn't applied */}
-        {hasAccess && !myApplication && job.status === 'POSTED' && (
+        {/* Access Granted Notice - Show when contractor has access */}
+        {hasAccess && job.status === 'POSTED' && !isJobWinner && (
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <CheckCircle className="w-6 h-6 text-green-600" />
                 <div>
-                  <h3 className="font-semibold text-green-800">Access Granted!</h3>
+                  <h3 className="font-semibold text-green-800">Access Granted! 🎉</h3>
                   <p className="text-green-700">
-                    You now have access to this job. View customer contact details below and submit your application.
+                    You can now see the customer&apos;s contact details below. <strong>Call them directly</strong> to discuss the job and agree on terms.
                   </p>
                 </div>
               </div>
-              <Button onClick={handleApplyForJob} className="mt-2">
-                Apply for This Job
-              </Button>
+              
+              {/* Customer Contact Card - Prominent display for direct contact */}
+              {job.customer && (
+                <div className="bg-white rounded-lg border border-green-200 p-4 mt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <PhoneCall className="w-5 h-5 text-green-600" />
+                    Contact Customer Now
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-gray-500" />
+                      <span className="text-lg font-medium">{job.customer.user?.name}</span>
+                    </div>
+                    {job.customer.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-green-600" />
+                        <a 
+                          href={`tel:${job.customer.phone}`} 
+                          className="text-lg font-semibold text-green-700 hover:text-green-800 underline"
+                        >
+                          {job.customer.phone}
+                        </a>
+                        <Button 
+                          size="sm" 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => window.location.href = `tel:${job.customer.phone}`}
+                        >
+                          <PhoneCall className="w-4 h-4 mr-1" />
+                          Call Now
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-500" />
+                      <a 
+                        href={`mailto:${job.customer.user?.email}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {job.customer.user?.email}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Next Step:</strong> Call the customer to discuss the job details, negotiate price, and agree on terms. 
+                      Once they agree to hire you, click <strong>&quot;I Won the Job&quot;</strong> below.
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -396,24 +426,38 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 </div>
               </div>
               
-              {(hasAccess || myApplication) && job.customer && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Customer Contact</h4>
-                  <div className="space-y-2">
+              {/* Customer Contact - Visible after purchasing access */}
+              {hasAccess && job.customer && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold flex items-center gap-2 text-blue-900">
+                    <PhoneCall className="w-5 h-5 text-blue-600" />
+                    Customer Contact
+                  </h4>
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-500" />
-                      <span>{job.customer.user?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span>{job.customer.user?.email}</span>
+                      <span className="font-medium">{job.customer.user?.name}</span>
                     </div>
                     {job.customer.phone && (
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span>{job.customer.phone}</span>
+                        <Phone className="w-4 h-4 text-green-600" />
+                        <a 
+                          href={`tel:${job.customer.phone}`}
+                          className="font-semibold text-green-700 hover:text-green-800 underline"
+                        >
+                          {job.customer.phone}
+                        </a>
                       </div>
                     )}
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <a 
+                        href={`mailto:${job.customer.user?.email}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {job.customer.user?.email}
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
@@ -425,37 +469,22 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 {hasAccess ? job.description : (job.description?.substring(0, 200) + '...')}
               </p>
             </div>
+
+            {/* Customer Notes - Only visible if hasAccess */}
+            {hasAccess && job.notes && (
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Customer Notes
+                </h4>
+                <p className="text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border">
+                  {job.notes}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* My Application */}
-        {myApplication && hasAccess && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Application</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-1">Proposed Rate</h4>
-                  <p>£{myApplication.proposedRate}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Timeline</h4>
-                  <p>{myApplication.timeline || 'Not specified'}</p>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Cover Letter</h4>
-                <p className="text-gray-700">{myApplication.coverLetter}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-1">Applied On</h4>
-                <p>{new Date(myApplication.appliedAt).toLocaleDateString()}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Dispute Section for Contractors */}
         {hasAccess && (['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && (
@@ -529,19 +558,13 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           isWonByMe={isJobWinner}
           finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
           contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
-          hasApplied={!!myApplication}
+          hasAccess={hasAccess}
           contractorName={undefined}
           onUpdate={() => onJobUpdate(job.id)}
         />
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4">
-          {hasAccess && !myApplication && job.status === 'POSTED' && (
-            <Button onClick={handleApplyForJob} className="flex-1 min-w-[200px]">
-              Apply for This Job
-            </Button>
-          )}
-
           {canProposeFinalPrice && (
             <Button 
               onClick={() => setShowFinalPriceDialog(true)} 
@@ -617,15 +640,6 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           isOpen={showFinalPriceDialog}
           onClose={() => setShowFinalPriceDialog(false)}
           onSuccess={() => onJobUpdate(job.id)}
-        />
-
-        <JobApplicationDialog
-          isOpen={showApplicationDialog}
-          onClose={() => setShowApplicationDialog(false)}
-          onSuccess={handleApplicationSuccess}
-          jobId={job.id}
-          jobTitle={job.title}
-          jobBudget={job.budget ? Number(job.budget) : undefined}
         />
       </div>
     </div>

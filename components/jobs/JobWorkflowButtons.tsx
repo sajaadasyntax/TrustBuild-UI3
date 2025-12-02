@@ -27,7 +27,7 @@ interface JobWorkflowButtonsProps {
   isWonByMe?: boolean;
   finalAmount?: number;
   contractorProposedAmount?: number;
-  hasApplied?: boolean;
+  hasAccess?: boolean;  // Contractor has purchased access to the job
   contractorName?: string;
   onUpdate: () => void;
 }
@@ -41,7 +41,7 @@ export default function JobWorkflowButtons({
   isWonByMe = false,
   finalAmount,
   contractorProposedAmount,
-  hasApplied = false,
+  hasAccess = false,
   contractorName,
   onUpdate,
 }: JobWorkflowButtonsProps) {
@@ -219,35 +219,45 @@ export default function JobWorkflowButtons({
       {/* Contractor Buttons */}
       {isContractor && (
         <>
-          {/* Step 2: "I won the job" button - Available to any contractor who applied */}
-          {hasApplied && jobStatus === 'POSTED' && !isWonByMe && (
+          {/* "I won the job" button - Available to any contractor who has purchased access */}
+          {hasAccess && jobStatus === 'POSTED' && !isWonByMe && (
             <>
               <Button
                 onClick={() => setShowClaimWonDialog(true)}
-                className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700"
                 variant="default"
               >
                 <Trophy className="h-4 w-4 mr-2" />
-                I won the job
+                I Won the Job
               </Button>
 
               <Dialog open={showClaimWonDialog} onOpenChange={setShowClaimWonDialog}>
                 <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-lg sm:text-xl">Claim "I won the job"</DialogTitle>
+                    <DialogTitle className="text-lg sm:text-xl">Confirm You Won the Job</DialogTitle>
                     <DialogDescription className="text-sm">
-                      This will notify the customer that you claim to have won the job. 
-                      The job will remain open until the customer confirms.
+                      Click this after you&apos;ve spoken to the customer and they&apos;ve agreed to hire you.
+                      The customer will receive a notification to confirm.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="py-4">
                     <p className="text-sm text-muted-foreground">
                       Job: <span className="font-semibold">{jobTitle}</span>
                     </p>
-                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-xs text-green-800">
+                        <strong>✅ Checklist before clicking:</strong>
+                      </p>
+                      <ul className="text-xs text-green-700 mt-2 space-y-1 ml-4">
+                        <li>• You&apos;ve spoken to the customer</li>
+                        <li>• They&apos;ve agreed to hire you</li>
+                        <li>• You&apos;ve discussed the price and terms</li>
+                      </ul>
+                    </div>
+                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-xs text-blue-800">
-                        <strong>Note:</strong> The customer will receive a notification asking them to confirm. 
-                        The job will stay open for other contractors until confirmation.
+                        <strong>Note:</strong> The customer will receive a notification and must confirm 
+                        before the job moves to &quot;In Progress&quot;.
                       </p>
                     </div>
                   </div>
@@ -255,8 +265,8 @@ export default function JobWorkflowButtons({
                     <Button variant="outline" onClick={() => setShowClaimWonDialog(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleClaimWon} disabled={loading}>
-                      {loading ? 'Processing...' : 'Claim Job'}
+                    <Button onClick={handleClaimWon} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                      {loading ? 'Processing...' : 'Confirm I Won'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>

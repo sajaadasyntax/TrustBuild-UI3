@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw, PoundSterling, DollarSign } from "lucide-react"
+import { Search, Filter, FileText, Eye, AlertTriangle, Clock, CheckCircle, Download, RefreshCw, PoundSterling, DollarSign, User, Phone, Mail, Calendar, MapPin, Star, Users, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 
 interface JobStats {
   totalJobs: number;
@@ -650,86 +652,268 @@ export default function JobOversightPage() {
 
       {/* Job Details Modal */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Project Details</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Job Details
+            </DialogTitle>
             <DialogDescription>
               {selectedJob?.title} ({getStatusBadge(selectedJob?.status || '')})
             </DialogDescription>
           </DialogHeader>
           {selectedJob && (
-            <div className="space-y-4">
-              <div>
-                <strong>Customer:</strong> {selectedJob.customer?.user?.name}
-              </div>
-              <div>
-                <strong>Service:</strong> {selectedJob.service?.name}
-              </div>
-              <div>
-                <strong>Location:</strong> {selectedJob.location}
-              </div>
-              <div>
-                <strong>Budget:</strong> {formatCurrency(selectedJob.budget)}
-              </div>
-              <div>
-                <strong>Lead Price:</strong> {selectedJob.currentLeadPrice ? formatCurrency(selectedJob.currentLeadPrice) : 'Not set'}
-              </div>
-              <div>
-                <strong>Job Size:</strong> 
-                <Badge variant={selectedJob.jobSize === 'LARGE' ? 'destructive' : selectedJob.jobSize === 'MEDIUM' ? 'default' : 'secondary'} className="ml-2">
-                  {selectedJob.jobSize || 'Not classified'}
-                </Badge>
-              </div>
-              <div>
-                <strong>Contractor Limit:</strong>
-                <Badge variant="outline" className={`ml-2 ${(selectedJob.contractorsWithAccess || 0) >= (selectedJob.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}`}>
-                  {selectedJob.contractorsWithAccess || 0}/{selectedJob.maxContractorsPerJob || 5} contractors
-                </Badge>
-                {(selectedJob.contractorsWithAccess || 0) >= (selectedJob.maxContractorsPerJob || 5) && (
-                  <span className="ml-2 text-sm text-red-600">Limit reached</span>
-                )}
-              </div>
-              <div>
-                <strong>Description:</strong>
-                <div className="text-muted-foreground whitespace-pre-line mt-1">{selectedJob.description}</div>
-              </div>
-              {selectedJob.isFlagged && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-700 mb-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    <strong>Job Flagged for Review</strong>
-                  </div>
-                  {selectedJob.flagReason && (
-                    <div>
-                      <p className="text-sm font-medium text-red-700">Reason:</p>
-                      <p className="text-sm text-red-600 mt-1">{selectedJob.flagReason}</p>
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="customer">Customer</TabsTrigger>
+                <TabsTrigger value="contractors">Contractors</TabsTrigger>
+                <TabsTrigger value="admin">Admin Actions</TabsTrigger>
+              </TabsList>
+              
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <strong>Service:</strong> {selectedJob.service?.name}
                     </div>
-                  )}
-                  {selectedJob.flaggedAt && (
-                    <p className="text-xs text-red-500 mt-2">
-                      Flagged on {new Date(selectedJob.flaggedAt).toLocaleString()}
-                    </p>
-                  )}
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <strong>Location:</strong> {selectedJob.location}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <strong>Budget:</strong> {formatCurrency(selectedJob.budget)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PoundSterling className="h-4 w-4 text-muted-foreground" />
+                      <strong>Lead Price:</strong> {selectedJob.currentLeadPrice ? formatCurrency(selectedJob.currentLeadPrice) : 'Not set'}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <strong>Job Size:</strong> 
+                      <Badge variant={selectedJob.jobSize === 'LARGE' ? 'destructive' : selectedJob.jobSize === 'MEDIUM' ? 'default' : 'secondary'} className="ml-2">
+                        {selectedJob.jobSize || 'Not classified'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <strong>Contractor Limit:</strong>
+                      <Badge variant="outline" className={`ml-2 ${(selectedJob.contractorsWithAccess || 0) >= (selectedJob.maxContractorsPerJob || 5) ? 'bg-red-100 text-red-800' : ''}`}>
+                        {selectedJob.contractorsWithAccess || 0}/{selectedJob.maxContractorsPerJob || 5} contractors
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <strong>Posted:</strong> {new Date(selectedJob.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div>
-                <strong>Applications:</strong>
-                <ul className="list-disc ml-6">
-                  {selectedJob.applications?.map(app => (
-                    <li key={app.id}>
-                      {app.contractor?.businessName || app.contractor?.user?.name} - {app.status}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                
+                <Separator />
+                
+                <div>
+                  <strong>Description:</strong>
+                  <div className="text-muted-foreground whitespace-pre-line mt-1 p-3 bg-muted rounded-lg">{selectedJob.description}</div>
+                </div>
+                
+                {selectedJob.notes && (
+                  <div>
+                    <strong>Customer Notes:</strong>
+                    <div className="text-muted-foreground whitespace-pre-line mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">{selectedJob.notes}</div>
+                  </div>
+                )}
+                
+                {selectedJob.isFlagged && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-700 mb-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      <strong>Job Flagged for Review</strong>
+                    </div>
+                    {selectedJob.flagReason && (
+                      <div>
+                        <p className="text-sm font-medium text-red-700">Reason:</p>
+                        <p className="text-sm text-red-600 mt-1">{selectedJob.flagReason}</p>
+                      </div>
+                    )}
+                    {selectedJob.flaggedAt && (
+                      <p className="text-xs text-red-500 mt-2">
+                        Flagged on {new Date(selectedJob.flaggedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
+              {/* Customer Tab - Full Customer Details */}
+              <TabsContent value="customer" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <User className="h-5 w-5" />
+                      Customer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <strong>Name:</strong> {selectedJob.customer?.user?.name || 'N/A'}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <strong>Email:</strong> 
+                          <a href={`mailto:${selectedJob.customer?.user?.email}`} className="text-blue-600 hover:underline">
+                            {selectedJob.customer?.user?.email || 'N/A'}
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <strong>Phone:</strong> 
+                          {selectedJob.customer?.phone ? (
+                            <a href={`tel:${selectedJob.customer.phone}`} className="text-blue-600 hover:underline font-semibold">
+                              {selectedJob.customer.phone}
+                            </a>
+                          ) : 'Not provided'}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <strong>Address:</strong> {selectedJob.location || 'N/A'}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <strong>Customer Since:</strong> {selectedJob.customer?.user?.createdAt ? new Date(selectedJob.customer.user.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              {/* Contractors Tab - All contractor activity */}
+              <TabsContent value="contractors" className="space-y-4">
+                {/* Winning Contractor */}
+                {selectedJob.wonByContractor && (
+                  <Card className="border-green-200 bg-green-50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg text-green-800">
+                        <CheckCircle className="h-5 w-5" />
+                        Selected Contractor (Winner)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <strong>Business Name:</strong> {selectedJob.wonByContractor.businessName || 'N/A'}
+                        </div>
+                        <div>
+                          <strong>Contact Name:</strong> {selectedJob.wonByContractor.user?.name || 'N/A'}
+                        </div>
+                        <div>
+                          <strong>Email:</strong> 
+                          <a href={`mailto:${selectedJob.wonByContractor.user?.email}`} className="text-blue-600 hover:underline ml-1">
+                            {selectedJob.wonByContractor.user?.email || 'N/A'}
+                          </a>
+                        </div>
+                        <div>
+                          <strong>Phone:</strong> 
+                          {selectedJob.wonByContractor.phone ? (
+                            <a href={`tel:${selectedJob.wonByContractor.phone}`} className="text-blue-600 hover:underline font-semibold ml-1">
+                              {selectedJob.wonByContractor.phone}
+                            </a>
+                          ) : ' N/A'}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Contractors with Access */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-5 w-5" />
+                      Contractors Who Purchased Access ({selectedJob.purchasedBy?.length || 0})
+                    </CardTitle>
+                    <CardDescription>
+                      These contractors have paid to view customer details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedJob.purchasedBy && selectedJob.purchasedBy.length > 0 ? (
+                      <div className="space-y-3">
+                        {selectedJob.purchasedBy.map((contractor, index) => (
+                          <div key={contractor.contractorId || index} className="p-3 border rounded-lg bg-white">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1">
+                                <div className="font-semibold">{contractor.contractorName}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Star className="h-3 w-3 text-yellow-500" />
+                                  {contractor.averageRating?.toFixed(1) || 'No rating'} • {contractor.reviewCount || 0} reviews
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {contractor.jobsCompleted || 0} jobs completed
+                                </div>
+                              </div>
+                              <div className="text-right text-sm text-muted-foreground">
+                                <div>Purchased: {new Date(contractor.purchasedAt).toLocaleDateString()}</div>
+                                {contractor.paidAmount && (
+                                  <div className="font-medium">{formatCurrency(contractor.paidAmount)}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No contractors have purchased access yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Applications (if any) */}
+                {selectedJob.applications && selectedJob.applications.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <FileText className="h-5 w-5" />
+                        Applications ({selectedJob.applications.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {selectedJob.applications.map(app => (
+                          <div key={app.id} className="p-3 border rounded-lg">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-semibold">{app.contractor?.businessName || app.contractor?.user?.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Proposed: {formatCurrency(app.proposedRate)}
+                                  {app.timeline && ` • Timeline: ${app.timeline}`}
+                                </div>
+                              </div>
+                              <Badge variant={app.status === 'ACCEPTED' ? 'default' : app.status === 'REJECTED' ? 'destructive' : 'secondary'}>
+                                {app.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              {/* Admin Actions Tab */}
+              <TabsContent value="admin" className="space-y-4">
 
-              {/* Admin Override Controls */}
+              {/* Admin Override Controls - Now in the admin tab */}
               {canWriteJobs && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Admin Override Controls
-                  </h3>
                   <div className="space-y-3">
                     {/* Approve Winner */}
                     {selectedJob.status === 'POSTED' && selectedJob.applications && selectedJob.applications.length > 0 && (
@@ -881,9 +1065,9 @@ export default function JobOversightPage() {
                       </div>
                     )}
                   </div>
-                </div>
               )}
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>

@@ -123,6 +123,7 @@ export interface Job {
   serviceId: string;
   title: string;
   description: string;
+  notes?: string;  // Customer notes visible to contractors with access
   budget?: number;
   location: string;
   postcode?: string;
