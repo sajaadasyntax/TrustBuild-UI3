@@ -816,9 +816,11 @@ export default function JobOversightPage() {
                         </div>
                         <div>
                           <strong>Email:</strong> 
-                          <a href={`mailto:${selectedJob.wonByContractor.user?.email}`} className="text-blue-600 hover:underline ml-1">
-                            {selectedJob.wonByContractor.user?.email || 'N/A'}
-                          </a>
+                          {selectedJob.wonByContractor.user?.email ? (
+                            <a href={`mailto:${selectedJob.wonByContractor.user.email}`} className="text-blue-600 hover:underline ml-1">
+                              {selectedJob.wonByContractor.user.email}
+                            </a>
+                          ) : ' N/A'}
                         </div>
                         <div>
                           <strong>Phone:</strong> 
