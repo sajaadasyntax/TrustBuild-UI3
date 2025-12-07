@@ -147,8 +147,10 @@ export interface Job {
   wonByContractor?: {
     user?: {
       name: string;
+      email?: string;
     };
     businessName?: string;
+    phone?: string;
   };
   
   // Final price workflow fields
