@@ -103,8 +103,25 @@ interface Contractor {
   servicesProvided?: string
   description?: string
   subscription?: {
+    id?: string
     status?: string
+    plan?: string
+    isActive?: boolean
+    currentPeriodStart?: string
+    currentPeriodEnd?: string
+    monthlyPrice?: number
   }
+  // Outstanding payments info
+  unpaidCommissions?: Array<{
+    id: string
+    jobId: string
+    jobTitle?: string
+    commissionAmount: number
+    totalAmount: number
+    dueDate: string
+    status: string
+  }>
+  totalOutstandingAmount?: number
 }
 
 const handleApiError = (error: any, defaultMessage: string) => {
@@ -796,6 +813,44 @@ export default function AdminContractors() {
                                 {contractor.creditsBalance || 0} credits
                               </span>
                             </div>
+                          </div>
+                          
+                          {/* Subscription Details */}
+                          <div className="flex items-center space-x-4 text-sm mt-2">
+                            {contractor.subscription?.isActive ? (
+                              <div className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded">
+                                <Badge variant="default" className="bg-green-600 text-xs">
+                                  {contractor.subscription.plan || 'MONTHLY'} Subscription
+                                </Badge>
+                                <span className="text-green-700 text-xs">
+                                  {contractor.subscription.currentPeriodEnd && 
+                                    `Expires: ${new Date(contractor.subscription.currentPeriodEnd).toLocaleDateString()}`
+                                  }
+                                </span>
+                                {contractor.subscription.status === 'cancelled' && (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                                    Cancelled
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
+                                No Active Subscription
+                              </Badge>
+                            )}
+                            
+                            {/* Outstanding Payments Warning */}
+                            {contractor.totalOutstandingAmount && contractor.totalOutstandingAmount > 0 ? (
+                              <div className="flex items-center gap-2 px-2 py-1 bg-red-50 border border-red-200 rounded">
+                                <AlertTriangle className="h-3 w-3 text-red-600" />
+                                <span className="text-red-700 text-xs font-medium">
+                                  Outstanding: £{contractor.totalOutstandingAmount.toFixed(2)}
+                                </span>
+                                <span className="text-red-600 text-xs">
+                                  ({contractor.unpaidCommissions?.length || 0} unpaid commission{(contractor.unpaidCommissions?.length || 0) !== 1 ? 's' : ''})
+                                </span>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>

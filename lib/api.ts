@@ -532,14 +532,12 @@ export const authApi = {
   },
 
   refreshToken: async (): Promise<{ token: string }> => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    const response = await apiRequest<{ data: { token: string } }>('/auth/refresh', {
+    const response = await apiRequest<{ status: string; token: string; data: { user: User } }>('/auth/refresh-token', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
     });
     
-    setStoredToken(response.data.token);
-    return response.data;
+    setStoredToken(response.token);
+    return { token: response.token };
   },
 
   forgotPassword: async (email: string): Promise<void> => {

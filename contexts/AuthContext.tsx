@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
 import { authApi, usersApi, ApiError, User } from '@/lib/api';
 
 interface AuthContextType {
@@ -24,6 +24,11 @@ const getStoredToken = (): string | null => {
   return localStorage.getItem('auth_token');
 };
 
+const setStoredToken = (token: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('auth_token', token);
+};
+
 const clearAllTokens = (): void => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('auth_token');
@@ -33,11 +38,106 @@ const clearAllTokens = (): void => {
   localStorage.removeItem('token');
 };
 
+// Parse JWT token to get expiration time
+const getTokenExpiration = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp ? payload.exp * 1000 : null; // Convert to milliseconds
+  } catch {
+    return null;
+  }
+};
+
+// Check if token will expire soon (within 30 minutes)
+const isTokenExpiringSoon = (token: string): boolean => {
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return true;
+  const thirtyMinutes = 30 * 60 * 1000;
+  return Date.now() > expiration - thirtyMinutes;
+};
+
+// Check if token is expired
+const isTokenExpired = (token: string): boolean => {
+  const expiration = getTokenExpiration(token);
+  if (!expiration) return true;
+  return Date.now() > expiration;
+};
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isRefreshingRef = useRef(false);
 
   const isAuthenticated = !!user;
+
+  // Refresh token function
+  const refreshAuthToken = useCallback(async (): Promise<boolean> => {
+    if (isRefreshingRef.current) return false;
+    
+    const token = getStoredToken();
+    if (!token) return false;
+
+    // Don't refresh if token is already expired
+    if (isTokenExpired(token)) {
+      console.log('🔄 Token expired, cannot refresh');
+      return false;
+    }
+
+    isRefreshingRef.current = true;
+    
+    try {
+      console.log('🔄 Refreshing auth token...');
+      const response = await authApi.refreshToken();
+      if (response.token) {
+        setStoredToken(response.token);
+        console.log('✅ Token refreshed successfully');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      return false;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, []);
+
+  // Setup automatic token refresh
+  const setupTokenRefresh = useCallback(() => {
+    // Clear any existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    const token = getStoredToken();
+    if (!token) return;
+
+    // Check and refresh token every 5 minutes
+    refreshIntervalRef.current = setInterval(async () => {
+      const currentToken = getStoredToken();
+      if (!currentToken) {
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+        }
+        return;
+      }
+
+      // Refresh if token expires within 30 minutes
+      if (isTokenExpiringSoon(currentToken)) {
+        const success = await refreshAuthToken();
+        if (!success && isTokenExpired(currentToken)) {
+          // Token expired and refresh failed - logout
+          console.log('🚪 Token expired and refresh failed, logging out');
+          clearAllTokens();
+          setUser(null);
+          if (refreshIntervalRef.current) {
+            clearInterval(refreshIntervalRef.current);
+          }
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+  }, [refreshAuthToken]);
 
   // Initialize auth state on app load
   useEffect(() => {
@@ -49,20 +149,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
+      // Check if token is expired
+      if (isTokenExpired(token)) {
+        console.log('🔄 Token expired on load, clearing session');
+        clearAllTokens();
+        setLoading(false);
+        return;
+      }
+
       try {
+        // If token is expiring soon, try to refresh it first
+        if (isTokenExpiringSoon(token)) {
+          await refreshAuthToken();
+        }
+
         // Use the usersApi.getMe() to get current user
         const userData = await usersApi.getMe();
         setUser(userData);
+        
+        // Setup automatic token refresh
+        setupTokenRefresh();
       } catch (error) {
         console.error('Auth initialization error:', error);
         
-        // Clear all tokens on ANY auth error (malformed JWT, 401, 500, etc.)
-        clearAllTokens();
-        setUser(null);
-        
-        // Force reload the page to clear any cached state
-        if (typeof window !== 'undefined') {
-          window.location.reload();
+        // Only clear tokens on 401 errors, not on network errors
+        if (error instanceof ApiError && error.status === 401) {
+          clearAllTokens();
+          setUser(null);
+        } else {
+          // For other errors (network, 500, etc.), keep the token and try again later
+          console.warn('Non-auth error during initialization, keeping session');
         }
       } finally {
         setLoading(false);
@@ -70,15 +186,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initializeAuth();
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [refreshAuthToken, setupTokenRefresh]);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await authApi.login({ email, password });
       
       // The authApi.login already handles token storage
-      // console.log("🔐 Login successful, setting user:", response.user);
       setUser(response.user);
+      
+      // Setup automatic token refresh after successful login
+      setupTokenRefresh();
     } catch (error) {
       throw error; // Re-throw to let components handle the error
     }

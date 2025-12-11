@@ -387,7 +387,7 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
           ) : (
             <>
               <CreditCard className="h-4 w-4 mr-2" />
-              Pay £{leadPrice}
+              Pay £{(leadPrice * 1.20).toFixed(2)} (incl. VAT)
             </>
           )}
         </Button>
@@ -649,6 +649,18 @@ export default function JobLeadAccessDialog({
                   <span className="font-bold text-lg">{formatCurrency(leadPrice)}</span>
                 )}
               </div>
+              {!hasSubscription && leadPrice > 0 && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">VAT (20%):</span>
+                    <span className="font-medium">{formatCurrency(leadPrice * 0.20)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-muted-foreground font-medium">Total to Pay:</span>
+                    <span className="font-bold text-lg text-primary">{formatCurrency(leadPrice * 1.20)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           
@@ -796,7 +808,10 @@ export default function JobLeadAccessDialog({
                         </div>
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-blue-600">{formatCurrency(leadPrice)}</div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-blue-600">{formatCurrency(leadPrice * 1.20)}</div>
+                      <div className="text-xs text-muted-foreground">(incl. VAT)</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -826,7 +841,7 @@ export default function JobLeadAccessDialog({
                   }}
                   className="min-w-32"
                 >
-                  Pay {formatCurrency(leadPrice)}
+                  Pay {formatCurrency(leadPrice * 1.20)} (incl. VAT)
                 </Button>
                 <Button 
                   onClick={() => {
@@ -968,11 +983,32 @@ export default function JobLeadAccessDialog({
                         </div>
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-gray-900">
-                      {formatCurrency(leadPrice)}
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(leadPrice * 1.20)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">(incl. VAT)</div>
                     </div>
                   </div>
                 </div>
+
+                {/* VAT Breakdown for Stripe Payment */}
+                {paymentMethod === 'STRIPE' && (
+                  <div className="bg-gray-50 border rounded-lg p-3 text-sm">
+                    <div className="flex justify-between">
+                      <span>Lead Price:</span>
+                      <span>{formatCurrency(leadPrice)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>VAT (20%):</span>
+                      <span>{formatCurrency(leadPrice * 0.20)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold border-t pt-2 mt-2">
+                      <span>Total:</span>
+                      <span>{formatCurrency(leadPrice * 1.20)}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Subscription Promotion */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
@@ -1011,7 +1047,7 @@ export default function JobLeadAccessDialog({
                     className="min-w-32"
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Pay {formatCurrency(leadPrice)}
+                    Pay {formatCurrency(leadPrice * 1.20)} (incl. VAT)
                   </Button>
                 ) : (
                   <Button disabled className="min-w-32">
