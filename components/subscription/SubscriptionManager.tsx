@@ -696,9 +696,9 @@ export default function SubscriptionManager() {
                 <Zap className="h-5 w-5 text-green-700" />
               </div>
               <div>
-                <h4 className="font-medium">No Commission Fees</h4>
+                <h4 className="font-medium">Flexible Payment Options</h4>
                 <p className="text-sm text-muted-foreground">
-                  Keep 100% of your earnings with no commission fees on completed jobs.
+                  Use free weekly credits (5% commission) or pay lead price upfront (0% commission).
                 </p>
               </div>
             </div>

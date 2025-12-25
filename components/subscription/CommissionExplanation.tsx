@@ -27,13 +27,27 @@ export function CommissionExplanation({ isSubscribed = false }: { isSubscribed?:
               <InfoIcon className="h-4 w-4 text-primary" />
               <AlertTitle>Subscription Benefits</AlertTitle>
               <AlertDescription className="mt-2">
-                With your active subscription, you get immediate access to all jobs without upfront costs. 
-                After job completion and customer confirmation, a 5% commission will be applied.
+                With your active subscription, you have two options: Use your free weekly credits (5% commission after job completion), 
+                or pay the lead price upfront to avoid any commission fees.
               </AlertDescription>
             </Alert>
             
             <div className="space-y-4 mt-4">
-              <h3 className="font-medium">How it works:</h3>
+              <h3 className="font-medium">Your Two Options:</h3>
+              
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 mb-4">
+                <h4 className="font-medium text-green-800 mb-1">Option 1: Use Weekly Credits (5% Commission)</h4>
+                <p className="text-sm text-green-700">Use your 3 free weekly credits to access jobs. Pay 5% commission only after job completion.</p>
+              </div>
+              
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 mb-4">
+                <h4 className="font-medium text-blue-800 mb-1">Option 2: Pay Lead Price (0% Commission)</h4>
+                <p className="text-sm text-blue-700">Pay the lead price upfront and keep 100% of your earnings - no commission at all!</p>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <h3 className="font-medium">How Commission Works (When Using Credits):</h3>
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
                 <span className="bg-primary/20 rounded-full w-5 h-5 flex items-center justify-center text-xs text-primary font-bold mt-0.5">1</span>
@@ -47,12 +61,12 @@ export function CommissionExplanation({ isSubscribed = false }: { isSubscribed?:
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
                 <span className="bg-primary/20 rounded-full w-5 h-5 flex items-center justify-center text-xs text-primary font-bold mt-0.5">3</span>
-                <p className="text-sm">A 5% commission on the final amount is calculated (VAT included).</p>
+                <p className="text-sm">A 5% commission on the final amount is calculated (+ VAT).</p>
               </div>
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
                 <span className="bg-primary/20 rounded-full w-5 h-5 flex items-center justify-center text-xs text-primary font-bold mt-0.5">4</span>
-                <p className="text-sm">You'll receive a notification with payment details.</p>
+                <p className="text-sm">You&apos;ll receive a notification with payment details.</p>
               </div>
               
               <div className="grid grid-cols-[20px_1fr] gap-x-2 items-start">
@@ -78,13 +92,13 @@ export function CommissionExplanation({ isSubscribed = false }: { isSubscribed?:
                 <span>£50.00</span>
               </div>
               <div className="flex justify-between">
-                <span>VAT (included):</span>
-                <span>£0.00</span>
+                <span>VAT (20%):</span>
+                <span>£10.00</span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
                 <span>Total Due:</span>
-                <span>£50.00</span>
+                <span>£60.00</span>
               </div>
             </div>
           </>

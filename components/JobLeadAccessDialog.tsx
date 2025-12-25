@@ -83,9 +83,10 @@ interface StripePaymentFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   contractor: Contractor | null;
+  isSubscriber?: boolean; // Whether this is a subscriber paying lead price
 }
 
-function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: StripePaymentFormProps) {
+function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, isSubscriber = false }: StripePaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -280,15 +281,20 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor }: 
 
       if (paymentIntent?.status === 'succeeded') {
         // Call backend to complete job access purchase
+        // Use STRIPE_SUBSCRIBER if this is a subscriber paying lead price, otherwise use STRIPE
         const result = await paymentsApi.purchaseJobAccess({
           jobId: job.id,
-          paymentMethod: 'STRIPE',
+          paymentMethod: isSubscriber ? 'STRIPE_SUBSCRIBER' : 'STRIPE',
           stripePaymentIntentId: paymentIntent.id
         })
         
+        const successMessage = isSubscriber 
+          ? `Job access purchased. No commission will be charged. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`
+          : `Job access purchased. Payment of £${(leadPrice * 1.20).toFixed(2)} processed. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`
+        
         toast({
           title: "Payment Successful!",
-          description: `Job access purchased. Payment of £${leadPrice} processed. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`,
+          description: successMessage,
         })
         
         // Call the success callback (without passing the result)
@@ -756,6 +762,7 @@ export default function JobLeadAccessDialog({
                 onSuccess={handleStripeSuccess}
                 onCancel={handleStripeCancel}
                 contractor={contractor}
+                isSubscriber={hasSubscription && paymentMethod === 'STRIPE_SUBSCRIBER'}
               />
             </Elements>
           ) : hasSubscription ? (
@@ -824,20 +831,9 @@ export default function JobLeadAccessDialog({
                 <Button 
                   variant="outline"
                   onClick={() => {
-                    // Pay lead price method (no commission, no credit deduction)
-                    paymentsApi.purchaseJobAccess({
-                      jobId: job.id,
-                      paymentMethod: 'STRIPE_SUBSCRIBER'
-                    }).then(() => {
-                      toast({
-                        title: "Access Granted!",
-                        description: `Job details unlocked. No commission will be charged.`,
-                      });
-                      if (onAccessGranted) onAccessGranted();
-                      onClose();
-                    }).catch(error => {
-                      handleApiError(error, 'Failed to access job details');
-                    });
+                    // Pay lead price method via Stripe (no commission, no credit deduction)
+                    setPaymentMethod('STRIPE_SUBSCRIBER')
+                    setShowStripeForm(true)
                   }}
                   className="min-w-32"
                 >
