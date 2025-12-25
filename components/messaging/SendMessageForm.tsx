@@ -143,7 +143,7 @@ export default function SendMessageForm({
                   <SelectContent>
                     {availableRecipients.map((admin) => (
                       <SelectItem key={admin.id} value={admin.id}>
-                        {admin.name} ({admin.email})
+                        {admin.name} - {admin.displayRole || 'Admin'}
                       </SelectItem>
                     ))}
                   </SelectContent>

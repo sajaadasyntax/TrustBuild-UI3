@@ -139,6 +139,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, 5 * 60 * 1000); // Check every 5 minutes
   }, [refreshAuthToken]);
 
+  // Handle user activity - refresh token when user is actively using the app
+  const handleUserActivity = useCallback(() => {
+    const token = getStoredToken();
+    if (!token || !user) return;
+    
+    // If token is expiring soon and user is active, refresh it
+    if (isTokenExpiringSoon(token) && !isRefreshingRef.current) {
+      refreshAuthToken();
+    }
+  }, [user, refreshAuthToken]);
+
   // Initialize auth state on app load
   useEffect(() => {
     const initializeAuth = async () => {
@@ -194,6 +205,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
   }, [refreshAuthToken, setupTokenRefresh]);
+
+  // Listen for user activity to keep session alive
+  useEffect(() => {
+    if (!user) return;
+
+    // Throttled activity handler - only process once per minute
+    let lastActivityTime = Date.now();
+    const throttledHandler = () => {
+      const now = Date.now();
+      if (now - lastActivityTime > 60000) { // 1 minute throttle
+        lastActivityTime = now;
+        handleUserActivity();
+      }
+    };
+
+    // Listen for user interaction events
+    window.addEventListener('click', throttledHandler);
+    window.addEventListener('keydown', throttledHandler);
+    window.addEventListener('scroll', throttledHandler);
+    window.addEventListener('mousemove', throttledHandler);
+
+    // Also refresh on visibility change (when tab becomes active)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const token = getStoredToken();
+        if (token && isTokenExpiringSoon(token)) {
+          refreshAuthToken();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('click', throttledHandler);
+      window.removeEventListener('keydown', throttledHandler);
+      window.removeEventListener('scroll', throttledHandler);
+      window.removeEventListener('mousemove', throttledHandler);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, handleUserActivity, refreshAuthToken]);
 
   const login = async (email: string, password: string) => {
     try {

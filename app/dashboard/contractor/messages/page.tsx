@@ -53,8 +53,9 @@ interface Message {
 interface Admin {
   id: string;
   name: string;
-  email: string;
+  email?: string; // Hidden from contractors - only admins can see
   role: string;
+  displayRole?: string; // Human-readable role label
 }
 
 interface Conversation {
@@ -288,7 +289,7 @@ export default function ContractorMessagesPage() {
       const searchLower = searchTerm.toLowerCase();
       return (
         admin.name?.toLowerCase().includes(searchLower) ||
-        admin.email?.toLowerCase().includes(searchLower)
+        admin.displayRole?.toLowerCase().includes(searchLower)
       );
     }
     return true;
@@ -404,7 +405,7 @@ export default function ContractorMessagesPage() {
                       <User className="h-5 w-5" />
                       {selectedAdmin?.name || 'Admin'}
                     </CardTitle>
-                    <CardDescription>{selectedAdmin?.email}</CardDescription>
+                    <CardDescription>{selectedAdmin?.displayRole || 'TrustBuild Support'}</CardDescription>
                   </div>
                   <Button
                     variant="ghost"
@@ -556,9 +557,9 @@ export default function ContractorMessagesPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-semibold">{admin.name}</div>
-                        <div className="text-sm text-muted-foreground">{admin.email}</div>
+                        <div className="text-sm text-muted-foreground">{admin.displayRole || 'TrustBuild Support'}</div>
                       </div>
-                      <Badge variant="outline">Admin</Badge>
+                      <Badge variant="outline">{admin.role === 'SUPER_ADMIN' ? 'Admin' : 'Admin'}</Badge>
                     </div>
                   </button>
                 ))}
