@@ -465,7 +465,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
             <div>
               <h4 className="font-semibold mb-2">Description</h4>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                 {hasAccess ? job.description : (job.description?.substring(0, 200) + '...')}
               </p>
             </div>

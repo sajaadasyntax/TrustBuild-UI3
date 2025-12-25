@@ -378,7 +378,7 @@ export default function JobDetailsPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground whitespace-pre-wrap">
+                  <p className="text-muted-foreground whitespace-pre-wrap break-words">
                     {job.description}
                   </p>
                 )}
