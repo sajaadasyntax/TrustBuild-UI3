@@ -579,8 +579,11 @@ export default function JobLeadAccessDialog({
     }
   };
 
-  const leadPrice = getEffectiveLeadPrice();
+  const baseLeadPrice = getEffectiveLeadPrice();
   const creditsBalance = contractor?.creditsBalance || 0;
+  
+  // Set lead price to £60.00, then add VAT on top
+  const leadPrice = 60.00;
 
 
 

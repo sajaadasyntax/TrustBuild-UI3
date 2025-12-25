@@ -423,6 +423,22 @@ export const adminApi = {
     return response;
   },
 
+  // Verify/approve a review (especially external reviews that need admin approval)
+  verifyReview: async (reviewId: string) => {
+    const response = await adminApiRequest<any>(`/admin/reviews/${reviewId}/verify`, {
+      method: 'PATCH',
+    });
+    return response;
+  },
+
+  // Reject/unverify a review
+  rejectReview: async (reviewId: string) => {
+    const response = await adminApiRequest<any>(`/admin/reviews/${reviewId}/reject`, {
+      method: 'PATCH',
+    });
+    return response;
+  },
+
   // Moderate content
   moderateContent: async (type: string, id: string, data: any) => {
     const response = await adminApiRequest<any>(`/admin/content/${type}/${id}/moderate`, {

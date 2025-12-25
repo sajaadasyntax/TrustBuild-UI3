@@ -185,7 +185,7 @@ export default function FeaturedContractorsPage() {
               {/* Actions */}
               <div className="flex gap-2 pt-2">
                 <Button asChild className="flex-1">
-                  <Link href={`/contractors/${contractor.id}`}>
+                  <Link href={`/contractors/${contractor.id}?from=featured`}>
                     View Profile
                   </Link>
                 </Button>

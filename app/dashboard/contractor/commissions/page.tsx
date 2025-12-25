@@ -363,15 +363,16 @@ export default function ContractorCommissions() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {commission.status === 'PENDING' && (
+                      {(commission.status === 'PENDING' || commission.status === 'OVERDUE') && (
                         <Button 
                           size="sm"
+                          variant={commission.status === 'OVERDUE' ? 'destructive' : 'default'}
                           onClick={() => {
                             setSelectedCommission(commission)
                             setShowPaymentDialog(true)
                           }}
                         >
-                          Pay Now
+                          {commission.status === 'OVERDUE' ? 'Pay Now (Overdue)' : 'Pay Now'}
                         </Button>
                       )}
                       {commission.status === 'PAID' && (

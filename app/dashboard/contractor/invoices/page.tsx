@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Table,
   TableBody,
@@ -23,18 +22,184 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Download, FileText, Search } from "lucide-react"
-import { invoicesApi, handleApiError, Invoice } from '@/lib/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Download, FileText, Search, CreditCard, AlertCircle } from "lucide-react"
+import { apiRequest, handleApiError, getStoredToken } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
+interface ContractorInvoice {
+  id: string
+  invoiceNumber: string
+  type: 'regular' | 'commission' | 'manual'
+  description: string
+  amount: number
+  vatAmount: number
+  totalAmount: number
+  status: string
+  dueDate?: string
+  paidAt?: string
+  issuedAt?: string
+  createdAt: string
+  items?: Array<{ description: string; amount: number; quantity: number }>
+}
+
+// Manual Invoice Payment Form Component
+function ManualInvoicePaymentForm({ 
+  invoice, 
+  onSuccess, 
+  onCancel 
+}: { 
+  invoice: ContractorInvoice
+  onSuccess: () => void
+  onCancel: () => void 
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!stripe || !elements) {
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      // Create payment intent for manual invoice
+      const response = await fetch('/api/payments/create-manual-invoice-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getStoredToken()}`
+        },
+        body: JSON.stringify({ manualInvoiceId: invoice.id })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to create payment intent')
+      }
+
+      // Confirm payment with Stripe
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        result.data.clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+          }
+        }
+      )
+
+      if (stripeError) {
+        setError(stripeError.message || 'Payment failed')
+        return
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        // Confirm payment with backend
+        const confirmResponse = await fetch('/api/payments/pay-manual-invoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getStoredToken()}`
+          },
+          body: JSON.stringify({
+            manualInvoiceId: invoice.id,
+            stripePaymentIntentId: paymentIntent.id
+          })
+        })
+
+        if (!confirmResponse.ok) {
+          const { message } = await confirmResponse.json()
+          throw new Error(message || 'Failed to confirm payment')
+        }
+
+        onSuccess()
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err)
+      setError(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700 mb-2 block">
+            Card Details
+          </label>
+          <div className="p-3 border border-gray-300 rounded-md">
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': { color: '#aab7c4' },
+                  },
+                  invalid: { color: '#9e2146' },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="bg-gray-50 p-4 rounded-md">
+          <div className="flex justify-between text-sm font-bold">
+            <span>Total Due:</span>
+            <span>£{invoice.totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isProcessing} className="flex-1">
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!stripe || isProcessing} className="flex-1">
+          {isProcessing ? 'Processing...' : `Pay £${invoice.totalAmount.toFixed(2)}`}
+        </Button>
+      </div>
+    </form>
+  )
+}
 
 export default function ContractorInvoicesPage() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [invoices, setInvoices] = useState<ContractorInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedInvoice, setSelectedInvoice] = useState<ContractorInvoice | null>(null)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -49,9 +214,17 @@ export default function ContractorInvoicesPage() {
   const fetchInvoices = async (page = 1, limit = 10) => {
     try {
       setLoading(true)
-      const response = await invoicesApi.getMyInvoices({ page, limit })
-      setInvoices(response.data)
-      setPagination(response.data.pagination)
+      // Fetch from the contractor dashboard invoices endpoint which includes manual invoices
+      const response = await apiRequest<{
+        status: string
+        data: {
+          invoices: ContractorInvoice[]
+          pagination: { page: number; limit: number; total: number; pages: number }
+        }
+      }>(`/contractor/invoices?page=${page}&limit=${limit}`)
+      
+      setInvoices(response.data.invoices || [])
+      setPagination(response.data.pagination || { page: 1, limit: 10, total: 0, pages: 1 })
     } catch (error) {
       toast({
         title: "Error",
@@ -64,9 +237,24 @@ export default function ContractorInvoicesPage() {
     }
   }
 
-  const handleDownload = async (invoiceId: string) => {
+  const handleDownload = async (invoiceId: string, invoiceType: string) => {
     try {
-      const blob = await invoicesApi.downloadInvoice(invoiceId)
+      // Different download endpoint for manual invoices
+      const endpoint = invoiceType === 'manual' 
+        ? `/api/invoices/manual/${invoiceId}/download`
+        : `/api/invoices/${invoiceId}/download`
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${getStoredToken()}`,
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to download invoice')
+      }
+      
+      const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.style.display = 'none'
@@ -84,9 +272,19 @@ export default function ContractorInvoicesPage() {
     }
   }
 
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Payment Successful",
+      description: "Your invoice has been paid successfully.",
+    })
+    setShowPaymentDialog(false)
+    setSelectedInvoice(null)
+    fetchInvoices(pagination.page, pagination.limit)
+  }
+
   const filteredInvoices = invoices.filter(invoice => 
-    invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    invoice.description.toLowerCase().includes(searchTerm.toLowerCase())
+    invoice.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    invoice.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const formatDate = (date: Date | string) => {
@@ -104,14 +302,35 @@ export default function ContractorInvoicesPage() {
     }).format(amount)
   }
 
-  const getStatusBadge = (invoice: Invoice) => {
-    if (invoice.paidAt) {
+  const getStatusBadge = (invoice: ContractorInvoice) => {
+    if (invoice.paidAt || invoice.status === 'PAID') {
       return <Badge className="bg-green-500">Paid</Badge>
-    } else if (invoice.dueAt && new Date(invoice.dueAt) < new Date()) {
+    } else if (invoice.status === 'OVERDUE' || (invoice.dueDate && new Date(invoice.dueDate) < new Date())) {
       return <Badge variant="destructive">Overdue</Badge>
+    } else if (invoice.status === 'CANCELED' || invoice.status === 'CANCELLED') {
+      return <Badge variant="secondary">Cancelled</Badge>
     } else {
       return <Badge variant="outline">Pending</Badge>
     }
+  }
+
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'manual':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Admin Invoice</Badge>
+      case 'commission':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Commission</Badge>
+      default:
+        return <Badge variant="outline">Regular</Badge>
+    }
+  }
+
+  const canPayInvoice = (invoice: ContractorInvoice) => {
+    return invoice.type === 'manual' && 
+           !invoice.paidAt && 
+           invoice.status !== 'PAID' && 
+           invoice.status !== 'CANCELED' && 
+           invoice.status !== 'CANCELLED'
   }
 
   return (
@@ -120,7 +339,7 @@ export default function ContractorInvoicesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Invoices</h1>
           <p className="text-muted-foreground">
-            View and manage all your invoices
+            View and manage all your invoices including admin-issued invoices
           </p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
@@ -141,7 +360,7 @@ export default function ContractorInvoicesPage() {
         <CardHeader>
           <CardTitle>All Invoices</CardTitle>
           <CardDescription>
-            Your complete invoice history
+            Your complete invoice history including commission and admin invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,6 +378,7 @@ export default function ContractorInvoicesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
@@ -169,23 +389,28 @@ export default function ContractorInvoicesPage() {
                 <TableBody>
                   {filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell>
-                        <Link href={`/dashboard/contractor/invoices/${invoice.id}`} className="font-medium hover:underline">
-                          {invoice.invoiceNumber}
-                        </Link>
+                      <TableCell className="font-medium">
+                        {invoice.invoiceNumber}
                       </TableCell>
-                      <TableCell>{formatDate(invoice.issuedAt)}</TableCell>
+                      <TableCell>{getTypeBadge(invoice.type)}</TableCell>
+                      <TableCell>{formatDate(invoice.issuedAt || invoice.createdAt)}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{invoice.description}</TableCell>
                       <TableCell className="text-right">{formatCurrency(Number(invoice.totalAmount))}</TableCell>
                       <TableCell>{getStatusBadge(invoice)}</TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Link href={`/dashboard/contractor/invoices/${invoice.id}`} passHref>
-                          <Button size="sm" variant="outline">
-                            <FileText className="h-4 w-4 mr-1" />
-                            View
+                        {canPayInvoice(invoice) && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedInvoice(invoice)
+                              setShowPaymentDialog(true)
+                            }}
+                          >
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            Pay
                           </Button>
-                        </Link>
-                        <Button size="sm" variant="outline" onClick={() => handleDownload(invoice.id)}>
+                        )}
+                        <Button size="sm" variant="outline" onClick={() => handleDownload(invoice.id, invoice.type)}>
                           <Download className="h-4 w-4 mr-1" />
                           PDF
                         </Button>
@@ -236,6 +461,50 @@ export default function ContractorInvoicesPage() {
           </CardFooter>
         )}
       </Card>
+
+      {/* Payment Dialog for Manual Invoices */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pay Invoice</DialogTitle>
+            <DialogDescription>
+              Complete payment for invoice {selectedInvoice?.invoiceNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInvoice && (
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-md space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Invoice:</span>
+                  <span className="font-medium">{selectedInvoice.invoiceNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Description:</span>
+                  <span className="font-medium">{selectedInvoice.description}</span>
+                </div>
+                {selectedInvoice.dueDate && (
+                  <div className="flex justify-between text-sm">
+                    <span>Due Date:</span>
+                    <span className="font-medium">{formatDate(selectedInvoice.dueDate)}</span>
+                  </div>
+                )}
+              </div>
+
+              <Elements stripe={stripePromise}>
+                <ManualInvoicePaymentForm
+                  invoice={selectedInvoice}
+                  onSuccess={handlePaymentSuccess}
+                  onCancel={() => {
+                    setShowPaymentDialog(false)
+                    setSelectedInvoice(null)
+                  }}
+                />
+              </Elements>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -152,7 +152,8 @@ export default function ReviewManagementPage() {
     setModeratingReviews(prev => new Set(prev).add(reviewId))
     
     try {
-      await adminApi.moderateContent('review', reviewId, 'approve')
+      // Use the dedicated verifyReview endpoint for proper review approval
+      await adminApi.verifyReview(reviewId)
       setReviews(prev => 
         prev.map(review => 
           review.id === reviewId 
@@ -160,6 +161,10 @@ export default function ReviewManagementPage() {
             : review
         )
       )
+      toast({
+        title: "Review Approved",
+        description: "The review has been verified and will now be visible.",
+      })
     } catch (error) {
       handleApiError(error, 'Failed to approve review')
     } finally {
@@ -177,7 +182,8 @@ export default function ReviewManagementPage() {
     setModeratingReviews(prev => new Set(prev).add(reviewId))
     
     try {
-      await adminApi.moderateContent('review', reviewId, 'reject')
+      // Use the dedicated rejectReview endpoint
+      await adminApi.rejectReview(reviewId)
       setReviews(prev => 
         prev.map(review => 
           review.id === reviewId 
@@ -185,6 +191,10 @@ export default function ReviewManagementPage() {
             : review
         )
       )
+      toast({
+        title: "Review Rejected",
+        description: "The review has been rejected and will not be displayed.",
+      })
     } catch (error) {
       handleApiError(error, 'Failed to reject review')
     } finally {

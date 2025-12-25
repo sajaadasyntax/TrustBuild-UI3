@@ -51,6 +51,15 @@ export default function JobsPage() {
     fetchCategories()
   }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
 
+  // Refresh jobs when page regains focus (e.g., after navigating back from job details)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchJobs()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
+
   const fetchJobs = async () => {
     try {
       setLoading(true)

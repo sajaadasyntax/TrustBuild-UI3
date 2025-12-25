@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle } from 'lucide-react'
@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator'
 
 export default function ContractorProfilePage() {
   const { id } = useParams() as { id: string }
+  const searchParams = useSearchParams()
+  const fromSource = searchParams.get('from')
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +23,10 @@ export default function ContractorProfilePage() {
   const [reviewsTotal, setReviewsTotal] = useState(0)
   const [averageRating, setAverageRating] = useState(0)
   const [logoError, setLogoError] = useState(false)
+  
+  // Determine the back link based on where the user came from
+  const backLink = fromSource === 'featured' ? '/' : '/contractors'
+  const backText = fromSource === 'featured' ? 'Back to Featured Contractors' : 'Back to Contractors'
 
   useEffect(() => {
     if (id) {
@@ -93,10 +99,10 @@ export default function ContractorProfilePage() {
             <p className="text-muted-foreground mb-6">
               The contractor profile you are looking for doesn't exist or has been removed.
             </p>
-            <Link href="/contractors">
+            <Link href={backLink}>
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Contractors
+                {backText}
               </Button>
             </Link>
           </CardContent>
@@ -112,10 +118,10 @@ export default function ContractorProfilePage() {
   return (
     <div className="container py-32">
       <div className="mb-8">
-        <Link href="/contractors">
+        <Link href={backLink}>
           <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Contractors
+            {backText}
           </Button>
         </Link>
       </div>
