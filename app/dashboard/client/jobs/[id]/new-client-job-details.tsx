@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle } from "lucide-react"
+import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, Trophy } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -40,18 +40,31 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       )
       if (winner) {
         setSelectedContractor(winner.contractorId)
+      } else if (contractorsWhoClaimedWon.length > 0 && selectedContractor) {
+        // If we have a selected contractor from claims, keep it
+        // Otherwise, if only one contractor claimed, pre-select them
+        if (!selectedContractor && contractorsWhoClaimedWon.length === 1) {
+          setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
+        }
       }
     } catch {
       // Failed to load applications - the page will show empty state
       setApplications([])
     }
-  }, [job.id, job.wonByContractorId])
+  }, [job.id, job.wonByContractorId, contractorsWhoClaimedWon, selectedContractor])
 
   useEffect(() => {
     if (job.id) {
       fetchApplications()
     }
   }, [job.id, fetchApplications])
+
+  // Update selectedContractor when contractorsWhoClaimedWon changes
+  useEffect(() => {
+    if (contractorsWhoClaimedWon.length === 1 && !selectedContractor) {
+      setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
+    }
+  }, [contractorsWhoClaimedWon, selectedContractor])
 
   // Removed handleSelectContractor, confirmContractorSelection, handleChangeContractor, and handleAcceptApplication
   // Customers can only view applications and contractor profiles, not select/accept contractors
@@ -128,6 +141,10 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const canConfirmCompletion = job.status === 'COMPLETED' && selectedContractor && !job.customerConfirmed
   const needsFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && job.contractorProposedAmount
   const contractorsWithAccess = job.jobAccess?.length || 0
+  
+  // Get contractors who claimed "I won the job"
+  const contractorsWhoClaimedWon = job.purchasedBy?.filter(contractor => contractor.claimedWon) || []
+  const hasMultipleClaims = contractorsWhoClaimedWon.length > 1
 
   return (
     <div className="container py-32">
@@ -261,17 +278,118 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           </CardContent>
         </Card>
 
-        {/* Contractors with Access */}
-        {job.purchasedBy && job.purchasedBy.length > 0 && (
-          <Card>
+        {/* Contractors Who Claimed "I Won the Job" - Show prominently */}
+        {contractorsWhoClaimedWon.length > 0 && job.status === 'POSTED' && (
+          <Card className="border-green-200 bg-green-50">
             <CardHeader>
-              <CardTitle>Contractors with Access ({job.purchasedBy.length})</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                Contractors Who Claimed They Won ({contractorsWhoClaimedWon.length})
+              </CardTitle>
               <CardDescription>
-                These contractors have purchased access to view your job details
+                {hasMultipleClaims 
+                  ? 'Multiple contractors claim they won. Please select the correct one.'
+                  : 'A contractor claims they won your job. Please confirm if this is correct.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {job.purchasedBy.map((contractor, index) => (
+              {contractorsWhoClaimedWon.map((contractor, index) => (
+                <div
+                  key={contractor.contractorId || index}
+                  className={`p-4 border rounded-lg ${
+                    selectedContractor === contractor.contractorId
+                      ? 'border-green-500 bg-green-100'
+                      : 'border-green-200 bg-white'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-lg">
+                          {contractor.contractorName}
+                        </h4>
+                        {contractor.claimedWon && (
+                          <Badge className="bg-green-600">
+                            <Trophy className="w-3 h-3 mr-1" />
+                            Claims They Won
+                          </Badge>
+                        )}
+                        {selectedContractor === contractor.contractorId && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            Selected
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span>{contractor.averageRating?.toFixed(1) || 'No rating'}</span>
+                        <span className="text-gray-500">
+                          ({contractor.reviewCount || 0} reviews)
+                        </span>
+                        <span className="text-gray-500">
+                          • {contractor.jobsCompleted || 0} jobs completed
+                        </span>
+                      </div>
+                      {contractor.claimedWonAt && (
+                        <div className="text-sm text-gray-500 mt-1">
+                          Claimed on: {new Date(contractor.claimedWonAt).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">
+                        Purchased: {new Date(contractor.purchasedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      {(contractor.jobsCompleted || 0) > 0 ? 'Experienced contractor' : 'New to platform'}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {/* View Profile Button */}
+                      {contractor.contractorId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <Link href={`/contractors/${contractor.contractorId}`} target="_blank">
+                            View Profile & Reviews
+                          </Link>
+                        </Button>
+                      )}
+                      {/* Select Button - Only show if not already selected and job is POSTED */}
+                      {job.status === 'POSTED' && selectedContractor !== contractor.contractorId && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => setSelectedContractor(contractor.contractorId || null)}
+                        >
+                          Select This Contractor
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Contractors with Access (but haven't claimed) */}
+        {job.purchasedBy && job.purchasedBy.filter(c => !c.claimedWon).length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Other Contractors with Access ({job.purchasedBy.filter(c => !c.claimedWon).length})</CardTitle>
+              <CardDescription>
+                These contractors have purchased access but haven&apos;t claimed they won yet
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {job.purchasedBy.filter(c => !c.claimedWon).map((contractor, index) => (
                 <div
                   key={contractor.contractorId || index}
                   className="p-4 border rounded-lg border-gray-200"
@@ -296,7 +414,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                       <div className="text-sm text-gray-500">
                         Purchased: {new Date(contractor.purchasedAt).toLocaleDateString()}
                       </div>
-                      {/* Customer should not see contractor payment amount */}
                     </div>
                   </div>
 
@@ -495,7 +612,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           isWonByMe={false}
           finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
           contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
-          contractorName={job.wonByContractor?.businessName || job.wonByContractor?.user?.name || undefined}
+          contractorName={contractorsWhoClaimedWon.length === 1 ? contractorsWhoClaimedWon[0].contractorName : undefined}
+          contractorsWhoClaimedWon={contractorsWhoClaimedWon}
+          selectedContractorId={selectedContractor}
           onUpdate={onJobUpdate}
         />
 

@@ -191,6 +191,8 @@ export interface Job {
     purchasedAt: string;
     method: string;
     paidAmount?: number;
+    claimedWon?: boolean;
+    claimedWonAt?: string | null;
     averageRating?: number;
     reviewCount?: number;
     jobsCompleted?: number;
@@ -1073,9 +1075,10 @@ export const jobsApi = {
   },
 
   // Customer confirms contractor winner
-  confirmWinner: async (jobId: string): Promise<Job> => {
+  confirmWinner: async (jobId: string, contractorId?: string): Promise<Job> => {
     const response = await apiRequest<{ status: string; message: string; data: { job: Job } }>(`/jobs/${jobId}/confirm-winner`, {
       method: 'PATCH',
+      body: JSON.stringify({ contractorId }),
     });
     return response.data.job;
   },

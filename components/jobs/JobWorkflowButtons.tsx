@@ -30,6 +30,8 @@ interface JobWorkflowButtonsProps {
   hasAccess?: boolean;  // Contractor has purchased access to the job
   hasClaimedWon?: boolean;  // Contractor has already claimed "I won the job"
   contractorName?: string;
+  contractorsWhoClaimedWon?: Array<{ contractorId?: string; contractorName: string; claimedWonAt?: string | null }>;  // Contractors who claimed "I won the job"
+  selectedContractorId?: string | null;  // Customer's selected contractor ID
   onUpdate: () => void;
 }
 
@@ -45,6 +47,8 @@ export default function JobWorkflowButtons({
   hasAccess = false,
   hasClaimedWon = false,
   contractorName,
+  contractorsWhoClaimedWon = [],
+  selectedContractorId = null,
   onUpdate,
 }: JobWorkflowButtonsProps) {
   const [showClaimWonDialog, setShowClaimWonDialog] = useState(false);
@@ -56,6 +60,7 @@ export default function JobWorkflowButtons({
   const [suggestedPrice, setSuggestedPrice] = useState('');
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedContractorForConfirmation, setSelectedContractorForConfirmation] = useState<string | null>(selectedContractorId || null);
 
   // Contractor: Claim "I won the job" - sends notification but doesn't close job
   const handleClaimWon = async () => {
@@ -122,12 +127,15 @@ export default function JobWorkflowButtons({
   const handleConfirmWinner = async () => {
     try {
       setLoading(true);
-      await jobsApi.confirmWinner(jobId);
+      // Use selectedContractorForConfirmation if multiple contractors claimed, otherwise use selectedContractorId
+      const contractorIdToConfirm = selectedContractorForConfirmation || selectedContractorId || undefined;
+      await jobsApi.confirmWinner(jobId, contractorIdToConfirm || undefined);
       toast({
         title: 'Success',
         description: 'Contractor confirmed. Job is now in progress and applications are closed.',
       });
       setShowConfirmWinnerDialog(false);
+      setSelectedContractorForConfirmation(null);
       onUpdate();
     } catch (error: any) {
       console.error('Error confirming winner:', error);
@@ -350,20 +358,30 @@ export default function JobWorkflowButtons({
 
       {/* Customer Buttons */}
       {/* Step 3: Customer confirms contractor winner */}
-      {isCustomer && jobStatus === 'POSTED' && contractorName && (
+      {isCustomer && jobStatus === 'POSTED' && contractorsWhoClaimedWon.length > 0 && (
         <>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="flex-1">
                 <h4 className="font-semibold text-blue-900 mb-1">
-                  Contractor Claims They Won
+                  {contractorsWhoClaimedWon.length === 1 
+                    ? 'Contractor Claims They Won'
+                    : `${contractorsWhoClaimedWon.length} Contractors Claim They Won`}
                 </h4>
                 <p className="text-sm text-blue-800 mb-3">
-                  {contractorName} claims that they won your job. Please confirm if this is correct.
+                  {contractorsWhoClaimedWon.length === 1
+                    ? `${contractorsWhoClaimedWon[0].contractorName} claims that they won your job. Please confirm if this is correct.`
+                    : 'Multiple contractors claim they won. Please select the correct one and confirm.'}
                 </p>
                 <Button
-                  onClick={() => setShowConfirmWinnerDialog(true)}
+                  onClick={() => {
+                    // If only one contractor claimed, pre-select them
+                    if (contractorsWhoClaimedWon.length === 1) {
+                      setSelectedContractorForConfirmation(contractorsWhoClaimedWon[0].contractorId || null);
+                    }
+                    setShowConfirmWinnerDialog(true);
+                  }}
                   variant="default"
                   size="sm"
                 >
@@ -374,20 +392,64 @@ export default function JobWorkflowButtons({
           </div>
 
           <Dialog open={showConfirmWinnerDialog} onOpenChange={setShowConfirmWinnerDialog}>
-            <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw] sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-lg sm:text-xl">Confirm Winning Contractor</DialogTitle>
                 <DialogDescription className="text-sm">
-                  Confirm if {contractorName} won your job. Once confirmed, the job will be in progress and applications will close.
+                  {contractorsWhoClaimedWon.length === 1
+                    ? `Confirm if ${contractorsWhoClaimedWon[0].contractorName} won your job. Once confirmed, the job will be in progress and applications will close.`
+                    : 'Select which contractor won your job. Once confirmed, the job will be in progress and applications will close.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Job Title:</p>
+                  <p className="text-sm text-muted-foreground mb-2">Job Title:</p>
                   <p className="font-semibold">{jobTitle}</p>
-                  <p className="text-sm text-muted-foreground mt-2">Contractor:</p>
-                  <p className="font-semibold">{contractorName}</p>
                 </div>
+                
+                {contractorsWhoClaimedWon.length > 1 && (
+                  <div className="space-y-2">
+                    <Label>Select the contractor who won:</Label>
+                    {contractorsWhoClaimedWon.map((contractor) => (
+                      <div
+                        key={contractor.contractorId}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                          selectedContractorForConfirmation === contractor.contractorId
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedContractorForConfirmation(contractor.contractorId || null)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{contractor.contractorName}</p>
+                            {contractor.claimedWonAt && (
+                              <p className="text-xs text-gray-500">
+                                Claimed on: {new Date(contractor.claimedWonAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          {selectedContractorForConfirmation === contractor.contractorId && (
+                            <CheckCircle className="h-5 w-5 text-blue-600" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {contractorsWhoClaimedWon.length === 1 && (
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Contractor:</p>
+                    <p className="font-semibold">{contractorsWhoClaimedWon[0].contractorName}</p>
+                    {contractorsWhoClaimedWon[0].claimedWonAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Claimed on: {new Date(contractorsWhoClaimedWon[0].claimedWonAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
                   By confirming, the job will move to "In Progress" and no other contractors will be able to apply.
                 </p>
@@ -395,7 +457,10 @@ export default function JobWorkflowButtons({
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => setShowConfirmWinnerDialog(false)}
+                  onClick={() => {
+                    setShowConfirmWinnerDialog(false);
+                    setSelectedContractorForConfirmation(null);
+                  }}
                   disabled={loading}
                 >
                   Cancel
@@ -403,7 +468,7 @@ export default function JobWorkflowButtons({
                 <Button
                   variant="default"
                   onClick={handleConfirmWinner}
-                  disabled={loading}
+                  disabled={loading || (contractorsWhoClaimedWon.length > 1 && !selectedContractorForConfirmation)}
                 >
                   {loading ? 'Processing...' : 'Confirm Winner'}
                 </Button>
