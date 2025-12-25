@@ -54,6 +54,7 @@ interface ContractorInvoice {
   issuedAt?: string
   createdAt: string
   items?: Array<{ description: string; amount: number; quantity: number }>
+  isPayable?: boolean // Flag from backend indicating if invoice can be paid
 }
 
 // Manual Invoice Payment Form Component
@@ -316,6 +317,11 @@ export default function ContractorInvoicesPage() {
   }
 
   const canPayInvoice = (invoice: ContractorInvoice) => {
+    // Use isPayable flag from backend if available, otherwise check manually
+    if (invoice.isPayable !== undefined) {
+      return invoice.isPayable
+    }
+    // Fallback to manual check
     return invoice.type === 'manual' && 
            !invoice.paidAt && 
            invoice.status !== 'PAID' && 
