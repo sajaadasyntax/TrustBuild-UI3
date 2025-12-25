@@ -159,7 +159,7 @@ export function AdminNavigationNew() {
                 <Button
                   variant="ghost"
                   className={`px-3 py-2 h-auto font-medium ${
-                    pathname.startsWith("/admin/payments") || pathname.startsWith("/admin/invoices") || pathname.startsWith("/admin/pricing")
+                    pathname.startsWith("/admin/payments") || pathname.startsWith("/admin/invoices") || pathname.startsWith("/admin/pricing") || pathname.startsWith("/admin/unpaid-commissions")
                       ? "bg-accent text-accent-foreground"
                       : "text-foreground/60"
                   }`}
@@ -175,6 +175,12 @@ export function AdminNavigationNew() {
                   <Link href="/admin/payments" className="cursor-pointer">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Payments
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/unpaid-commissions" className="cursor-pointer">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Commissions
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -410,7 +416,6 @@ export function AdminNavigationNew() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{admin.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{admin.email}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="text-xs">
                       {admin.role.replace('_', ' ')}
