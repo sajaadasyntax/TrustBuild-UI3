@@ -29,6 +29,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [showFinalPriceConfirmation, setShowFinalPriceConfirmation] = useState(false)
 
+  // Get contractors who claimed "I won the job"
+  const contractorsWhoClaimedWon = job.purchasedBy?.filter(contractor => contractor.claimedWon) || []
+
   const fetchApplications = useCallback(async () => {
     try {
       const applicationsData = await jobsApi.getApplications(job.id)
@@ -40,10 +43,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       )
       if (winner) {
         setSelectedContractor(winner.contractorId)
-      } else if (contractorsWhoClaimedWon.length > 0 && selectedContractor) {
-        // If we have a selected contractor from claims, keep it
-        // Otherwise, if only one contractor claimed, pre-select them
-        if (!selectedContractor && contractorsWhoClaimedWon.length === 1) {
+      } else if (contractorsWhoClaimedWon.length > 0) {
+        // If only one contractor claimed, pre-select them
+        if (contractorsWhoClaimedWon.length === 1 && !selectedContractor) {
           setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
         }
       }
@@ -141,9 +143,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const canConfirmCompletion = job.status === 'COMPLETED' && selectedContractor && !job.customerConfirmed
   const needsFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && job.contractorProposedAmount
   const contractorsWithAccess = job.jobAccess?.length || 0
-  
-  // Get contractors who claimed "I won the job"
-  const contractorsWhoClaimedWon = job.purchasedBy?.filter(contractor => contractor.claimedWon) || []
   const hasMultipleClaims = contractorsWhoClaimedWon.length > 1
 
   return (
