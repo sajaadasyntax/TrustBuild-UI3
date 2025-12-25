@@ -77,6 +77,13 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     [job, contractor?.id, myApplication]
   )
 
+  // Check if contractor has already claimed "I won the job"
+  const hasClaimedWon = useMemo(() => {
+    if (!contractor?.id || !job.jobAccess) return false
+    const myAccess = job.jobAccess.find(access => access.contractorId === contractor.id)
+    return myAccess?.claimedWon === true
+  }, [job.jobAccess, contractor?.id])
+
   // Computed status values
   const applicationStatus = myApplication?.status || 'none'
   const canCompleteJob = job.status === 'IN_PROGRESS' && isJobWinner
@@ -135,8 +142,13 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     ])
     
     // Small delay for backend processing
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Refresh job data to get updated jobAccess with customer info
     await onJobUpdate(job.id)
+    
+    // Double-check access after job update
+    await checkJobAccess()
     
     toast({
       title: "Access Granted! 🎉",
@@ -360,12 +372,22 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                       </a>
                     </div>
                   </div>
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Next Step:</strong> Call the customer to discuss the job details, negotiate price, and agree on terms. 
-                      Once they agree to hire you, click <strong>&quot;I Won the Job&quot;</strong> below.
-                    </p>
-                  </div>
+                  {!hasClaimedWon && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Next Step:</strong> Call the customer to discuss the job details, negotiate price, and agree on terms. 
+                        Once they agree to hire you, click <strong>&quot;I Won the Job&quot;</strong> below.
+                      </p>
+                    </div>
+                  )}
+                  {hasClaimedWon && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        <strong>✅ You&apos;ve already claimed this job!</strong> The customer has been notified and will confirm if you won. 
+                        Please wait for their confirmation.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -398,6 +420,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           hasAccess={hasAccess}
           myApplication={myApplication}
           isJobWinner={isJobWinner}
+          hasClaimedWon={hasClaimedWon}
           onClaimWon={() => {
             // This will be handled by JobWorkflowButtons, but we show the guidance here
           }}
@@ -559,6 +582,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           finalAmount={job.finalAmount ? Number(job.finalAmount) : undefined}
           contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
           hasAccess={hasAccess}
+          hasClaimedWon={hasClaimedWon}
           contractorName={undefined}
           onUpdate={() => onJobUpdate(job.id)}
         />

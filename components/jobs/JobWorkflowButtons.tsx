@@ -28,6 +28,7 @@ interface JobWorkflowButtonsProps {
   finalAmount?: number;
   contractorProposedAmount?: number;
   hasAccess?: boolean;  // Contractor has purchased access to the job
+  hasClaimedWon?: boolean;  // Contractor has already claimed "I won the job"
   contractorName?: string;
   onUpdate: () => void;
 }
@@ -42,6 +43,7 @@ export default function JobWorkflowButtons({
   finalAmount,
   contractorProposedAmount,
   hasAccess = false,
+  hasClaimedWon = false,
   contractorName,
   onUpdate,
 }: JobWorkflowButtonsProps) {
@@ -65,6 +67,7 @@ export default function JobWorkflowButtons({
         description: 'Customer has been notified. They will confirm if you won the job.',
       });
       setShowClaimWonDialog(false);
+      // Refresh job data to update hasClaimedWon status
       onUpdate();
     } catch (error: any) {
       console.error('Error claiming job as won:', error);
@@ -222,14 +225,29 @@ export default function JobWorkflowButtons({
           {/* "I won the job" button - Available to any contractor who has purchased access */}
           {hasAccess && jobStatus === 'POSTED' && !isWonByMe && (
             <>
-              <Button
-                onClick={() => setShowClaimWonDialog(true)}
-                className="w-full bg-green-600 hover:bg-green-700"
-                variant="default"
-              >
-                <Trophy className="h-4 w-4 mr-2" />
-                I Won the Job
-              </Button>
+              {/* Check if contractor has already claimed won - need to pass this prop */}
+              {!hasClaimedWon && (
+                <Button
+                  onClick={() => setShowClaimWonDialog(true)}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  variant="default"
+                >
+                  <Trophy className="h-4 w-4 mr-2" />
+                  I Won the Job
+                </Button>
+              )}
+              
+              {hasClaimedWon && (
+                <div className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-yellow-800">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium">You&apos;ve already claimed this job</span>
+                  </div>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    The customer has been notified. Please wait for their confirmation.
+                  </p>
+                </div>
+              )}
 
               <Dialog open={showClaimWonDialog} onOpenChange={setShowClaimWonDialog}>
                 <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">

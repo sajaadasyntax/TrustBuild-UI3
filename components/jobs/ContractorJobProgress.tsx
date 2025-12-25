@@ -22,6 +22,7 @@ interface ContractorJobProgressProps {
   hasAccess: boolean
   myApplication?: JobApplication | null  // Now optional - we no longer require applications
   isJobWinner: boolean
+  hasClaimedWon?: boolean  // Contractor has already claimed "I won the job"
   onClaimWon?: () => void
   onProposeFinalPrice?: () => void
 }
@@ -45,6 +46,7 @@ export function ContractorJobProgress({
   hasAccess,
   myApplication,
   isJobWinner,
+  hasClaimedWon = false,
   onClaimWon,
   onProposeFinalPrice,
 }: ContractorJobProgressProps) {
@@ -65,24 +67,28 @@ export function ContractorJobProgress({
     })
     
     // Step 2: Contact Customer & Win the Job (combining old steps 2 & 3)
-    const hasAccessAndPosted = hasAccess && job.status === 'POSTED' && !isJobWinner
+    const hasAccessAndPosted = hasAccess && job.status === 'POSTED' && !isJobWinner && !hasClaimedWon
     steps.push({
       id: 'contact',
       title: 'Call Customer & Win the Job',
       description: isJobWinner 
         ? 'Customer confirmed you as the winner! 🎉'
-        : 'Call the customer directly to discuss the job and agree on terms',
+        : hasClaimedWon
+          ? 'You\'ve claimed this job! Waiting for customer confirmation...'
+          : 'Call the customer directly to discuss the job and agree on terms',
       icon: <Phone className="h-5 w-5" />,
       status: isJobWinner 
         ? 'completed' 
-        : (hasAccessAndPosted ? 'current' : 'upcoming'),
+        : hasClaimedWon
+          ? 'waiting'
+          : (hasAccessAndPosted ? 'current' : 'upcoming'),
       tips: hasAccessAndPosted ? [
         '📞 Call the customer using the contact details shown above',
         '💬 Discuss job details, timeline, and your approach',
         '💰 Agree on the price directly with the customer',
         '✅ Once they agree to hire you, click "I Won the Job" below'
       ] : undefined,
-      action: hasAccessAndPosted ? {
+      action: hasAccessAndPosted && !hasClaimedWon ? {
         label: 'I Won the Job',
         onClick: onClaimWon,
         variant: 'default'

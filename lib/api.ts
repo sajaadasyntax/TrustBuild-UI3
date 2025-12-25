@@ -232,6 +232,8 @@ export interface JobAccess {
   paidAmount?: number;
   creditUsed: boolean;
   accessedAt: string;
+  claimedWon?: boolean;
+  claimedWonAt?: string;
   job?: Job;
   contractor?: Contractor;
   payment?: Payment;
