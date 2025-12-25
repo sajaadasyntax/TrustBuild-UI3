@@ -179,6 +179,27 @@ export const adminApi = {
     return response;
   },
 
+  clearErrorLogs: async (params?: {
+    level?: string;
+    source?: string;
+    startDate?: string;
+    endDate?: string;
+    olderThanDays?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    const response = await adminApiRequest<any>(`/admin/errors/logs?${queryParams}`, {
+      method: 'DELETE',
+    });
+    return response;
+  },
+
   // Get all users with filters and pagination
   getAllUsers: async (params?: { 
     page?: number; 

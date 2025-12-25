@@ -20,6 +20,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { adminApi } from '@/lib/adminApi';
@@ -34,7 +45,8 @@ import {
   AlertCircle,
   Info,
   TrendingDown,
-  Server
+  Server,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -70,6 +82,8 @@ export default function ErrorLogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedError, setSelectedError] = useState<ErrorLog | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const { toast } = useToast();
 
   // Filters
@@ -217,6 +231,40 @@ export default function ErrorLogsPage() {
     }
   };
 
+  const clearErrorLogs = async () => {
+    try {
+      setClearing(true);
+      
+      // Build params based on current filters
+      const params: any = {};
+      if (levelFilter !== 'all') params.level = levelFilter;
+      if (sourceFilter !== 'all') params.source = sourceFilter;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+
+      const response = await adminApi.clearErrorLogs(params);
+      
+      toast({
+        title: 'Success',
+        description: response.message || `Cleared ${response.data?.deletedCount || 0} error log(s)`,
+      });
+
+      // Refresh the logs and stats
+      await fetchErrors();
+      await fetchStats();
+      setShowClearDialog(false);
+    } catch (error: any) {
+      console.error('Clear logs error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to clear error logs',
+        variant: 'destructive',
+      });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const viewErrorDetails = (error: ErrorLog) => {
     setSelectedError(error);
     setShowDetailDialog(true);
@@ -255,10 +303,58 @@ export default function ErrorLogsPage() {
             Monitor system errors, API issues, and webhook failures
           </p>
         </div>
-        <Button onClick={exportErrors} variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportErrors} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Clear Logs
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear Error Logs</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {levelFilter !== 'all' || sourceFilter !== 'all' || startDate || endDate ? (
+                    <>
+                      This will permanently delete all error logs matching your current filters:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        {levelFilter !== 'all' && <li>Level: {levelFilter}</li>}
+                        {sourceFilter !== 'all' && <li>Source: {sourceFilter}</li>}
+                        {startDate && <li>Start Date: {startDate}</li>}
+                        {endDate && <li>End Date: {endDate}</li>}
+                      </ul>
+                      This action cannot be undone.
+                    </>
+                  ) : (
+                    'This will permanently delete ALL error logs. This action cannot be undone.'
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={clearErrorLogs}
+                  disabled={clearing}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {clearing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    'Clear Logs'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Statistics Dashboard */}
