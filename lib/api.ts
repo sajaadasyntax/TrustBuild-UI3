@@ -394,7 +394,7 @@ export class ApiError extends Error {
 }
 
 // Token management
-const getStoredToken = (): string | null => {
+export const getStoredToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   // Check for admin token first (for admin routes), then fall back to regular auth token
   return localStorage.getItem('admin_token') || localStorage.getItem('auth_token');
@@ -413,7 +413,7 @@ const removeStoredToken = (): void => {
 };
 
 // API request helper
-const apiRequest = async <T>(
+export const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
@@ -2353,6 +2353,31 @@ export const invoicesApi = {
     status: 'success',
     data: Object.assign(response.data, { pagination: response.pagination })
   };
+  },
+
+  getMyAllInvoices: async (params: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{
+    status: string;
+    data: {
+      invoices: any[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    };
+  }> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.set(key, value.toString());
+      }
+    });
+    
+    return apiRequest(`/contractor/invoices?${searchParams.toString()}`);
   },
 
   getInvoiceById: async (invoiceId: string): Promise<Invoice> => {

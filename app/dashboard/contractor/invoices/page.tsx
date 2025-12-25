@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Download, FileText, Search, CreditCard, AlertCircle } from "lucide-react"
-import { apiRequest, handleApiError, getStoredToken } from '@/lib/api'
+import { invoicesApi, handleApiError, getStoredToken } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -215,22 +215,12 @@ export default function ContractorInvoicesPage() {
     try {
       setLoading(true)
       // Fetch from the contractor dashboard invoices endpoint which includes manual invoices
-      const response = await apiRequest<{
-        status: string
-        data: {
-          invoices: ContractorInvoice[]
-          pagination: { page: number; limit: number; total: number; pages: number }
-        }
-      }>(`/contractor/invoices?page=${page}&limit=${limit}`)
+      const response = await invoicesApi.getMyAllInvoices({ page, limit })
       
       setInvoices(response.data.invoices || [])
       setPagination(response.data.pagination || { page: 1, limit: 10, total: 0, pages: 1 })
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load invoices. Please try again.",
-        variant: "destructive",
-      })
+      handleApiError(error, 'Failed to load invoices')
       console.error("Failed to load invoices:", error)
     } finally {
       setLoading(false)
