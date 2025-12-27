@@ -468,7 +468,7 @@ export default function JobDetailsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Application Status</CardTitle>
+                <CardTitle>Job Claims Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
