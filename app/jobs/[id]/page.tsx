@@ -473,28 +473,28 @@ export default function JobDetailsPage() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Total Applications</span>
+                    <span className="text-sm">Contractors Who Claimed</span>
                     <span className="font-medium">{job.applications?.length || 0}</span>
                   </div>
                   
-                  {!canApply() && user?.role === 'CONTRACTOR' && (
+                  {user?.role === 'CONTRACTOR' && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {job.applications?.some(app => app.contractor?.userId === user.id) ? (
                         <>
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          You have already applied
+                          You have claimed this job
                         </>
-                      ) : job.applications?.some(app => app.status === 'ACCEPTED') ? (
+                      ) : job.wonByContractorId ? (
                         <>
                           <AlertCircle className="h-4 w-4 text-orange-500" />
-                          This job has been accepted by another contractor
+                          This job has been won by another contractor
                         </>
-                      ) : (
+                      ) : job.status !== 'POSTED' ? (
                         <>
                           <AlertCircle className="h-4 w-4 text-yellow-500" />
-                          This job is no longer accepting applications
+                          Job is no longer available
                         </>
-                      )}
+                      ) : null}
                     </div>
                   )}
                   
