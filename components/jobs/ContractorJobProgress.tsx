@@ -82,13 +82,13 @@ export function ContractorJobProgress({
         : hasClaimedWon
           ? 'waiting'
           : (hasAccessAndPosted ? 'current' : 'upcoming'),
-      tips: hasAccessAndPosted ? [
+      tips: hasAccessAndPosted && !isJobWinner ? [
         '📞 Call the customer using the contact details shown above',
         '💬 Discuss job details, timeline, and your approach',
         '💰 Agree on the price directly with the customer',
         '✅ Once they agree to hire you, click "I Won the Job" below'
       ] : undefined,
-      action: hasAccessAndPosted && !hasClaimedWon ? {
+      action: hasAccessAndPosted && !hasClaimedWon && !isJobWinner ? {
         label: 'I Won the Job',
         onClick: onClaimWon,
         variant: 'default'

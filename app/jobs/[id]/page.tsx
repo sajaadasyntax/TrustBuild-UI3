@@ -218,6 +218,15 @@ export default function JobDetailsPage() {
     if (user.role !== 'CONTRACTOR') return false
     if (job.status !== 'POSTED' && job.status !== 'DRAFT') return false
     
+    // Don't show apply button if contractor has won the job
+    if (job.wonByContractorId) {
+      // Check if current contractor is the winner
+      const myApplication = job.applications?.find(app => app.contractor?.userId === user.id)
+      if (myApplication && job.wonByContractorId === myApplication.contractorId) {
+        return false // Contractor has won, don't show apply button
+      }
+    }
+    
     const hasApplied = job.applications?.some(app => 
       app.contractor?.userId === user.id
     )

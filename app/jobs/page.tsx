@@ -289,10 +289,7 @@ export default function JobsPage() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {job.applications?.length || 0} applications
-                      </span>
+                    <div className="flex items-center justify-end">
                       <Badge variant={job.status === 'POSTED' ? 'default' : 'secondary'}>
                         {job.status.toLowerCase().replace('_', ' ')}
                       </Badge>

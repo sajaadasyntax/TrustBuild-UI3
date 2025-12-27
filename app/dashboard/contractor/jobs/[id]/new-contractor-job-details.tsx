@@ -317,8 +317,8 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </Card>
         )}
 
-        {/* Access Granted Notice - Show when contractor has access */}
-        {hasAccess && job.status === 'POSTED' && !isJobWinner && (
+        {/* Access Granted Notice - Show when contractor has access or has won */}
+        {(hasAccess || isJobWinner) && job.status === 'POSTED' && (
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -394,8 +394,8 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </Card>
         )}
 
-        {/* Access Required Notice */}
-        {!hasAccess && (
+        {/* Access Required Notice - Hide if contractor has won the job */}
+        {!hasAccess && !isJobWinner && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -437,7 +437,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-gray-500" />
-                  <span>{hasAccess ? job.location : `${job.postcode || 'Location'} area`}</span>
+                  <span>{(hasAccess || isJobWinner) ? job.location : `${job.postcode || 'Location'} area`}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-gray-500" />
@@ -449,8 +449,8 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 </div>
               </div>
               
-              {/* Customer Contact - Visible after purchasing access */}
-              {hasAccess && job.customer && (
+              {/* Customer Contact - Visible after purchasing access or if contractor won */}
+              {(hasAccess || isJobWinner) && job.customer && (
                 <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <h4 className="font-semibold flex items-center gap-2 text-blue-900">
                     <PhoneCall className="w-5 h-5 text-blue-600" />
@@ -489,12 +489,12 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
             <div>
               <h4 className="font-semibold mb-2">Description</h4>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
-                {hasAccess ? job.description : (job.description?.substring(0, 200) + '...')}
+                {(hasAccess || isJobWinner) ? job.description : (job.description?.substring(0, 200) + '...')}
               </p>
             </div>
 
-            {/* Customer Notes - Only visible if hasAccess */}
-            {hasAccess && job.notes && (
+            {/* Customer Notes - Only visible if hasAccess or won */}
+            {(hasAccess || isJobWinner) && job.notes && (
               <div>
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <MessageCircle className="w-4 h-4" />
@@ -510,7 +510,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
 
         {/* Dispute Section for Contractors */}
-        {hasAccess && (['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && (
+        {(hasAccess || isJobWinner) && (['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && (
           <Card className="border-muted">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2 flex items-center gap-2">

@@ -137,6 +137,11 @@ function ManualInvoicePaymentForm({
       }
     } catch (err: any) {
       console.error('Payment error:', err)
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        response: err.response
+      })
       setError(err.message || 'Payment failed. Please try again.')
     } finally {
       setIsProcessing(false)
