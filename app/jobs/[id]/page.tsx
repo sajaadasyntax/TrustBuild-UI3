@@ -5,8 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -19,7 +17,6 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  Send,
   Lock
 } from 'lucide-react'
 import { jobsApi, handleApiError, Job, JobApplication } from '@/lib/api'
@@ -34,17 +31,9 @@ export default function JobDetailsPage() {
   const { user } = useAuth()
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
-  const [applying, setApplying] = useState(false)
-  const [showApplicationForm, setShowApplicationForm] = useState(false)
   const [showAccessDialog, setShowAccessDialog] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
   const [checkingAccess, setCheckingAccess] = useState(false)
-  const [application, setApplication] = useState({
-    proposal: '',
-    estimatedCost: '',
-    timeline: '',
-    questions: ''
-  })
 
   useEffect(() => {
     if (params.id) {
@@ -132,66 +121,6 @@ export default function JobDetailsPage() {
     }
   }
 
-  const handleApply = async () => {
-    if (!job || !user) {
-      return;
-    }
-
-    // Check if contractor has access
-    if (!hasAccess) {
-      console.warn('⚠️ No access to job, showing access dialog');
-      setShowAccessDialog(true);
-      return;
-    }
-
-
-    if (!application.estimatedCost || parseFloat(application.estimatedCost) <= 0) {
-      console.warn('⚠️ Invalid quote amount');
-      toast({
-        title: "Invalid Quote",
-        description: "Please provide a valid quote amount.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setApplying(true);
-      await jobsApi.apply(job.id, {
-        proposal: application.proposal,
-        estimatedCost: parseInt(application.estimatedCost),
-        timeline: application.timeline,
-        questions: application.questions
-      });
-      
-      toast({
-        title: "Application submitted!",
-        description: "Your application has been sent to the customer.",
-      });
-      
-      setShowApplicationForm(false);
-      await fetchJob(job.id);
-    } catch (error: any) {
-      console.error('❌ Application submission failed:', error);
-      // Check for access-related errors
-      if (error?.response?.status === 403 || error?.message?.includes('access')) {
-        toast({
-          title: "Access Required",
-          description: "You need to purchase job access before applying. Please purchase access first.",
-          variant: "destructive"
-        });
-        setShowApplicationForm(false); // Close the form
-        // Optionally refresh access status
-        if (job) {
-          await checkJobAccess(job.id);
-        }
-      } else {
-        handleApiError(error, 'Failed to submit application');
-      }
-    } finally {
-      setApplying(false)
-    }
-  }
 
   const formatBudget = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -213,26 +142,6 @@ export default function JobDetailsPage() {
     }
   }
 
-  const canApply = () => {
-    if (!job || !user) return false
-    if (user.role !== 'CONTRACTOR') return false
-    if (job.status !== 'POSTED' && job.status !== 'DRAFT') return false
-    
-    // Don't show apply button if contractor has won the job
-    if (job.wonByContractorId) {
-      // Check if current contractor is the winner
-      const myApplication = job.applications?.find(app => app.contractor?.userId === user.id)
-      if (myApplication && job.wonByContractorId === myApplication.contractorId) {
-        return false // Contractor has won, don't show apply button
-      }
-    }
-    
-    const hasApplied = job.applications?.some(app => 
-      app.contractor?.userId === user.id
-    )
-    
-    return !hasApplied
-  }
 
   // Find contractor's application for this job
   const getMyApplication = (): JobApplication | null => {
@@ -445,121 +354,6 @@ export default function JobDetailsPage() {
               />
             )}
 
-            {canApply() && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Apply for this Job</CardTitle>
-                  <CardDescription>
-                    Submit your application to be considered for this job.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {showRestrictedContent() ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
-                        <Lock className="h-4 w-4" />
-                        Access Required to Apply
-                      </div>
-                      <p className="text-sm text-blue-700 mb-3">
-                        To apply for this job and access the customer&apos;s contact details, you need to purchase job access first. 
-                        This allows you to see the full job description, customer contact information, and submit your application.
-                      </p>
-                      <div className="text-xs text-blue-600 mb-3 p-2 bg-blue-100 rounded">
-                        <strong>How it works:</strong><br/>
-                        1. Purchase access to this job<br/>
-                        2. Get instant access to customer contact details<br/>
-                        3. Submit your quote and application<br/>
-                        4. Contact the customer directly
-                      </div>
-                      <Button 
-                        onClick={() => setShowAccessDialog(true)}
-                        size="sm"
-                      >
-                        Purchase Job Access
-                      </Button>
-                    </div>
-                                  ) : !showApplicationForm ? (
-                    <Button onClick={() => setShowApplicationForm(true)}>
-                      Apply Now
-                    </Button>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="proposal">Cover Letter / Proposal</Label>
-                        <Textarea
-                          id="proposal"
-                          placeholder="Tell the customer why you're the right person for this job..."
-                          value={application.proposal}
-                          onChange={(e) => setApplication(prev => ({ ...prev, proposal: e.target.value }))}
-                          rows={4}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="cost">
-                            Your Quote (£) <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="cost"
-                            type="number"
-                            placeholder="Enter your quote"
-                            value={application.estimatedCost}
-                            onChange={(e) => setApplication(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="timeline">Your Timeline</Label>
-                          <Input
-                            id="timeline"
-                            placeholder="e.g., 2-3 weeks"
-                            value={application.timeline}
-                            onChange={(e) => setApplication(prev => ({ ...prev, timeline: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="questions">Questions for Customer (Optional)</Label>
-                        <Textarea
-                          id="questions"
-                          placeholder="Any questions about the project?"
-                          value={application.questions}
-                          onChange={(e) => setApplication(prev => ({ ...prev, questions: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleApply} 
-                          disabled={applying || !application.proposal || !application.estimatedCost}
-                        >
-                          {applying ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Submitting...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="h-4 w-4 mr-2" />
-                              Submit Application
-                            </>
-                          )}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setShowApplicationForm(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
 
             {/* Job Phase Management for Assigned Contractors */}
             {user?.role === 'CONTRACTOR' && job.applications?.some(app => 

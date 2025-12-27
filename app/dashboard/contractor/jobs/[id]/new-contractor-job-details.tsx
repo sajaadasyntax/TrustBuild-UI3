@@ -403,7 +403,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 <div>
                   <h3 className="font-semibold text-orange-800">Job Access Required</h3>
                   <p className="text-orange-700">
-                    Purchase access to view customer contact details and apply for this job.
+                    Purchase access to view customer contact details and claim this job.
                   </p>
                 </div>
               </div>

@@ -132,7 +132,7 @@ export default function JobWorkflowButtons({
       await jobsApi.confirmWinner(jobId, contractorIdToConfirm || undefined);
       toast({
         title: 'Success',
-        description: 'Contractor confirmed. Job is now in progress and applications are closed.',
+        description: 'Contractor confirmed. Job is now in progress and claims are closed.',
       });
       setShowConfirmWinnerDialog(false);
       setSelectedContractorForConfirmation(null);
@@ -397,8 +397,8 @@ export default function JobWorkflowButtons({
                 <DialogTitle className="text-lg sm:text-xl">Confirm Winning Contractor</DialogTitle>
                 <DialogDescription className="text-sm">
                   {contractorsWhoClaimedWon.length === 1
-                    ? `Confirm if ${contractorsWhoClaimedWon[0].contractorName} won your job. Once confirmed, the job will be in progress and applications will close.`
-                    : 'Select which contractor won your job. Once confirmed, the job will be in progress and applications will close.'}
+                    ? `Confirm if ${contractorsWhoClaimedWon[0].contractorName} won your job. Once confirmed, the job will be in progress and claims will close.`
+                    : 'Select which contractor won your job. Once confirmed, the job will be in progress and claims will close.'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -451,7 +451,7 @@ export default function JobWorkflowButtons({
                 )}
                 
                 <p className="text-xs text-muted-foreground">
-                  By confirming, the job will move to "In Progress" and no other contractors will be able to apply.
+                  By confirming, the job will move to "In Progress" and no other contractors will be able to claim this job.
                 </p>
               </div>
               <DialogFooter>

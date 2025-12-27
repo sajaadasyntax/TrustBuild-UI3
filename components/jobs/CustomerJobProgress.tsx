@@ -65,17 +65,17 @@ export function CustomerJobProgress({
       status: 'completed',
     })
     
-    // Step 2: Receive Applications
+    // Step 2: Contractors Claim Job
     const hasApplications = applications.length > 0
     const accessCount = job.jobAccess?.length || 0
     steps.push({
       id: 'applications',
-      title: 'Contractors Apply',
+      title: 'Contractors Claim Job',
       description: hasApplications 
-        ? `${applications.length} application(s) received, ${accessCount} contractor(s) viewed`
+        ? `${applications.length} contractor(s) claimed they won, ${accessCount} contractor(s) viewed`
         : accessCount > 0 
-          ? `${accessCount} contractor(s) viewed your job - waiting for applications`
-          : 'Waiting for contractors to view and apply',
+          ? `${accessCount} contractor(s) viewed your job - waiting for claims`
+          : 'Waiting for contractors to view and claim this job',
       icon: <Users className="h-5 w-5" />,
       status: hasApplications ? 'completed' : 'current',
     })
@@ -94,7 +94,7 @@ export function CustomerJobProgress({
         ? 'completed' 
         : (hasApplications && isPosted ? 'current' : 'upcoming'),
       tips: (hasApplications && isPosted && !hasWinner) ? [
-        '👀 Review all applications and quotes above',
+        '👀 Review all contractors who claimed they won above',
         '📞 Contact contractors directly to discuss details',
         '💬 Ask questions, negotiate terms and pricing',
         '✅ When a contractor clicks "I Won", you\'ll be asked to confirm'
@@ -122,7 +122,7 @@ export function CustomerJobProgress({
         tips: [
           '🔍 Verify this is the contractor you agreed to hire',
           '✅ Once confirmed, the job moves to "In Progress"',
-          '🚫 Other contractors will no longer be able to apply'
+          '🚫 Other contractors will no longer be able to claim this job'
         ]
       })
     } else {
@@ -341,9 +341,8 @@ export function CustomerJobProgress({
                 </h4>
                 <p className="text-sm text-blue-800">
                   Contractors will purchase access to view your job details and contact you. 
-                  They&apos;ll submit applications with quotes. You can then contact them directly, 
-                  negotiate, and choose the best fit. When you agree to hire someone, they&apos;ll 
-                  click &quot;I Won&quot; and you&apos;ll confirm here.
+                  After discussing with you, if they win the job, they&apos;ll click &quot;I Won the Job&quot; 
+                  and you&apos;ll confirm here. You can then contact them directly to negotiate and finalize details.
                 </p>
               </div>
             </div>
