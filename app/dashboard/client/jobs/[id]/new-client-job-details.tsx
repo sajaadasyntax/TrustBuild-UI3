@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, Trophy } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { jobsApi, paymentsApi, handleApiError, Job, JobApplication } from '@/lib/api'
+import { jobsApi, paymentsApi, reviewsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import WriteReviewDialog from '@/components/reviews/WriteReviewDialog'
@@ -28,6 +28,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [showFinalPriceConfirmation, setShowFinalPriceConfirmation] = useState(false)
+  const [hasReview, setHasReview] = useState(false)
 
   // Get contractors who claimed "I won the job"
   const contractorsWhoClaimedWon = job.purchasedBy?.filter(contractor => contractor.claimedWon) || []
@@ -62,6 +63,26 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
     }
   }, [contractorsWhoClaimedWon.length]) // Only depend on length, not the array itself
+
+  // Check if customer has left a review for this job
+  useEffect(() => {
+    const checkReview = async () => {
+      if (job.status === 'COMPLETED' && job.wonByContractorId && job.customerConfirmed) {
+        try {
+          // Check if there's a review for this job
+          const reviews = await reviewsApi.getContractorReviews(job.wonByContractorId, { page: 1, limit: 100 })
+          const jobReview = reviews.find((review: any) => review.jobId === job.id)
+          setHasReview(!!jobReview)
+        } catch (error) {
+          // If we can't fetch reviews, assume no review exists yet
+          setHasReview(false)
+        }
+      } else {
+        setHasReview(false)
+      }
+    }
+    checkReview()
+  }, [job.id, job.status, job.wonByContractorId, job.customerConfirmed])
 
   // Removed handleSelectContractor, confirmContractorSelection, handleChangeContractor, and handleAcceptApplication
   // Customers can only view applications and contractor profiles, not select/accept contractors
@@ -569,8 +590,10 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           </Card>
         )}
 
-        {/* Dispute Section */}
-        {(['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'COMPLETED', 'DISPUTED'].includes(job.status)) && job.wonByContractorId && (
+        {/* Dispute Section - Hide if job is completed, confirmed, and review has been left */}
+        {(['IN_PROGRESS', 'AWAITING_FINAL_PRICE_CONFIRMATION', 'DISPUTED'].includes(job.status) || 
+          (job.status === 'COMPLETED' && job.wonByContractorId && job.customerConfirmed && !hasReview)) && 
+          job.wonByContractorId && (
           <Card className="border-muted">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-2 flex items-center gap-2">
@@ -660,6 +683,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             onClose={() => setShowReviewDialog(false)}
             onSuccess={() => {
               setShowReviewDialog(false)
+              setHasReview(true) // Mark review as left
               onJobUpdate()
             }}
             jobId={job.id}
