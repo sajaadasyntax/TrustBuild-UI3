@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { NewClientJobDetails } from "./new-client-job-details"
 import { jobsApi, Job } from "@/lib/api"
@@ -15,7 +15,19 @@ export default function Page({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const fetchJob = async () => {
+  // Track last fetch time to prevent rapid successive calls
+  const lastFetchRef = useRef<number>(0)
+  const FETCH_DEBOUNCE_MS = 1000 // Minimum 1 second between fetches
+
+  const fetchJob = useCallback(async () => {
+    const now = Date.now()
+    // Prevent rapid successive calls
+    if (now - lastFetchRef.current < FETCH_DEBOUNCE_MS) {
+      console.log('Skipping fetch - too soon since last fetch')
+      return
+    }
+    lastFetchRef.current = now
+
     try {
       setLoading(true)
       console.log('Fetching job with ID:', params.id)
@@ -28,7 +40,7 @@ export default function Page({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id]) // Memoize to prevent unnecessary re-renders
 
   useEffect(() => {
     if (params.id) {

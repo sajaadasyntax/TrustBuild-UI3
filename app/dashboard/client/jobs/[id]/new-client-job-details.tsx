@@ -42,18 +42,13 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
         job.wonByContractorId && app.contractorId === job.wonByContractorId
       )
       if (winner) {
-        setSelectedContractor(winner.contractorId)
-      } else if (contractorsWhoClaimedWon.length > 0) {
-        // If only one contractor claimed, pre-select them
-        if (contractorsWhoClaimedWon.length === 1 && !selectedContractor) {
-          setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
-        }
+        setSelectedContractor(prev => prev || winner.contractorId)
       }
     } catch {
       // Failed to load applications - the page will show empty state
       setApplications([])
     }
-  }, [job.id, job.wonByContractorId, contractorsWhoClaimedWon, selectedContractor])
+  }, [job.id, job.wonByContractorId]) // Removed circular dependencies
 
   useEffect(() => {
     if (job.id) {
@@ -61,12 +56,12 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     }
   }, [job.id, fetchApplications])
 
-  // Update selectedContractor when contractorsWhoClaimedWon changes
+  // Update selectedContractor when contractorsWhoClaimedWon changes (only once)
   useEffect(() => {
     if (contractorsWhoClaimedWon.length === 1 && !selectedContractor) {
       setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
     }
-  }, [contractorsWhoClaimedWon, selectedContractor])
+  }, [contractorsWhoClaimedWon.length]) // Only depend on length, not the array itself
 
   // Removed handleSelectContractor, confirmContractorSelection, handleChangeContractor, and handleAcceptApplication
   // Customers can only view applications and contractor profiles, not select/accept contractors

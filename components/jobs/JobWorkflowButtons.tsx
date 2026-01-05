@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -61,6 +61,17 @@ export default function JobWorkflowButtons({
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedContractorForConfirmation, setSelectedContractorForConfirmation] = useState<string | null>(selectedContractorId || null);
+  const lastUpdateRef = useRef<number>(0);
+  const UPDATE_DEBOUNCE_MS = 500; // Minimum 500ms between updates
+
+  // Debounced update function to prevent rapid successive calls
+  const debouncedUpdate = () => {
+    const now = Date.now();
+    if (now - lastUpdateRef.current >= UPDATE_DEBOUNCE_MS) {
+      lastUpdateRef.current = now;
+      onUpdate();
+    }
+  };
 
   // Contractor: Claim "I won the job" - sends notification but doesn't close job
   const handleClaimWon = async () => {
@@ -73,7 +84,7 @@ export default function JobWorkflowButtons({
       });
       setShowClaimWonDialog(false);
       // Refresh job data to update hasClaimedWon status
-      onUpdate();
+      debouncedUpdate();
     } catch (error: any) {
       console.error('Error claiming job as won:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to claim job as won';
@@ -109,7 +120,7 @@ export default function JobWorkflowButtons({
       });
       setShowMarkCompletedDialog(false);
       setCompletionAmount('');
-      onUpdate();
+      debouncedUpdate();
     } catch (error: any) {
       console.error('Error submitting final price:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to submit final price';
@@ -136,7 +147,7 @@ export default function JobWorkflowButtons({
       });
       setShowConfirmWinnerDialog(false);
       setSelectedContractorForConfirmation(null);
-      onUpdate();
+      debouncedUpdate();
     } catch (error: any) {
       console.error('Error confirming winner:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to confirm winner';
@@ -173,7 +184,7 @@ export default function JobWorkflowButtons({
       setShowPriceChangeDialog(false);
       setSuggestedPrice('');
       setFeedback('');
-      onUpdate();
+      debouncedUpdate();
     } catch (error: any) {
       console.error('Error suggesting price change:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to suggest price change';
@@ -211,7 +222,7 @@ export default function JobWorkflowButtons({
       
       setShowConfirmDialog(false);
       setFeedback('');
-      onUpdate();
+      debouncedUpdate();
     } catch (error: any) {
       console.error('Error confirming completion:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to process confirmation';
