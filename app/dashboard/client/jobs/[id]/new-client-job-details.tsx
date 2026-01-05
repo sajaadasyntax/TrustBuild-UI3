@@ -554,7 +554,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 <div>
                   <h3 className="font-semibold text-yellow-800">Final Price Confirmation Required</h3>
                   <p className="text-yellow-700">
-                    The contractor has proposed a final price of £{job.contractorProposedAmount?.toFixed(2)} for this job.
+                    The contractor has proposed a final price of £{job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'} for this job.
                   </p>
                 </div>
               </div>
@@ -680,7 +680,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             jobId={job.id}
             jobTitle={job.title}
             contractorName={job.wonByContractor?.user?.name || 'Contractor'}
-            proposedAmount={job.contractorProposedAmount}
+            proposedAmount={Number(job.contractorProposedAmount)}
             proposedAt={job.finalPriceProposedAt}
             timeoutAt={job.finalPriceTimeoutAt}
             isOpen={showFinalPriceConfirmation}

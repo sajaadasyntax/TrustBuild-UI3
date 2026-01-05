@@ -132,9 +132,9 @@ export function ContractorJobProgress({
       id: 'final-price',
       title: 'Submit Final Price',
       description: isAwaitingConfirmation 
-        ? `Submitted £${job.contractorProposedAmount?.toFixed(2)} - awaiting customer confirmation`
+        ? `Submitted £${job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'} - awaiting customer confirmation`
         : isCompleted
-          ? `Final amount: £${job.finalAmount?.toFixed(2) || job.contractorProposedAmount?.toFixed(2)}`
+          ? `Final amount: £${job.finalAmount ? Number(job.finalAmount).toFixed(2) : job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'}`
           : 'Enter the final agreed amount and request payment',
       icon: <PoundSterling className="h-5 w-5" />,
       status: isAwaitingConfirmation 

@@ -159,7 +159,7 @@ export function CustomerJobProgress({
       steps.push({
         id: 'confirm-price',
         title: 'Confirm Final Price',
-        description: `Contractor submitted £${job.contractorProposedAmount?.toFixed(2)} - please review and confirm`,
+        description: `Contractor submitted £${job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'} - please review and confirm`,
         icon: <PoundSterling className="h-5 w-5" />,
         status: 'current',
         action: onConfirmPrice ? {
@@ -179,7 +179,7 @@ export function CustomerJobProgress({
         id: 'confirm-price',
         title: 'Confirm Final Price',
         description: isCompleted 
-          ? `Confirmed: £${job.finalAmount?.toFixed(2) || job.contractorProposedAmount?.toFixed(2)}`
+          ? `Confirmed: £${job.finalAmount ? Number(job.finalAmount).toFixed(2) : job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'}`
           : 'Review and confirm the final price when work is done',
         icon: <PoundSterling className="h-5 w-5" />,
         status: isCompleted ? 'completed' : 'upcoming',

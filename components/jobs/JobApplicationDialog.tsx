@@ -106,7 +106,7 @@ export default function JobApplicationDialog({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-center gap-2 text-blue-800">
                 <DollarSign className="h-4 w-4" />
-                <span className="text-sm font-medium">Customer Budget: £{jobBudget.toFixed(2)}</span>
+                <span className="text-sm font-medium">Customer Budget: £{Number(jobBudget).toFixed(2)}</span>
               </div>
               <p className="text-xs text-blue-700 mt-1">
                 This is the customer's budget. Provide your own quote based on your assessment.

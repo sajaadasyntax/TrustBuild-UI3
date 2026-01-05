@@ -25,7 +25,7 @@ export default function ContractorProfilePage() {
   const [logoError, setLogoError] = useState(false)
   
   // Determine the back link based on where the user came from
-  const backLink = fromSource === 'featured' ? '/' : '/contractors'
+  const backLink = fromSource === 'featured' ? '/dashboard/featured-contractors' : '/contractors'
   const backText = fromSource === 'featured' ? 'Back to Featured Contractors' : 'Back to Contractors'
 
   useEffect(() => {

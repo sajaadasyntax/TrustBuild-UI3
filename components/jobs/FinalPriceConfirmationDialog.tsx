@@ -130,7 +130,7 @@ export function FinalPriceConfirmationDialog({
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p className="text-sm text-gray-600">Proposed Final Price</p>
-                    <p className="text-2xl font-bold text-green-600">£{proposedAmount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-green-600">£{Number(proposedAmount).toFixed(2)}</p>
                   </div>
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />

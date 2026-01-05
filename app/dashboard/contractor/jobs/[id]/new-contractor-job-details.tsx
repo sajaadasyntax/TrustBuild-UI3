@@ -605,7 +605,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 <span className="font-medium">Waiting for Customer Confirmation</span>
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                Final price of £{job.contractorProposedAmount?.toFixed(2)} proposed. 
+                Final price of £{job.contractorProposedAmount ? Number(job.contractorProposedAmount).toFixed(2) : '0.00'} proposed. 
                 Customer has 7 days to respond.
               </p>
             </div>

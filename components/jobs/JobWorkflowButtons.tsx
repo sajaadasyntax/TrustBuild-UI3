@@ -489,7 +489,7 @@ export default function JobWorkflowButtons({
                   Final Price Confirmation Required
                 </h4>
                 <p className="text-sm text-yellow-800 mb-3">
-                  The contractor has submitted a final price of £{contractorProposedAmount.toFixed(2)}. 
+                  The contractor has submitted a final price of £{Number(contractorProposedAmount).toFixed(2)}. 
                   Please confirm, decline, or suggest a different amount.
                 </p>
                 <Button
@@ -516,7 +516,7 @@ export default function JobWorkflowButtons({
                   <p className="text-sm text-muted-foreground">Job Title:</p>
                   <p className="font-semibold">{jobTitle}</p>
                   <p className="text-sm text-muted-foreground mt-2">Proposed Final Price:</p>
-                  <p className="text-2xl font-bold">£{contractorProposedAmount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">£{Number(contractorProposedAmount).toFixed(2)}</p>
                 </div>
                 
                 <div className="space-y-3">
@@ -590,7 +590,7 @@ export default function JobWorkflowButtons({
                     onChange={(e) => setSuggestedPrice(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Current proposed price: £{contractorProposedAmount.toFixed(2)}
+                    Current proposed price: £{Number(contractorProposedAmount).toFixed(2)}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -638,7 +638,7 @@ export default function JobWorkflowButtons({
                   Completion Confirmation Required
                 </h4>
                 <p className="text-sm text-yellow-800 mb-3">
-                  The contractor has marked this job as completed for £{finalAmount.toFixed(2)}.
+                  The contractor has marked this job as completed for £{Number(finalAmount).toFixed(2)}.
                   Please confirm if this is correct and if the job has been completed satisfactorily.
                 </p>
                 <Button
@@ -665,7 +665,7 @@ export default function JobWorkflowButtons({
                   <p className="text-sm text-muted-foreground">Job Title:</p>
                   <p className="font-semibold">{jobTitle}</p>
                   <p className="text-sm text-muted-foreground mt-2">Final Amount:</p>
-                  <p className="text-2xl font-bold">£{finalAmount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">£{Number(finalAmount).toFixed(2)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="feedback">Feedback (Optional)</Label>
