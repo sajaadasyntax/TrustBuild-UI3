@@ -70,7 +70,8 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
       if (job.status === 'COMPLETED' && job.wonByContractorId && job.customerConfirmed) {
         try {
           // Check if there's a review for this job
-          const reviews = await reviewsApi.getContractorReviews(job.wonByContractorId, { page: 1, limit: 100 })
+          const response = await reviewsApi.getContractorReviews(job.wonByContractorId, { page: 1, limit: 100 })
+          const reviews = response.data.reviews || []
           const jobReview = reviews.find((review: any) => review.jobId === job.id)
           setHasReview(!!jobReview)
         } catch (error) {
