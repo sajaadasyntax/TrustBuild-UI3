@@ -27,8 +27,10 @@ export default function ContractorsDirectory() {
       return
     }
     
-    fetchContractors()
-  }, [user, router])
+    if (user === null || user?.role !== 'CUSTOMER') {
+      fetchContractors()
+    }
+  }, [user]) // Removed router from dependencies
 
   const fetchContractors = async () => {
     try {

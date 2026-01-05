@@ -95,7 +95,7 @@ export default function Home() {
         router.push('/admin')
       }
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies - router.push is stable
 
   useEffect(() => {
     fetchFeaturedContractors()

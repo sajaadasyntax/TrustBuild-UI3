@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,21 +46,8 @@ export default function JobsPage() {
     'Newcastle'
   ]
 
-  useEffect(() => {
-    fetchJobs()
-    fetchCategories()
-  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
-
-  // Refresh jobs when page regains focus (e.g., after navigating back from job details)
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchJobs()
-    }
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
-
-  const fetchJobs = async () => {
+  // Memoize fetchJobs to prevent unnecessary re-renders
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true)
       const params: any = {
@@ -91,7 +78,39 @@ export default function JobsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
+
+  useEffect(() => {
+    fetchJobs()
+    fetchCategories()
+  }, [fetchJobs])
+
+  // Refresh jobs when page regains focus (e.g., after navigating back from job details)
+  // Use useRef to store latest fetch function and debounce
+  const lastFocusFetchRef = useRef<number>(0)
+  const fetchJobsRef = useRef(fetchJobs)
+  const FOCUS_DEBOUNCE_MS = 2000 // Minimum 2 seconds between focus-triggered fetches
+
+  // Update ref when fetchJobs changes
+  useEffect(() => {
+    fetchJobsRef.current = fetchJobs
+  }, [fetchJobs])
+
+  useEffect(() => {
+    const handleFocus = () => {
+      const now = Date.now()
+      // Prevent rapid successive calls when window gains focus multiple times
+      if (now - lastFocusFetchRef.current < FOCUS_DEBOUNCE_MS) {
+        return
+      }
+      lastFocusFetchRef.current = now
+      fetchJobsRef.current() // Use ref to access latest fetchJobs
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, []) // Empty dependency array - event listener doesn't need to be re-registered
+
 
   const fetchCategories = async () => {
     try {
