@@ -416,6 +416,24 @@ export const adminApi = {
     return response;
   },
 
+  // Get jobs with rejected final prices
+  getJobsWithRejectedFinalPrice: async () => {
+    const response = await adminApiRequest<any>('/jobs/rejected-final-prices');
+    return response;
+  },
+
+  // Get contractor's completed jobs
+  getContractorCompletedJobs: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/completed-jobs`);
+    return response;
+  },
+
+  // Get contractor's reviews
+  getContractorReviews: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/reviews`);
+    return response;
+  },
+
   // Get all reviews
   getAllReviews: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

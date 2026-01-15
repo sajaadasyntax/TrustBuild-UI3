@@ -278,6 +278,33 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </Card>
         )}
 
+        {/* Review Request Prompt - Shows when job is completed */}
+        {canRequestReview && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-yellow-800 text-lg mb-1">🎉 Job Completed! Request a Review</h3>
+                  <p className="text-yellow-700 mb-4">
+                    Great work on completing this job! Customer reviews help build your reputation and attract more clients.
+                    Send a friendly review request to the customer.
+                  </p>
+                  <Button 
+                    onClick={() => setShowReviewRequest(true)}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Request Customer Review
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Credit Balance Display - Only for active subscribers */}
         {contractor && subscription?.status === 'active' && (
           <Card>

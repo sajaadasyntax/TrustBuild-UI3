@@ -35,6 +35,9 @@ export default function AdminSettingsPage() {
   
   // Free job allocation
   const [freeJobAllocation, setFreeJobAllocation] = useState('1');
+  
+  // Max contractors per job
+  const [maxContractorsPerJob, setMaxContractorsPerJob] = useState('5');
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -77,6 +80,11 @@ export default function AdminSettingsPage() {
       if (settingsObject['FREE_JOB_ALLOCATION']) {
         const allocationValue = settingsObject['FREE_JOB_ALLOCATION'].value;
         setFreeJobAllocation(allocationValue?.defaultAllocation?.toString() || '1');
+      }
+      
+      if (settingsObject['MAX_CONTRACTORS_PER_JOB']) {
+        const maxContractorsValue = settingsObject['MAX_CONTRACTORS_PER_JOB'].value;
+        setMaxContractorsPerJob(maxContractorsValue?.defaultMax?.toString() || '5');
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -148,6 +156,13 @@ export default function AdminSettingsPage() {
     updateSetting('FREE_JOB_ALLOCATION', {
       defaultAllocation: parseInt(freeJobAllocation),
       description: 'Default free job leads for new contractors',
+    });
+  };
+
+  const handleSaveMaxContractorsPerJob = () => {
+    updateSetting('MAX_CONTRACTORS_PER_JOB', {
+      defaultMax: parseInt(maxContractorsPerJob),
+      description: 'Default maximum contractors that can purchase access to each job',
     });
   };
 
@@ -274,6 +289,38 @@ export default function AdminSettingsPage() {
           <Button onClick={handleSaveFreeJobAllocation} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Free Job Allocation
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Max Contractors Per Job */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Max Contractors Per Job</CardTitle>
+          <CardDescription>
+            Set the default maximum number of contractors that can purchase access to each job.
+            This can be overridden on individual jobs if needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2">
+            <Label htmlFor="maxContractorsPerJob">Default Max Contractors</Label>
+            <Input
+              id="maxContractorsPerJob"
+              type="number"
+              min="1"
+              max="50"
+              value={maxContractorsPerJob}
+              onChange={(e) => setMaxContractorsPerJob(e.target.value)}
+              placeholder="5"
+            />
+            <p className="text-sm text-muted-foreground">
+              Recommended: 5 contractors per job for optimal competition
+            </p>
+          </div>
+          <Button onClick={handleSaveMaxContractorsPerJob} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Max Contractors Setting
           </Button>
         </CardContent>
       </Card>

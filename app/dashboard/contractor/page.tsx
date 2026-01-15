@@ -457,11 +457,21 @@ export default function ContractorDashboard() {
                   return Math.round((filled / fields.length) * 100);
                 })()} className="h-2" />
               </div>
-              <Button variant="outline" asChild className="w-full">
-                <Link href="/profile">
-                  Edit Profile
-                </Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" asChild className="flex-1">
+                  <Link href="/profile">
+                    Edit Profile
+                  </Link>
+                </Button>
+                {contractor?.id && (
+                  <Button variant="secondary" asChild className="flex-1">
+                    <Link href={`/contractors/${contractor.id}`} target="_blank">
+                      <Eye className="mr-2 h-4 w-4" />
+                      View as Customer
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

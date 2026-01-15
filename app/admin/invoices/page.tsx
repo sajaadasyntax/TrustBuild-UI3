@@ -101,6 +101,7 @@ export default function AdminInvoicesPage() {
   // Manual invoice creation state
   const [showManualInvoiceDialog, setShowManualInvoiceDialog] = useState(false)
   const [contractors, setContractors] = useState<any[]>([])
+  const [contractorSearchTerm, setContractorSearchTerm] = useState('')
   const [manualInvoiceForm, setManualInvoiceForm] = useState({
     contractorId: '',
     reason: '',
@@ -191,9 +192,12 @@ export default function AdminInvoicesPage() {
   }
 
   const calculateTotal = () => {
-    // Amounts already include VAT, so no additional calculation needed
-    const total = invoiceItems.reduce((sum, item) => sum + (item.amount * item.quantity), 0)
-    return { subtotal: total, tax: 0, total: total }
+    // Calculate subtotal from items (amounts entered are net/ex-VAT)
+    const subtotal = invoiceItems.reduce((sum, item) => sum + (item.amount * item.quantity), 0)
+    // VAT is 20% added on top
+    const vat = subtotal * 0.20
+    const total = subtotal + vat
+    return { subtotal, vat, total }
   }
 
   const handleCreateManualInvoice = async () => {
@@ -243,6 +247,7 @@ export default function AdminInvoicesPage() {
         notes: '',
         dueDate: '',
       })
+      setContractorSearchTerm('')
       setInvoiceItems([{ description: '', amount: 0, quantity: 1 }])
       fetchInvoices()
     } catch (error: any) {
@@ -344,21 +349,45 @@ export default function AdminInvoicesPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="contractor">Contractor</Label>
-                <Select 
-                  value={manualInvoiceForm.contractorId} 
-                  onValueChange={(value) => setManualInvoiceForm({...manualInvoiceForm, contractorId: value})}
-                >
-                  <SelectTrigger id="contractor">
-                    <SelectValue placeholder="Select contractor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contractors.map((contractor) => (
-                      <SelectItem key={contractor.id} value={contractor.id}>
-                        {contractor.user.name} - {contractor.businessName || 'No business name'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search by name or business name..."
+                    value={contractorSearchTerm}
+                    onChange={(e) => setContractorSearchTerm(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Select 
+                    value={manualInvoiceForm.contractorId} 
+                    onValueChange={(value) => setManualInvoiceForm({...manualInvoiceForm, contractorId: value})}
+                  >
+                    <SelectTrigger id="contractor">
+                      <SelectValue placeholder="Select contractor" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {contractors
+                        .filter((contractor) => {
+                          if (!contractorSearchTerm) return true;
+                          const searchLower = contractorSearchTerm.toLowerCase();
+                          const name = contractor.user?.name?.toLowerCase() || '';
+                          const businessName = contractor.businessName?.toLowerCase() || '';
+                          const email = contractor.user?.email?.toLowerCase() || '';
+                          return name.includes(searchLower) || businessName.includes(searchLower) || email.includes(searchLower);
+                        })
+                        .map((contractor) => (
+                          <SelectItem key={contractor.id} value={contractor.id}>
+                            {contractor.user?.name || 'Unknown'} - {contractor.businessName || 'No business name'}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {contractorSearchTerm && contractors.filter((c) => {
+                    const searchLower = contractorSearchTerm.toLowerCase();
+                    return (c.user?.name?.toLowerCase() || '').includes(searchLower) || 
+                           (c.businessName?.toLowerCase() || '').includes(searchLower);
+                  }).length === 0 && (
+                    <p className="text-sm text-muted-foreground">No contractors found matching "{contractorSearchTerm}"</p>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -435,11 +464,15 @@ export default function AdminInvoicesPage() {
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Total (VAT included):</span>
-                  <span>{formatCurrency(totals.total)}</span>
+                  <span>Subtotal (ex-VAT):</span>
+                  <span>{formatCurrency(totals.subtotal)}</span>
                 </div>
-                <div className="flex justify-between font-bold">
-                  <span>Amount Due:</span>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>VAT (20%):</span>
+                  <span>{formatCurrency(totals.vat)}</span>
+                </div>
+                <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                  <span>Total Amount Due:</span>
                   <span>{formatCurrency(totals.total)}</span>
                 </div>
               </div>

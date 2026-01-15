@@ -24,8 +24,11 @@ import {
   AlertTriangle,
   RefreshCw,
   User,
-  Award
+  Award,
+  MessageCircle
 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { adminApi } from '@/lib/adminApi'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { toast } from '@/hooks/use-toast'
@@ -85,6 +88,11 @@ export default function AdminContractorProfile() {
   const { admin, loading: authLoading } = useAdminAuth()
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showJobsDialog, setShowJobsDialog] = useState(false)
+  const [showReviewsDialog, setShowReviewsDialog] = useState(false)
+  const [completedJobs, setCompletedJobs] = useState<any[]>([])
+  const [reviews, setReviews] = useState<any[]>([])
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   const contractorId = params?.id as string
 
@@ -115,6 +123,46 @@ export default function AdminContractorProfile() {
       setLoading(false)
     }
   }
+
+  const fetchCompletedJobs = async () => {
+    if (!contractorId) return
+    try {
+      setLoadingDetails(true)
+      const response = await adminApi.getContractorCompletedJobs(contractorId)
+      setCompletedJobs(response?.jobs || response?.data?.jobs || [])
+    } catch (error) {
+      console.error('Failed to fetch completed jobs:', error)
+      setCompletedJobs([])
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  const fetchReviews = async () => {
+    if (!contractorId) return
+    try {
+      setLoadingDetails(true)
+      const response = await adminApi.getContractorReviews(contractorId)
+      setReviews(response?.reviews || response?.data?.reviews || [])
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+      setReviews([])
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
+  useEffect(() => {
+    if (showJobsDialog) {
+      fetchCompletedJobs()
+    }
+  }, [showJobsDialog])
+
+  useEffect(() => {
+    if (showReviewsDialog) {
+      fetchReviews()
+    }
+  }, [showReviewsDialog])
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
@@ -257,11 +305,15 @@ export default function AdminContractorProfile() {
 
               <Separator />
 
-              {/* Quick Stats */}
+              {/* Quick Stats - Clickable to show details */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold">{contractor.jobsCompleted || contractor.totalJobs || 0}</div>
+                <div 
+                  className="text-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                  onClick={() => setShowJobsDialog(true)}
+                >
+                  <div className="text-2xl font-bold text-blue-600">{contractor.jobsCompleted || contractor.totalJobs || 0}</div>
                   <div className="text-xs text-muted-foreground">Jobs Completed</div>
+                  <div className="text-xs text-blue-600 mt-1">Click to view →</div>
                 </div>
                 <div className="text-center p-3 bg-muted rounded-lg">
                   <div className="text-2xl font-bold flex items-center justify-center gap-1">
@@ -270,9 +322,13 @@ export default function AdminContractorProfile() {
                   </div>
                   <div className="text-xs text-muted-foreground">Average Rating</div>
                 </div>
-                <div className="text-center p-3 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold">{contractor.reviewCount || 0}</div>
+                <div 
+                  className="text-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                  onClick={() => setShowReviewsDialog(true)}
+                >
+                  <div className="text-2xl font-bold text-blue-600">{contractor.reviewCount || 0}</div>
                   <div className="text-xs text-muted-foreground">Reviews</div>
+                  <div className="text-xs text-blue-600 mt-1">Click to view →</div>
                 </div>
                 <div className="text-center p-3 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">{contractor.completionRate || 0}%</div>
@@ -474,6 +530,133 @@ export default function AdminContractorProfile() {
           </Tabs>
         </div>
       </div>
+
+      {/* Completed Jobs Dialog */}
+      <Dialog open={showJobsDialog} onOpenChange={setShowJobsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Completed Jobs ({completedJobs.length})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            {loadingDetails ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin" />
+              </div>
+            ) : completedJobs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No completed jobs found.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {completedJobs.map((job: any) => (
+                  <Card key={job.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold">{job.title}</h4>
+                          <div className="text-sm text-muted-foreground mt-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              {job.location}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              Completed: {job.completionDate ? new Date(job.completionDate).toLocaleDateString() : 'N/A'}
+                            </div>
+                            {job.finalAmount && (
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4" />
+                                Final Amount: £{Number(job.finalAmount).toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <Badge variant="secondary">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Completed
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reviews Dialog */}
+      <Dialog open={showReviewsDialog} onOpenChange={setShowReviewsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Reviews ({reviews.length})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            {loadingDetails ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin" />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No reviews found.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review: any) => (
+                  <Card key={review.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="font-medium">{review.rating}/5</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-gray-700 mb-2">{review.comment}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        {review.customerName || review.customer?.user?.name || 'Anonymous'}
+                        {review.isVerified && (
+                          <Badge variant="outline" className="text-green-600 border-green-300">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                        {review.isExternal && (
+                          <Badge variant="outline">External</Badge>
+                        )}
+                      </div>
+                      {review.job?.title && (
+                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Briefcase className="h-3 w-3" />
+                          Job: {review.job.title}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

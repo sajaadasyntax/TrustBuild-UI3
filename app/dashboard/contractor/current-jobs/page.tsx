@@ -6,14 +6,24 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Clock, MapPin, DollarSign } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Clock, MapPin, DollarSign, CreditCard, Coins, CheckCircle2 } from "lucide-react"
 import { useAuth } from '@/contexts/AuthContext'
 import { jobsApi, handleApiError, Job } from '@/lib/api'
 
+interface ExtendedJob extends Job {
+  hasAccess?: boolean;
+  accessMethod?: string;
+  accessType?: string;
+  accessedAt?: string;
+  claimedWon?: boolean;
+}
+
 export default function ContractorCurrentJobs() {
   const { user } = useAuth()
-  const [activeJobs, setActiveJobs] = useState<Job[]>([])
+  const [activeJobs, setActiveJobs] = useState<ExtendedJob[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('all')
 
   useEffect(() => {
     if (user && user.role === 'CONTRACTOR') {
@@ -25,14 +35,9 @@ export default function ContractorCurrentJobs() {
     try {
       setLoading(true)
       
-      // Get contractor's applications and filter for accepted ones with active jobs
-      const applications = await jobsApi.getMyApplications()
-      const acceptedApplications = applications.filter(app => app.status === 'ACCEPTED')
-      const activeJobsData = acceptedApplications
-        .map(app => app.job)
-        .filter(job => ['IN_PROGRESS', 'DISPUTED'].includes(job.status))
-      
-      setActiveJobs(activeJobsData)
+      // Get all contractor's jobs with ACTIVE status (includes POSTED, IN_PROGRESS, WON, AWAITING_FINAL_PRICE_CONFIRMATION)
+      const { jobs } = await jobsApi.getMyAllJobs({ status: 'ACTIVE' })
+      setActiveJobs(jobs)
     } catch (error) {
       handleApiError(error, 'Failed to fetch active jobs')
     } finally {
@@ -50,14 +55,6 @@ export default function ContractorCurrentJobs() {
     }).format(amount)
   }
 
-  const calculateProgress = (job: Job) => {
-    // Calculate progress based on job timeline or milestones
-    // For now, use a simple calculation based on creation date
-    const daysSinceStart = Math.floor((new Date().getTime() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-    const estimatedDuration = job.urgency === 'asap' ? 3 : job.urgency === 'week' ? 7 : 14
-    return Math.min(Math.floor((daysSinceStart / estimatedDuration) * 100), 90)
-  }
-
   const getTimeAgo = (date: string) => {
     const days = Math.floor((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
     if (days === 0) return 'Today'
@@ -65,6 +62,37 @@ export default function ContractorCurrentJobs() {
     if (days < 7) return `${days} days ago`
     if (days < 14) return '1 week ago'
     return `${Math.floor(days / 7)} weeks ago`
+  }
+
+  const getStatusBadge = (job: ExtendedJob) => {
+    if (job.status === 'DISPUTED') {
+      return <Badge variant="destructive">Disputed</Badge>
+    }
+    if (job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION') {
+      return <Badge className="bg-amber-500">Awaiting Confirmation</Badge>
+    }
+    if (job.status === 'WON' || job.claimedWon) {
+      return <Badge className="bg-green-600">Won Job</Badge>
+    }
+    if (job.status === 'IN_PROGRESS') {
+      return <Badge className="bg-blue-600">In Progress</Badge>
+    }
+    return <Badge variant="outline">Available</Badge>
+  }
+
+  const getAccessMethodIcon = (job: ExtendedJob) => {
+    if (job.accessMethod === 'CREDIT') {
+      return <Coins className="h-3 w-3 text-yellow-600" />
+    }
+    return <CreditCard className="h-3 w-3 text-blue-600" />
+  }
+
+  // Filter jobs by tab
+  const getFilteredJobs = () => {
+    if (activeTab === 'all') return activeJobs
+    if (activeTab === 'won') return activeJobs.filter(job => job.status === 'WON' || job.claimedWon || job.status === 'IN_PROGRESS')
+    if (activeTab === 'available') return activeJobs.filter(job => job.status === 'POSTED' && !job.claimedWon)
+    return activeJobs
   }
 
   if (loading) {
@@ -84,12 +112,14 @@ export default function ContractorCurrentJobs() {
     )
   }
 
+  const filteredJobs = getFilteredJobs()
+
   return (
     <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Current Jobs</h1>
-          <p className="text-muted-foreground">Manage your active projects</p>
+          <h1 className="text-3xl font-bold">Active Jobs</h1>
+          <p className="text-muted-foreground">Manage your active jobs and leads</p>
         </div>
         <Button variant="outline" asChild>
           <Link href="/dashboard/contractor">
@@ -98,55 +128,77 @@ export default function ContractorCurrentJobs() {
         </Button>
       </div>
 
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="all">All ({activeJobs.length})</TabsTrigger>
+          <TabsTrigger value="won">
+            Won / In Progress ({activeJobs.filter(j => j.status === 'WON' || j.claimedWon || j.status === 'IN_PROGRESS').length})
+          </TabsTrigger>
+          <TabsTrigger value="available">
+            Available ({activeJobs.filter(j => j.status === 'POSTED' && !j.claimedWon).length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="space-y-4">
-        {activeJobs.length === 0 ? (
+        {filteredJobs.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">You don&apos;t have any active jobs</p>
+              <p className="text-muted-foreground mb-4">No jobs found in this category</p>
               <Button asChild>
                 <Link href="/jobs">Browse Available Jobs</Link>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          activeJobs.map((job) => (
-            <Card key={job.id} className="dashboard-card">
+          filteredJobs.map((job) => (
+            <Card key={job.id} className="dashboard-card hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle>{job.title}</CardTitle>
-                  <Badge variant={['DISPUTED'].includes(job.status) ? 'destructive' : 'outline'}>
-                    {['DISPUTED'].includes(job.status) ? 'Disputed' : 'In Progress'}
-                  </Badge>
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2">
+                      {job.title}
+                      {job.claimedWon && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                    </CardTitle>
+                    <CardDescription>{job.service?.name}</CardDescription>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {getStatusBadge(job)}
+                    {job.hasAccess && (
+                      <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                        {getAccessMethodIcon(job)}
+                        {job.accessMethod === 'CREDIT' ? 'Credit' : 'Paid'}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <CardDescription className="flex items-center gap-4 text-sm">
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
                   <span className="flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    {formatCurrency(job.budget)}
+                    {formatCurrency(job.budget || job.estimatedValue)}
                   </span>
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {job.location}
                   </span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span>Started {getTimeAgo(job.createdAt)}</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {job.accessedAt ? `Purchased ${getTimeAgo(job.accessedAt)}` : `Posted ${getTimeAgo(job.createdAt)}`}
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>Estimated Progress</span>
-                    <span>{calculateProgress(job)}%</span>
-                  </div>
-                  <Progress value={calculateProgress(job)} className="h-2" />
-                </div>
+                {job.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {job.description}
+                  </p>
+                )}
               </CardContent>
               <CardFooter className="pt-2">
                 <Button variant="outline" asChild className="w-full">
                   <Link href={`/dashboard/contractor/jobs/${job.id}`}>
-                    View Details & Update Progress
+                    View Job Details
                   </Link>
                 </Button>
               </CardFooter>

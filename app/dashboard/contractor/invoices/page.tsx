@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -57,7 +57,7 @@ interface ContractorInvoice {
   isPayable?: boolean // Flag from backend indicating if invoice can be paid
 }
 
-// Manual Invoice Payment Form Component
+// Manual Invoice Payment Form Component with Apple Pay and Google Pay support
 function ManualInvoicePaymentForm({ 
   invoice, 
   onSuccess, 
@@ -71,11 +71,45 @@ function ManualInvoicePaymentForm({
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Create payment intent on mount
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/create-manual-invoice-payment-intent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getStoredToken()}`
+          },
+          body: JSON.stringify({ manualInvoiceId: invoice.id })
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to create payment intent')
+        }
+
+        setClientSecret(result.data.clientSecret)
+      } catch (err: any) {
+        console.error('Error creating payment intent:', err)
+        setError(err.message || 'Failed to initialize payment')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    createPaymentIntent()
+  }, [invoice.id])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !clientSecret) {
       return
     }
 
@@ -83,31 +117,14 @@ function ManualInvoicePaymentForm({
     setError(null)
 
     try {
-      // Create payment intent for manual invoice
-      const response = await fetch('/api/payments/create-manual-invoice-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getStoredToken()}`
+      // Confirm payment with Stripe using PaymentElement (supports Apple Pay, Google Pay, cards, etc.)
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard/contractor/invoices?payment_success=true`,
         },
-        body: JSON.stringify({ manualInvoiceId: invoice.id })
+        redirect: 'if_required',
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to create payment intent')
-      }
-
-      // Confirm payment with Stripe
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        result.data.clientSecret,
-        {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-          }
-        }
-      )
 
       if (stripeError) {
         setError(stripeError.message || 'Payment failed')
@@ -116,7 +133,7 @@ function ManualInvoicePaymentForm({
 
       if (paymentIntent?.status === 'succeeded') {
         // Confirm payment with backend
-        const confirmResponse = await fetch('/api/payments/pay-manual-invoice', {
+        const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/pay-manual-invoice`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -137,11 +154,132 @@ function ManualInvoicePaymentForm({
       }
     } catch (err: any) {
       console.error('Payment error:', err)
-      console.error('Error details:', {
-        message: err.message,
-        stack: err.stack,
-        response: err.response
+      setError(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-[200px] w-full" />
+        <div className="flex gap-3">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 flex-1" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!clientSecret) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error || 'Failed to initialize payment. Please try again.'}
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#10b981',
+            fontFamily: 'system-ui, sans-serif',
+          },
+        },
+      }}
+    >
+      <InvoicePaymentForm 
+        invoice={invoice}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+        error={error}
+        setError={setError}
+        isProcessing={isProcessing}
+        setIsProcessing={setIsProcessing}
+        clientSecret={clientSecret}
+      />
+    </Elements>
+  )
+}
+
+// Inner payment form component that has access to Elements context
+function InvoicePaymentForm({
+  invoice,
+  onSuccess,
+  onCancel,
+  error,
+  setError,
+  isProcessing,
+  setIsProcessing,
+  clientSecret,
+}: {
+  invoice: ContractorInvoice
+  onSuccess: () => void
+  onCancel: () => void
+  error: string | null
+  setError: (error: string | null) => void
+  isProcessing: boolean
+  setIsProcessing: (isProcessing: boolean) => void
+  clientSecret: string
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    if (!stripe || !elements) {
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard/contractor/invoices?payment_success=true`,
+        },
+        redirect: 'if_required',
       })
+
+      if (stripeError) {
+        setError(stripeError.message || 'Payment failed')
+        return
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/pay-manual-invoice`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getStoredToken()}`
+          },
+          body: JSON.stringify({
+            manualInvoiceId: invoice.id,
+            stripePaymentIntentId: paymentIntent.id
+          })
+        })
+
+        if (!confirmResponse.ok) {
+          const { message } = await confirmResponse.json()
+          throw new Error(message || 'Failed to confirm payment')
+        }
+
+        onSuccess()
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err)
       setError(err.message || 'Payment failed. Please try again.')
     } finally {
       setIsProcessing(false)
@@ -153,22 +291,12 @@ function ManualInvoicePaymentForm({
       <div className="space-y-4">
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Card Details
+            Payment Method
           </label>
-          <div className="p-3 border border-gray-300 rounded-md">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': { color: '#aab7c4' },
-                  },
-                  invalid: { color: '#9e2146' },
-                },
-              }}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Pay securely with card, Apple Pay, or Google Pay
+          </p>
+          <PaymentElement />
         </div>
 
         {error && (
@@ -492,16 +620,14 @@ export default function ContractorInvoicesPage() {
                 )}
               </div>
 
-              <Elements stripe={stripePromise}>
-                <ManualInvoicePaymentForm
-                  invoice={selectedInvoice}
-                  onSuccess={handlePaymentSuccess}
-                  onCancel={() => {
-                    setShowPaymentDialog(false)
-                    setSelectedInvoice(null)
-                  }}
-                />
-              </Elements>
+              <ManualInvoicePaymentForm
+                invoice={selectedInvoice}
+                onSuccess={handlePaymentSuccess}
+                onCancel={() => {
+                  setShowPaymentDialog(false)
+                  setSelectedInvoice(null)
+                }}
+              />
             </div>
           )}
         </DialogContent>

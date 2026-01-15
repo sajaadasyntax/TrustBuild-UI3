@@ -1018,6 +1018,22 @@ export const jobsApi = {
     return response.data.applications;
   },
 
+  getMyAllJobs: async (params: { status?: 'ACTIVE' | 'COMPLETED' | string } = {}): Promise<{
+    jobs: (Job & { hasAccess: boolean; accessMethod?: string; accessType?: string })[];
+    total: number;
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params.status) searchParams.set('status', params.status);
+    
+    const response = await apiRequest<{ 
+      data: { 
+        jobs: (Job & { hasAccess: boolean; accessMethod?: string; accessType?: string })[];
+        total: number;
+      } 
+    }>(`/jobs/my/all?${searchParams.toString()}`);
+    return response.data;
+  },
+
   updateStatus: async (jobId: string, status: string): Promise<Job> => {
     const response = await apiRequest<{ data: { job: Job } }>(`/jobs/${jobId}/status`, {
       method: 'PATCH',

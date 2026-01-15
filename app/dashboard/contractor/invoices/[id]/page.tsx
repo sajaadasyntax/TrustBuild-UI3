@@ -195,11 +195,11 @@ export default function InvoiceDetailPage() {
                         <TableCell className="text-right">{formatCurrency(Number(invoice.amount))}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>VAT (included)</TableCell>
-                        <TableCell className="text-right">£0.00</TableCell>
+                        <TableCell>VAT ({invoice.vatRate || 20}%)</TableCell>
+                        <TableCell className="text-right">{formatCurrency(Number(invoice.vatAmount || 0))}</TableCell>
                       </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Total</TableCell>
+                      <TableRow className="bg-muted/50">
+                        <TableCell className="font-medium">Total (inc. VAT)</TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(Number(invoice.totalAmount))}</TableCell>
                       </TableRow>
                     </TableBody>

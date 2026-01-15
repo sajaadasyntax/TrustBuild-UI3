@@ -591,10 +591,22 @@ export default function SubscriptionManager() {
       <Card>
         <CardHeader>
           <CardTitle>Subscribe to {selectedPlan.name} Plan</CardTitle>
-          <CardDescription>Complete your subscription payment</CardDescription>
+          <CardDescription>Complete your subscription payment - Pay securely with card, Apple Pay, or Google Pay</CardDescription>
         </CardHeader>
         <CardContent>
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <Elements 
+            stripe={stripePromise} 
+            options={{ 
+              clientSecret,
+              appearance: {
+                theme: 'stripe',
+                variables: {
+                  colorPrimary: '#10b981',
+                  fontFamily: 'system-ui, sans-serif',
+                },
+              },
+            }}
+          >
             <PaymentForm 
               clientSecret={clientSecret}
               plan={selectedPlan}
