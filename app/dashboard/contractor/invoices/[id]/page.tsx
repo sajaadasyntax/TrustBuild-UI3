@@ -164,10 +164,12 @@ export default function InvoiceDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="font-medium mb-2">From</h3>
-                  <p>TrustBuild</p>
-                  <p>123 Construction Avenue</p>
-                  <p>London, UK</p>
-                  <p>info@trustbuild.uk</p>
+                  <p className="font-semibold">TRUSTBUILDERS LTD</p>
+                  <p>124 City Road</p>
+                  <p>London, EC1V 2NX</p>
+                  <p>United Kingdom</p>
+                  <p className="text-sm text-muted-foreground mt-2">Company No: 16452861</p>
+                  <p className="text-sm text-muted-foreground">VAT No: 496 3800 58</p>
                 </div>
                 <div>
                   <h3 className="font-medium mb-2">To</h3>
@@ -221,9 +223,12 @@ export default function InvoiceDetailPage() {
                 </p>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col items-start border-t pt-6">
+            <CardFooter className="flex flex-col items-start border-t pt-6 space-y-2">
               <p className="text-xs text-muted-foreground">
                 For any questions regarding this invoice, please contact our support team at support@trustbuild.uk
+              </p>
+              <p className="text-xs text-muted-foreground">
+                TRUSTBUILDERS LTD | 124 City Road, London, EC1V 2NX | Company No: 16452861 | VAT No: 496 3800 58
               </p>
             </CardFooter>
           </Card>
