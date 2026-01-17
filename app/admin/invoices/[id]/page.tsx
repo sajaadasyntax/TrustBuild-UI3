@@ -42,6 +42,8 @@ interface Invoice {
   contractorId: string
   jobId: string
   amount: number
+  vatRate?: number
+  vatAmount?: number
   totalAmount: number
   status: string
   description: string
