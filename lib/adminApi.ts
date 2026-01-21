@@ -567,6 +567,23 @@ export const adminApi = {
     return response;
   },
 
+  // Update full service details (name, description, category, isActive, pricing)
+  updateService: async (serviceId: string, serviceData: {
+    name?: string;
+    description?: string;
+    category?: string;
+    isActive?: boolean;
+    smallJobPrice?: number;
+    mediumJobPrice?: number;
+    largeJobPrice?: number;
+  }) => {
+    const response = await adminApiRequest<any>(`/admin/services/${serviceId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(serviceData),
+    });
+    return response;
+  },
+
   // Support Tickets
   getSupportTickets: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

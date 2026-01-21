@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { 
   Settings, 
   PoundSterling, 
@@ -94,9 +95,19 @@ export default function AdminPricingPage() {
   const [loading, setLoading] = useState(true)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [showPricingDialog, setShowPricingDialog] = useState(false)
+  const [showServiceDialog, setShowServiceDialog] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
   const [pricingForm, setPricingForm] = useState({
+    smallJobPrice: 0,
+    mediumJobPrice: 0,
+    largeJobPrice: 0
+  })
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    description: '',
+    category: '',
+    isActive: true,
     smallJobPrice: 0,
     mediumJobPrice: 0,
     largeJobPrice: 0
@@ -144,6 +155,24 @@ export default function AdminPricingPage() {
       await fetchData()
     } catch (error) {
       handleApiError(error, 'Failed to update pricing')
+    }
+  }
+
+  const handleUpdateService = async () => {
+    if (!selectedService) return
+
+    try {
+      await adminApi.updateService(selectedService.id, serviceForm)
+      
+      toast({
+        title: "Service Updated",
+        description: `${serviceForm.name} has been updated successfully`,
+      })
+      
+      setShowServiceDialog(false)
+      await fetchData()
+    } catch (error) {
+      handleApiError(error, 'Failed to update service')
     }
   }
 
@@ -197,6 +226,20 @@ export default function AdminPricingPage() {
       largeJobPrice: service.largeJobPrice
     })
     setShowPricingDialog(true)
+  }
+
+  const openServiceDialog = (service: Service) => {
+    setSelectedService(service)
+    setServiceForm({
+      name: service.name,
+      description: service.description || '',
+      category: service.category || '',
+      isActive: service.isActive,
+      smallJobPrice: service.smallJobPrice,
+      mediumJobPrice: service.mediumJobPrice,
+      largeJobPrice: service.largeJobPrice
+    })
+    setShowServiceDialog(true)
   }
 
   const openCreditDialog = (contractor: Contractor) => {
@@ -275,14 +318,24 @@ export default function AdminPricingPage() {
                           <h3 className="font-semibold">{service.name}</h3>
                           <p className="text-sm text-muted-foreground">{service.category}</p>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openPricingDialog(service)}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Pricing
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openServiceDialog(service)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Service
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openPricingDialog(service)}
+                          >
+                            <PoundSterling className="h-4 w-4 mr-2" />
+                            Quick Pricing
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-4">
@@ -530,6 +583,131 @@ export default function AdminPricingPage() {
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Full Service Edit Dialog */}
+        <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Service</DialogTitle>
+              <DialogDescription>
+                Update service details, category, and pricing
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="serviceName">Service Name *</Label>
+                <Input
+                  id="serviceName"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Plumbing, Electrical, etc."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="serviceDescription">Description</Label>
+                <Textarea
+                  id="serviceDescription"
+                  value={serviceForm.description}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Service description..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="serviceCategory">Category</Label>
+                <Input
+                  id="serviceCategory"
+                  value={serviceForm.category}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, category: e.target.value }))}
+                  placeholder="e.g., Trade Services, Home Improvement, etc."
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label htmlFor="serviceActive" className="text-base font-medium">
+                    Service Status
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {serviceForm.isActive ? 'Active - visible to customers' : 'Inactive - hidden from customers'}
+                  </p>
+                </div>
+                <Switch
+                  id="serviceActive"
+                  checked={serviceForm.isActive}
+                  onCheckedChange={(checked) => setServiceForm(prev => ({ ...prev, isActive: checked }))}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-4">Lead Pricing</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="editSmallPrice">Small Job Price</Label>
+                    <Input
+                      id="editSmallPrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.smallJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        smallJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="editMediumPrice">Medium Job Price</Label>
+                    <Input
+                      id="editMediumPrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.mediumJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        mediumJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="editLargePrice">Large Job Price</Label>
+                    <Input
+                      id="editLargePrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.largeJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        largeJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleUpdateService} 
+                  className="flex-1"
+                  disabled={!serviceForm.name.trim()}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowServiceDialog(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
