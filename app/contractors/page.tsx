@@ -20,14 +20,22 @@ export default function ContractorsDirectory() {
   const [blocked, setBlocked] = useState(false)
 
   useEffect(() => {
-    // Redirect clients to their dashboard - they shouldn't browse all contractors
+    // Block customers from browsing all contractors
     if (user && user.role === 'CUSTOMER') {
       setBlocked(true)
       setLoading(false)
       return
     }
     
-    if (user === null || user?.role !== 'CUSTOMER') {
+    // Block contractors from seeing other contractors
+    if (user && user.role === 'CONTRACTOR') {
+      setBlocked(true)
+      setLoading(false)
+      return
+    }
+    
+    // Only allow non-authenticated users or admins
+    if (user === null) {
       fetchContractors()
     }
   }, [user]) // Removed router from dependencies
@@ -49,6 +57,7 @@ export default function ContractorsDirectory() {
   }
 
   if (blocked) {
+    const isContractor = user?.role === 'CONTRACTOR'
     return (
       <div className="container py-32">
         <Card className="max-w-2xl mx-auto">
@@ -63,16 +72,21 @@ export default function ContractorsDirectory() {
           <CardContent className="space-y-4">
             <Alert>
               <AlertDescription>
-                This page is not available for clients. You can view contractors who apply to your posted jobs from your dashboard.
+                {isContractor 
+                  ? "This page is not available for contractors. Please return to your dashboard to manage your jobs and profile."
+                  : "This page is not available for clients. You can view contractors who apply to your posted jobs from your dashboard."
+                }
               </AlertDescription>
             </Alert>
             <div className="flex justify-center space-x-4">
-              <Link href="/dashboard/client">
+              <Link href={isContractor ? "/dashboard/contractor" : "/dashboard/client"}>
                 <Button>Go to Dashboard</Button>
               </Link>
-              <Link href="/post-job">
-                <Button variant="outline">Post a Job</Button>
-              </Link>
+              {!isContractor && (
+                <Link href="/post-job">
+                  <Button variant="outline">Post a Job</Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

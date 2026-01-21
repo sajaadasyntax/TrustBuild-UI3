@@ -330,10 +330,10 @@ export const adminApi = {
   },
 
   // Set job lead price
-  setJobLeadPrice: async (jobId: string, leadPrice: number) => {
+  setJobLeadPrice: async (jobId: string, price: number, reason?: string) => {
     const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/lead-price`, {
       method: 'PATCH',
-      body: JSON.stringify({ leadPrice }),
+      body: JSON.stringify({ price, reason: reason || 'Admin price adjustment' }),
     });
     return response;
   },

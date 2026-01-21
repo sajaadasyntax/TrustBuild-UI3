@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle } from 'lucide-react'
@@ -11,10 +11,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { contractorsApi, reviewsApi, Contractor, Review, handleApiError } from '@/lib/api'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/contexts/AuthContext'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { XCircle } from 'lucide-react'
 
 export default function ContractorProfilePage() {
   const { id } = useParams() as { id: string }
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user } = useAuth()
   const fromSource = searchParams.get('from')
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
@@ -23,10 +28,19 @@ export default function ContractorProfilePage() {
   const [reviewsTotal, setReviewsTotal] = useState(0)
   const [averageRating, setAverageRating] = useState(0)
   const [logoError, setLogoError] = useState(false)
+  const [isOwnProfile, setIsOwnProfile] = useState(false)
   
-  // Determine the back link based on where the user came from
-  const backLink = fromSource === 'featured' ? '/dashboard/featured-contractors' : '/contractors'
-  const backText = fromSource === 'featured' ? 'Back to Featured Contractors' : 'Back to Contractors'
+  // Handle back navigation - use browser history if available
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      // Fallback to a default page
+      router.push(fromSource === 'featured' ? '/dashboard/featured-contractors' : '/')
+    }
+  }
+  
+  const backText = fromSource === 'featured' ? 'Back to Featured Contractors' : 'Go Back'
 
   useEffect(() => {
     if (id) {
@@ -40,6 +54,11 @@ export default function ContractorProfilePage() {
       setLoading(true)
       const contractorData = await contractorsApi.getById(id)
       setContractor(contractorData)
+      
+      // Check if this is the contractor's own profile
+      if (user?.role === 'CONTRACTOR' && user?.contractor?.id === id) {
+        setIsOwnProfile(true)
+      }
     } catch (error) {
       handleApiError(error, 'Failed to load contractor profile')
     } finally {
@@ -99,12 +118,40 @@ export default function ContractorProfilePage() {
             <p className="text-muted-foreground mb-6">
               The contractor profile you are looking for doesn't exist or has been removed.
             </p>
-            <Link href={backLink}>
-              <Button>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {backText}
-              </Button>
-            </Link>
+            <Button onClick={handleBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {backText}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Block contractors from viewing other contractors' profiles
+  if (user?.role === 'CONTRACTOR' && user?.contractor?.id !== contractor.id) {
+    return (
+      <div className="container py-32">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <XCircle className="w-10 h-10 text-red-600" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Access Restricted</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                You cannot view other contractor profiles. Please return to your dashboard.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-center">
+              <Link href="/dashboard/contractor">
+                <Button>Go to Dashboard</Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -118,12 +165,10 @@ export default function ContractorProfilePage() {
   return (
     <div className="container py-32">
       <div className="mb-8">
-        <Link href={backLink}>
-          <Button variant="outline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {backText}
-          </Button>
-        </Link>
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {backText}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

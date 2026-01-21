@@ -364,9 +364,10 @@ export default function ContractorInvoicesPage() {
   const handleDownload = async (invoiceId: string, invoiceType: string) => {
     try {
       // Different download endpoint for manual invoices
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'
       const endpoint = invoiceType === 'manual' 
-        ? `/api/invoices/manual/${invoiceId}/download`
-        : `/api/invoices/${invoiceId}/download`
+        ? `${baseUrl}/invoices/manual/${invoiceId}/download`
+        : `${baseUrl}/invoices/${invoiceId}/download`
       
       const response = await fetch(endpoint, {
         headers: {

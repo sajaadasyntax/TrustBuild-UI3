@@ -56,7 +56,8 @@ function checkIsJobWinner(
 export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetailsProps) {
   const { user } = useAuth()
   const [updating, setUpdating] = useState(false)
-  const [hasAccess, setHasAccess] = useState(false)
+  // Initialize hasAccess from job.hasAccess if available (backend sends this flag)
+  const [hasAccess, setHasAccess] = useState<boolean>((job as any).hasAccess ?? false)
   const [checkingAccess, setCheckingAccess] = useState(true)
   const [showAccessDialog, setShowAccessDialog] = useState(false)
   const [contractor, setContractor] = useState<Contractor | null>(null)
@@ -88,7 +89,8 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const applicationStatus = myApplication?.status || 'none'
   const canCompleteJob = job.status === 'IN_PROGRESS' && isJobWinner
   const canProposeFinalPrice = job.status === 'IN_PROGRESS' && isJobWinner
-  const canRequestReview = job.status === 'COMPLETED' && isJobWinner
+  // Allow review request if: job is completed AND (contractor won OR contractor has access with claimed won)
+  const canRequestReview = job.status === 'COMPLETED' && (isJobWinner || hasClaimedWon)
   const isAwaitingFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && isJobWinner
 
   // Fetch contractor data on mount and when job changes
@@ -96,6 +98,13 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     fetchContractorData()
     checkJobAccess()
   }, [job.id])
+
+  // Update hasAccess immediately when job.hasAccess changes (from job refetch)
+  useEffect(() => {
+    if ((job as any).hasAccess) {
+      setHasAccess(true)
+    }
+  }, [(job as any).hasAccess])
 
   // Re-check access when jobAccess or applications change
   useEffect(() => {

@@ -22,7 +22,7 @@ export function formatCurrency(amount: number | undefined | null, options?: {
 }
 
 /**
- * Format a date string to locale date
+ * Format a date string to locale date (UK timezone)
  */
 export function formatDate(dateString: string | Date | undefined | null): string {
   if (!dateString) return 'Unknown'
@@ -37,11 +37,35 @@ export function formatDate(dateString: string | Date | undefined | null): string
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: 'Europe/London',
+  })
+}
+
+/**
+ * Format a date string to locale date and time (UK timezone)
+ */
+export function formatDateTime(dateString: string | Date | undefined | null): string {
+  if (!dateString) return 'Unknown'
+  
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString
+  
+  if (isNaN(date.getTime())) {
+    return 'Invalid date'
+  }
+  
+  return date.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/London',
   })
 }
 
 /**
  * Format a date string to relative time (e.g., "2 hours ago")
+ * Uses UTC for consistent comparison regardless of timezone
  */
 export function formatRelativeTime(dateString: string | Date | undefined | null): string {
   if (!dateString) return 'Unknown'
@@ -52,12 +76,14 @@ export function formatRelativeTime(dateString: string | Date | undefined | null)
     return 'Invalid date'
   }
   
+  // Use UTC timestamps for consistent calculation
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   
+  if (diffMinutes < 0) return 'Just now' // Handle future dates gracefully
   if (diffMinutes < 1) return 'Just now'
   if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
