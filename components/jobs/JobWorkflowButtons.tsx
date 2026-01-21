@@ -32,6 +32,7 @@ interface JobWorkflowButtonsProps {
   contractorName?: string;
   contractorsWhoClaimedWon?: Array<{ contractorId?: string; contractorName: string; claimedWonAt?: string | null }>;  // Contractors who claimed "I won the job"
   selectedContractorId?: string | null;  // Customer's selected contractor ID
+  customerConfirmed?: boolean;  // Whether customer has confirmed the job completion
   onUpdate: () => void;
 }
 
@@ -49,8 +50,11 @@ export default function JobWorkflowButtons({
   contractorName,
   contractorsWhoClaimedWon = [],
   selectedContractorId = null,
+  customerConfirmed = false,
   onUpdate,
 }: JobWorkflowButtonsProps) {
+  // Determine if the job is fully completed (customer has confirmed)
+  const isJobFullyCompleted = customerConfirmed;
   const [showClaimWonDialog, setShowClaimWonDialog] = useState(false);
   const [showMarkCompletedDialog, setShowMarkCompletedDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -638,8 +642,8 @@ export default function JobWorkflowButtons({
         </>
       )}
 
-      {/* Customer Buttons */}
-      {isCustomer && jobStatus === 'COMPLETED' && finalAmount && (
+      {/* Customer Buttons - Show only if job is COMPLETED but customer hasn't confirmed yet */}
+      {isCustomer && jobStatus === 'COMPLETED' && finalAmount && !isJobFullyCompleted && (
         <>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start gap-3">

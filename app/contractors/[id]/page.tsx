@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -15,7 +15,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { XCircle } from 'lucide-react'
 
+// Main page wrapper with Suspense boundary for useSearchParams
 export default function ContractorProfilePage() {
+  return (
+    <Suspense fallback={<div className="container py-32 text-center">Loading...</div>}>
+      <ContractorProfileContent />
+    </Suspense>
+  )
+}
+
+function ContractorProfileContent() {
   const { id } = useParams() as { id: string }
   const searchParams = useSearchParams()
   const router = useRouter()

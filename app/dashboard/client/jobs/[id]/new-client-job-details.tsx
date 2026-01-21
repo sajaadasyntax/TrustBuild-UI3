@@ -633,6 +633,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           contractorName={contractorsWhoClaimedWon.length === 1 ? contractorsWhoClaimedWon[0].contractorName : undefined}
           contractorsWhoClaimedWon={contractorsWhoClaimedWon}
           selectedContractorId={selectedContractor}
+          customerConfirmed={job.customerConfirmed}
           onUpdate={onJobUpdate}
         />
 
