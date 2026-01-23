@@ -96,6 +96,7 @@ export default function AdminPricingPage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [showPricingDialog, setShowPricingDialog] = useState(false)
   const [showServiceDialog, setShowServiceDialog] = useState(false)
+  const [showCreateServiceDialog, setShowCreateServiceDialog] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null)
   const [pricingForm, setPricingForm] = useState({
@@ -174,6 +175,53 @@ export default function AdminPricingPage() {
     } catch (error) {
       handleApiError(error, 'Failed to update service')
     }
+  }
+
+  const handleCreateService = async () => {
+    if (!serviceForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Service name is required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await adminApi.createService(serviceForm)
+      
+      toast({
+        title: "Service Created",
+        description: `${serviceForm.name} has been created successfully`,
+      })
+      
+      setShowCreateServiceDialog(false)
+      setServiceForm({
+        name: '',
+        description: '',
+        category: '',
+        isActive: true,
+        smallJobPrice: 15.00,
+        mediumJobPrice: 30.00,
+        largeJobPrice: 50.00
+      })
+      await fetchData()
+    } catch (error) {
+      handleApiError(error, 'Failed to create service')
+    }
+  }
+
+  const openCreateServiceDialog = () => {
+    setServiceForm({
+      name: '',
+      description: '',
+      category: '',
+      isActive: true,
+      smallJobPrice: 15.00,
+      mediumJobPrice: 30.00,
+      largeJobPrice: 50.00
+    })
+    setShowCreateServiceDialog(true)
   }
 
   const handleAdjustCredits = async (adjustmentType: 'add' | 'subtract' | 'set') => {
@@ -304,10 +352,18 @@ export default function AdminPricingPage() {
           <TabsContent value="services" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Service Lead Pricing</CardTitle>
-                <CardDescription>
-                  Set lead access prices for different job sizes across all service categories
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Service Lead Pricing</CardTitle>
+                    <CardDescription>
+                      Set lead access prices for different job sizes across all service categories
+                    </CardDescription>
+                  </div>
+                  <Button onClick={openCreateServiceDialog}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Service
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
@@ -495,29 +551,38 @@ export default function AdminPricingPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <Badge className="bg-green-100 text-green-800 mb-2">Small Jobs</Badge>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(
-                        services.reduce((sum, s) => sum + s.smallJobPrice, 0) / services.length || 0
-                      )}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <Badge className="bg-green-100 text-green-800 mb-3">Small Jobs</Badge>
+                    <p className="text-2xl font-bold break-words">
+                      {services.length > 0 
+                        ? formatCurrency(
+                            services.reduce((sum, s) => sum + s.smallJobPrice, 0) / services.length
+                          )
+                        : formatCurrency(0)
+                      }
                     </p>
                   </div>
-                  <div className="text-center">
-                    <Badge className="bg-yellow-100 text-yellow-800 mb-2">Medium Jobs</Badge>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(
-                        services.reduce((sum, s) => sum + s.mediumJobPrice, 0) / services.length || 0
-                      )}
+                  <div className="text-center p-4 border rounded-lg">
+                    <Badge className="bg-yellow-100 text-yellow-800 mb-3">Medium Jobs</Badge>
+                    <p className="text-2xl font-bold break-words">
+                      {services.length > 0
+                        ? formatCurrency(
+                            services.reduce((sum, s) => sum + s.mediumJobPrice, 0) / services.length
+                          )
+                        : formatCurrency(0)
+                      }
                     </p>
                   </div>
-                  <div className="text-center">
-                    <Badge className="bg-red-100 text-red-800 mb-2">Large Jobs</Badge>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(
-                        services.reduce((sum, s) => sum + s.largeJobPrice, 0) / services.length || 0
-                      )}
+                  <div className="text-center p-4 border rounded-lg">
+                    <Badge className="bg-red-100 text-red-800 mb-3">Large Jobs</Badge>
+                    <p className="text-2xl font-bold break-words">
+                      {services.length > 0
+                        ? formatCurrency(
+                            services.reduce((sum, s) => sum + s.largeJobPrice, 0) / services.length
+                          )
+                        : formatCurrency(0)
+                      }
                     </p>
                   </div>
                 </div>
@@ -704,6 +769,131 @@ export default function AdminPricingPage() {
                 <Button 
                   variant="outline"
                   onClick={() => setShowServiceDialog(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Service Dialog */}
+        <Dialog open={showCreateServiceDialog} onOpenChange={setShowCreateServiceDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Service</DialogTitle>
+              <DialogDescription>
+                Add a new service to the platform
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newServiceName">Service Name *</Label>
+                <Input
+                  id="newServiceName"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Plumbing, Electrical, etc."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="newServiceDescription">Description</Label>
+                <Textarea
+                  id="newServiceDescription"
+                  value={serviceForm.description}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Service description..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="newServiceCategory">Category</Label>
+                <Input
+                  id="newServiceCategory"
+                  value={serviceForm.category}
+                  onChange={(e) => setServiceForm(prev => ({ ...prev, category: e.target.value }))}
+                  placeholder="e.g., Trade Services, Home Improvement, etc."
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label htmlFor="newServiceActive" className="text-base font-medium">
+                    Service Status
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {serviceForm.isActive ? 'Active - visible to customers' : 'Inactive - hidden from customers'}
+                  </p>
+                </div>
+                <Switch
+                  id="newServiceActive"
+                  checked={serviceForm.isActive}
+                  onCheckedChange={(checked) => setServiceForm(prev => ({ ...prev, isActive: checked }))}
+                />
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-4">Lead Pricing</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="newSmallPrice">Small Job Price</Label>
+                    <Input
+                      id="newSmallPrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.smallJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        smallJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="newMediumPrice">Medium Job Price</Label>
+                    <Input
+                      id="newMediumPrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.mediumJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        mediumJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="newLargePrice">Large Job Price</Label>
+                    <Input
+                      id="newLargePrice"
+                      type="number"
+                      step="0.01"
+                      value={serviceForm.largeJobPrice}
+                      onChange={(e) => setServiceForm(prev => ({ 
+                        ...prev, 
+                        largeJobPrice: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleCreateService} 
+                  className="flex-1"
+                  disabled={!serviceForm.name.trim()}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Service
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateServiceDialog(false)}
                 >
                   Cancel
                 </Button>

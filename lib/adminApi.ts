@@ -567,6 +567,23 @@ export const adminApi = {
     return response;
   },
 
+  // Create a new service
+  createService: async (serviceData: {
+    name: string;
+    description?: string;
+    category?: string;
+    isActive?: boolean;
+    smallJobPrice?: number;
+    mediumJobPrice?: number;
+    largeJobPrice?: number;
+  }) => {
+    const response = await adminApiRequest<any>('/admin/services', {
+      method: 'POST',
+      body: JSON.stringify(serviceData),
+    });
+    return response;
+  },
+
   // Update full service details (name, description, category, isActive, pricing)
   updateService: async (serviceId: string, serviceData: {
     name?: string;
