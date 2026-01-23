@@ -800,7 +800,7 @@ export default function ContractorDashboard() {
                     ))}
                     {completedJobs.length > 5 && (
                       <Button variant="ghost" className="w-full" asChild>
-                        <Link href="/dashboard/contractor/job-history">
+                        <Link href="/dashboard/contractor/completed-jobs">
                           View {completedJobs.length - 5} more completed jobs →
                         </Link>
                       </Button>
