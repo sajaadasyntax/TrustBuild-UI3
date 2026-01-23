@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder } from "lucide-react"
+import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder, PoundSterling } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -42,6 +42,7 @@ export function AdminNavigationNew() {
   const canAccessJobs = isSuperAdmin || hasAnyPermission(permissions, ['jobs:read', 'jobs:write'])
   const canAccessUsers = isSuperAdmin || hasAnyPermission(permissions, ['users:read', 'users:write'])
   const canAccessFinance = isSuperAdmin || hasAnyPermission(permissions, ['payments:read', 'payments:write'])
+  const canAccessPricing = isSuperAdmin || hasAnyPermission(permissions, ['pricing:read', 'pricing:write', 'payments:read', 'payments:write'])
   const canAccessContent = isSuperAdmin || hasAnyPermission(permissions, ['content:read', 'content:write'])
   const canAccessSettings = isSuperAdmin || hasAnyPermission(permissions, ['settings:read', 'settings:write'])
   const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
@@ -153,7 +154,7 @@ export function AdminNavigationNew() {
           )}
 
           {/* Finance Dropdown */}
-          {canAccessFinance && (
+          {(canAccessFinance || canAccessPricing) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -171,30 +172,36 @@ export function AdminNavigationNew() {
               <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/payments" className="cursor-pointer">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Payments
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/unpaid-commissions" className="cursor-pointer">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Commissions
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/invoices" className="cursor-pointer">
-                    <Receipt className="mr-2 h-4 w-4" />
-                    Invoices
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/pricing" className="cursor-pointer">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Pricing
-                  </Link>
-                </DropdownMenuItem>
+                {canAccessFinance && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/payments" className="cursor-pointer">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Payments
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/unpaid-commissions" className="cursor-pointer">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Commissions
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/invoices" className="cursor-pointer">
+                        <Receipt className="mr-2 h-4 w-4" />
+                        Invoices
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canAccessPricing && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/pricing" className="cursor-pointer">
+                      <PoundSterling className="mr-2 h-4 w-4" />
+                      Service Pricing & Management
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
