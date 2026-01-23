@@ -35,7 +35,8 @@ import {
   CreditCard,
   Plus,
   Minus,
-  History
+  History,
+  Trash2
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -185,6 +186,8 @@ export default function AdminContractors() {
   const [loadingTransactions, setLoadingTransactions] = useState(false)
   const [showDirectApprovalDialog, setShowDirectApprovalDialog] = useState(false)
   const [directApprovalReason, setDirectApprovalReason] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteReason, setDeleteReason] = useState('')
   const [approvalData, setApprovalData] = useState({
     approved: true,
     reason: '',
@@ -553,6 +556,37 @@ export default function AdminContractors() {
       fetchStats()
     } catch (error) {
       handleApiError(error, 'Failed to approve contractor')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const openDeleteDialog = (contractor: Contractor) => {
+    setSelectedContractor(contractor)
+    setDeleteReason('')
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteContractor = async () => {
+    if (!selectedContractor) return
+
+    try {
+      setProcessing(true)
+      await adminApi.deleteContractor(selectedContractor.id, deleteReason)
+      
+      toast({
+        title: "Contractor Deleted",
+        description: `${selectedContractor.businessName} has been deleted from the system`,
+      })
+      
+      setShowDeleteDialog(false)
+      setSelectedContractor(null)
+      setDeleteReason('')
+      fetchContractors()
+      fetchPendingContractors()
+      fetchStats()
+    } catch (error) {
+      handleApiError(error, 'Failed to delete contractor')
     } finally {
       setProcessing(false)
     }
@@ -945,6 +979,14 @@ export default function AdminContractors() {
                                 >
                                   <CreditCard className="mr-2 h-4 w-4" />
                                   Manage Credits
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => openDeleteDialog(contractor)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Contractor
                                 </DropdownMenuItem>
                               </>
                             )}
@@ -1551,6 +1593,77 @@ export default function AdminContractors() {
                 <>
                   <UserCheck className="mr-2 h-4 w-4" />
                   Quick Approve
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Contractor Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Contractor</DialogTitle>
+            <DialogDescription>
+              Permanently delete {selectedContractor?.businessName} from the system
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-red-800">Warning: This action cannot be undone</h4>
+                  <p className="text-sm text-red-700 mt-1">
+                    Deleting this contractor will remove all their data including:
+                  </p>
+                  <ul className="text-sm text-red-700 mt-2 list-disc list-inside">
+                    <li>Profile and business information</li>
+                    <li>Credit transactions and balance</li>
+                    <li>Job applications and access records</li>
+                    <li>Portfolio items and reviews</li>
+                    <li>Subscription and payment records</li>
+                    <li>KYC documents</li>
+                  </ul>
+                  <p className="text-sm text-red-700 mt-2">
+                    The associated user account will be deactivated.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deleteReason">Reason for Deletion (Optional)</Label>
+              <Textarea
+                id="deleteReason"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Why are you deleting this contractor? (e.g., Duplicate account, Fraud, User request, etc.)"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteContractor}
+              disabled={processing}
+              variant="destructive"
+            >
+              {processing ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Contractor
                 </>
               )}
             </Button>

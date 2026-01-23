@@ -20,7 +20,9 @@ import {
   BarChart3,
   CreditCard,
   Award,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2,
+  Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,7 +53,9 @@ export function DashboardNavigation() {
     if (user?.role === "CONTRACTOR") {
       return [
         ...baseItems,
-        { label: "Jobs", href: "/jobs", icon: Briefcase },
+        { label: "Find Jobs", href: "/jobs", icon: Briefcase },
+        { label: "Current Jobs", href: "/dashboard/contractor/current-jobs", icon: Clock },
+        { label: "Completed Jobs", href: "/dashboard/contractor/completed-jobs", icon: CheckCircle2 },
         { label: "Messages", href: "/dashboard/contractor/messages", icon: MessageSquare },
         { label: "Reviews", href: "/dashboard/contractor/reviews", icon: Star },
         { label: "Payments", href: "/dashboard/contractor/payments", icon: CreditCard },

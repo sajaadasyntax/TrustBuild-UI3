@@ -842,6 +842,24 @@ export const adminApi = {
   getUnpaidCommissions: async (): Promise<{ data: { commissions: any[] } }> => {
     return adminApiRequest<{ data: { commissions: any[] } }>('/admin/unpaid-commissions');
   },
+
+  // Delete a contractor
+  deleteContractor: async (contractorId: string, reason?: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+    return response;
+  },
+
+  // Send commission reminder to contractor
+  sendCommissionReminder: async (commissionId: string, message?: string) => {
+    const response = await adminApiRequest<any>(`/admin/invoices/send-commission-reminder/${commissionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+    return response;
+  },
 };
 
 export default adminApi;

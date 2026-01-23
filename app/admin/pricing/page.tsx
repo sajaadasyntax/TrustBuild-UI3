@@ -557,7 +557,7 @@ export default function AdminPricingPage() {
                     <p className="text-2xl font-bold break-words">
                       {services.length > 0 
                         ? formatCurrency(
-                            services.reduce((sum, s) => sum + s.smallJobPrice, 0) / services.length
+                            Math.round((services.reduce((sum, s) => sum + s.smallJobPrice, 0) / services.length) * 100) / 100
                           )
                         : formatCurrency(0)
                       }
@@ -568,7 +568,7 @@ export default function AdminPricingPage() {
                     <p className="text-2xl font-bold break-words">
                       {services.length > 0
                         ? formatCurrency(
-                            services.reduce((sum, s) => sum + s.mediumJobPrice, 0) / services.length
+                            Math.round((services.reduce((sum, s) => sum + s.mediumJobPrice, 0) / services.length) * 100) / 100
                           )
                         : formatCurrency(0)
                       }
@@ -579,7 +579,7 @@ export default function AdminPricingPage() {
                     <p className="text-2xl font-bold break-words">
                       {services.length > 0
                         ? formatCurrency(
-                            services.reduce((sum, s) => sum + s.largeJobPrice, 0) / services.length
+                            Math.round((services.reduce((sum, s) => sum + s.largeJobPrice, 0) / services.length) * 100) / 100
                           )
                         : formatCurrency(0)
                       }

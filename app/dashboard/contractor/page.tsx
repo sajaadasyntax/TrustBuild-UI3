@@ -104,28 +104,26 @@ export default function ContractorDashboard() {
       const applicationsData = await jobsApi.getMyApplications()
       setApplications(applicationsData)
 
-      // Fetch jobs (active and completed) from accepted applications and won jobs
-      const acceptedApplications = applicationsData.filter(app => app.status === 'ACCEPTED')
-      const jobsFromApplications = acceptedApplications.map(app => app.job)
+      // Fetch ALL jobs (active and completed) from the proper API endpoint
+      // This includes jobs won via wonByContractorId, not just through applications
+      const [activeJobsResponse, completedJobsResponse] = await Promise.all([
+        jobsApi.getMyAllJobs({ status: 'ACTIVE' }),
+        jobsApi.getMyAllJobs({ status: 'COMPLETED' })
+      ])
       
-      // Also get jobs where contractor won (wonByContractorId)
-      // Note: This should be fetched from the backend, but for now we'll use applications
-      const activeJobsData = jobsFromApplications.filter(job => ['IN_PROGRESS', 'WON', 'DISPUTED'].includes(job.status))
-      const completedJobsData = jobsFromApplications.filter(job => job.status === 'COMPLETED')
-      
-      setActiveJobs(activeJobsData)
-      setCompletedJobs(completedJobsData)
+      setActiveJobs(activeJobsResponse.jobs || [])
+      setCompletedJobs(completedJobsResponse.jobs || [])
 
       // Fetch recent reviews
       const reviewsData = await reviewsApi.getMyReceived()
       setRecentReviews(reviewsData.slice(0, 5)) // Get latest 5 reviews
 
-      // Calculate stats using actual earnings data
+      // Calculate stats using actual earnings data and properly fetched jobs
       const earningsData = await contractorsApi.getMyEarnings()
       setStats({
         totalApplications: applicationsData.length,
-        activeJobs: activeJobsData.length,
-        completedJobs: completedJobsData.length,
+        activeJobs: activeJobsResponse.jobs?.length || 0,
+        completedJobs: completedJobsResponse.jobs?.length || 0,
         totalEarnings: earningsData.totalEarnings,
         monthlyEarnings: earningsData.monthlyEarnings,
         averageRating: contractorData.averageRating || 0,
@@ -233,9 +231,9 @@ export default function ContractorDashboard() {
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/dashboard/contractor/job-history">
+            <Link href="/dashboard/contractor/completed-jobs">
               <FileCheck className="mr-2 h-4 w-4" />
-              Job History
+              Completed Jobs
             </Link>
           </Button>
           <Button variant="outline" asChild>
@@ -698,28 +696,58 @@ export default function ContractorDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Active Jobs */}
             <Card>
-              <CardHeader>
-                <CardTitle>Active Jobs</CardTitle>
-                <CardDescription>
-                  Jobs currently in progress
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Active Jobs</CardTitle>
+                  <CardDescription>
+                    Jobs currently in progress
+                  </CardDescription>
+                </div>
+                {activeJobs.length > 0 && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/contractor/current-jobs">
+                      View All ({activeJobs.length})
+                    </Link>
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {activeJobs.length === 0 ? (
                   <div className="text-center py-6">
                     <Clock className="mx-auto h-8 w-8 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">No active jobs</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Jobs you work on will appear here
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {activeJobs.map((job) => (
-                      <div key={job.id} className="p-3 border rounded-lg">
-                        <h4 className="font-medium mb-1">{job.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget ?? 0)}
-                        </p>
-                      </div>
+                    {activeJobs.slice(0, 5).map((job) => (
+                      <Link 
+                        key={job.id} 
+                        href={`/dashboard/contractor/jobs/${job.id}`}
+                        className="block p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium mb-1">{job.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {job.location} • {formatCurrency(job.budget ?? 0)}
+                            </p>
+                          </div>
+                          <Badge className={getStatusColor(job.status)}>
+                            {job.status.toLowerCase().replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </Link>
                     ))}
+                    {activeJobs.length > 5 && (
+                      <Button variant="ghost" className="w-full" asChild>
+                        <Link href="/dashboard/contractor/current-jobs">
+                          View {activeJobs.length - 5} more active jobs →
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -727,28 +755,56 @@ export default function ContractorDashboard() {
 
             {/* Completed Jobs */}
             <Card>
-              <CardHeader>
-                <CardTitle>Completed Jobs</CardTitle>
-                <CardDescription>
-                  Successfully finished projects
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Completed Jobs</CardTitle>
+                  <CardDescription>
+                    Successfully finished projects
+                  </CardDescription>
+                </div>
+                {completedJobs.length > 0 && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/contractor/completed-jobs">
+                      View All ({completedJobs.length})
+                    </Link>
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {completedJobs.length === 0 ? (
                   <div className="text-center py-6">
                     <CheckCircle className="mx-auto h-8 w-8 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">No completed jobs yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Jobs you complete will appear here
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {completedJobs.slice(0, 5).map((job) => (
-                      <div key={job.id} className="p-3 border rounded-lg">
-                        <h4 className="font-medium mb-1">{job.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {job.location} • {formatCurrency(job.budget ?? 0)}
-                        </p>
-                    </div>
+                      <Link 
+                        key={job.id} 
+                        href={`/dashboard/contractor/jobs/${job.id}`}
+                        className="block p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium mb-1">{job.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {job.location} • {formatCurrency(job.finalAmount || job.budget || 0)}
+                            </p>
+                          </div>
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
+                      </Link>
                     ))}
+                    {completedJobs.length > 5 && (
+                      <Button variant="ghost" className="w-full" asChild>
+                        <Link href="/dashboard/contractor/job-history">
+                          View {completedJobs.length - 5} more completed jobs →
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
