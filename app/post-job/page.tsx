@@ -85,7 +85,11 @@ export default function PostJobPage() {
       let fetchedServices: Service[] = []
       if (response?.status === 'success' && response?.data?.services) {
         // The response.data.services is the array of services
-        fetchedServices = response.data.services.filter((item: any) => item.id)
+        // Filter to only include active services (explicitly exclude inactive ones)
+        // and ensure they have an id
+        fetchedServices = response.data.services.filter((item: any) => 
+          item.id && item.isActive !== false
+        )
       }
       
       console.log('Processed services:', fetchedServices)
