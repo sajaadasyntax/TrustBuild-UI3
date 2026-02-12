@@ -488,6 +488,14 @@ export const adminApi = {
     return response;
   },
 
+  // Process a refund for a payment
+  refundPayment: async (paymentId: string, data: { amount?: number; reason: string }) => {
+    return adminApiRequest<any>(`/admin/payments/${paymentId}/refund`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Get invoices
   getInvoices: async (params?: any) => {
     const queryParams = new URLSearchParams(params);
@@ -841,6 +849,29 @@ export const adminApi = {
   // Get unpaid commissions for admin
   getUnpaidCommissions: async (): Promise<{ data: { commissions: any[] } }> => {
     return adminApiRequest<{ data: { commissions: any[] } }>('/admin/unpaid-commissions');
+  },
+
+  // Manual override — mark a commission as Paid without a gateway transaction
+  manualOverrideCommission: async (commissionId: string, data: { reason: string; notes?: string }) => {
+    return adminApiRequest<any>(`/admin/commissions/${commissionId}/manual-override`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Get contractor's portfolio items
+  getContractorPortfolio: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/portfolio`);
+    return response;
+  },
+
+  // Delete a contractor's portfolio item
+  deleteContractorPortfolioItem: async (contractorId: string, itemId: string, reason?: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/portfolio/${itemId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+    return response;
   },
 
   // Delete a contractor

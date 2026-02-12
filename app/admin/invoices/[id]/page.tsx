@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/table"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   Download, 
   ArrowLeft, 
@@ -22,7 +25,10 @@ import {
   Clock, 
   CheckCircle,
   XCircle, 
-  AlertTriangle 
+  AlertTriangle,
+  ArrowDownRight,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react"
 import { 
   Dialog,
@@ -87,6 +93,13 @@ export default function AdminInvoiceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+
+  // Refund state
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
+  const [refundReason, setRefundReason] = useState('')
+  const [refundAmount, setRefundAmount] = useState<string>('')
+  const [isFullRefund, setIsFullRefund] = useState(true)
+  const [processingRefund, setProcessingRefund] = useState(false)
 
   const fetchInvoiceDetails = useCallback(async (invoiceId: string) => {
     try {
@@ -178,6 +191,62 @@ export default function AdminInvoiceDetailPage() {
     window.print()
   }
 
+  // Get the linked payment ID (if the invoice has an associated payment)
+  const linkedPaymentId = invoice?.payments?.[0]?.id
+  const linkedPaymentStripeId = invoice?.payments?.[0]?.stripePaymentId
+  const canRefund = invoice?.paidAt && linkedPaymentId && linkedPaymentStripeId
+
+  const handleOpenRefund = () => {
+    setRefundReason('')
+    setRefundAmount('')
+    setIsFullRefund(true)
+    setShowRefundDialog(true)
+  }
+
+  const handleProcessRefund = async () => {
+    if (!linkedPaymentId) return
+    if (!refundReason.trim()) {
+      toast({ title: 'Validation Error', description: 'Please provide a reason for the refund.', variant: 'destructive' })
+      return
+    }
+
+    const invoiceAmount = Number(invoice?.totalAmount || 0)
+    if (!isFullRefund && (!refundAmount || Number(refundAmount) <= 0)) {
+      toast({ title: 'Validation Error', description: 'Please enter a valid partial refund amount.', variant: 'destructive' })
+      return
+    }
+    if (!isFullRefund && Number(refundAmount) > invoiceAmount) {
+      toast({ title: 'Validation Error', description: 'Partial refund amount cannot exceed the invoice total.', variant: 'destructive' })
+      return
+    }
+
+    try {
+      setProcessingRefund(true)
+      const payload: { reason: string; amount?: number } = { reason: refundReason.trim() }
+      if (!isFullRefund) {
+        payload.amount = Number(refundAmount)
+      }
+
+      const result = await adminApi.refundPayment(linkedPaymentId, payload)
+
+      toast({
+        title: 'Refund Processed',
+        description: result.message || 'Refund was successful.',
+      })
+      setShowRefundDialog(false)
+      // Refresh invoice data
+      fetchInvoiceDetails(invoice!.id)
+    } catch (error: any) {
+      toast({
+        title: 'Refund Failed',
+        description: error.message || 'Failed to process refund. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setProcessingRefund(false)
+    }
+  }
+
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return 'N/A'
     return new Date(date).toLocaleDateString('en-GB', {
@@ -246,6 +315,12 @@ export default function AdminInvoiceDetailPage() {
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
+          {canRefund && (
+            <Button variant="destructive" onClick={handleOpenRefund}>
+              <ArrowDownRight className="h-4 w-4 mr-2" />
+              Refund
+            </Button>
+          )}
         </div>
       </div>
 
@@ -468,6 +543,149 @@ export default function AdminInvoiceDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Refund Confirmation Dialog */}
+      <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Refund Invoice Payment
+            </DialogTitle>
+            <DialogDescription>
+              This action will refund money to the customer via Stripe and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {invoice && (
+            <div className="space-y-4">
+              {/* Invoice summary */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Invoice</span>
+                  <span className="font-mono">#{invoice.invoiceNumber}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Recipient</span>
+                  <span>{invoice.recipientName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <span className="font-bold">{formatCurrency(Number(invoice.totalAmount))}</span>
+                </div>
+                {linkedPaymentStripeId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Stripe ID</span>
+                    <span className="font-mono text-xs">{linkedPaymentStripeId}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Refund type */}
+              <div className="space-y-2">
+                <Label>Refund Type</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="invoiceRefundType"
+                      checked={isFullRefund}
+                      onChange={() => { setIsFullRefund(true); setRefundAmount('') }}
+                      className="accent-red-600"
+                    />
+                    <span className="text-sm">Full Refund ({formatCurrency(Number(invoice.totalAmount))})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="invoiceRefundType"
+                      checked={!isFullRefund}
+                      onChange={() => setIsFullRefund(false)}
+                      className="accent-red-600"
+                    />
+                    <span className="text-sm">Partial Refund</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Partial amount input */}
+              {!isFullRefund && (
+                <div className="space-y-2">
+                  <Label htmlFor="invoice-refund-amount">Refund Amount (GBP)</Label>
+                  <Input
+                    id="invoice-refund-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={Number(invoice.totalAmount)}
+                    placeholder="0.00"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum: {formatCurrency(Number(invoice.totalAmount))}
+                  </p>
+                </div>
+              )}
+
+              {/* Reason */}
+              <div className="space-y-2">
+                <Label htmlFor="invoice-refund-reason">Reason for Refund *</Label>
+                <Textarea
+                  id="invoice-refund-reason"
+                  placeholder="Explain why this refund is being issued..."
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Warning */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    This will initiate a{' '}
+                    <strong>
+                      {isFullRefund ? 'full' : `partial (${formatCurrency(Number(refundAmount) || 0)})`}
+                    </strong>{' '}
+                    refund through Stripe. The funds will be returned to the original payment method.
+                    This action will be logged with your admin credentials.
+                  </span>
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRefundDialog(false)}
+                  disabled={processingRefund}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleProcessRefund}
+                  disabled={processingRefund || !refundReason.trim()}
+                >
+                  {processingRefund ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownRight className="mr-2 h-4 w-4" />
+                      Confirm Refund
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

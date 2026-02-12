@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,10 +25,19 @@ import {
   RefreshCw,
   User,
   Award,
-  MessageCircle
+  MessageCircle,
+  Image as ImageIcon,
+  Trash2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  AlertCircle
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { adminApi } from '@/lib/adminApi'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { toast } from '@/hooks/use-toast'
@@ -94,6 +103,16 @@ export default function AdminContractorProfile() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
 
+  // Portfolio / Media Manager state
+  const [portfolioItems, setPortfolioItems] = useState<any[]>([])
+  const [loadingPortfolio, setLoadingPortfolio] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [showDeleteImageDialog, setShowDeleteImageDialog] = useState(false)
+  const [deleteImageTarget, setDeleteImageTarget] = useState<any>(null)
+  const [deleteImageReason, setDeleteImageReason] = useState('')
+  const [deletingImage, setDeletingImage] = useState(false)
+
   const contractorId = params?.id as string
 
   useEffect(() => {
@@ -149,6 +168,91 @@ export default function AdminContractorProfile() {
       setReviews([])
     } finally {
       setLoadingDetails(false)
+    }
+  }
+
+  const fetchPortfolio = async () => {
+    if (!contractorId) return
+    try {
+      setLoadingPortfolio(true)
+      const response = await adminApi.getContractorPortfolio(contractorId)
+      setPortfolioItems(response?.data?.portfolioItems || [])
+    } catch (error) {
+      console.error('Failed to fetch portfolio:', error)
+      setPortfolioItems([])
+    } finally {
+      setLoadingPortfolio(false)
+    }
+  }
+
+  // Lightbox navigation
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false)
+  }, [])
+
+  const goToPrevious = useCallback(() => {
+    if (portfolioItems.length === 0) return
+    setLightboxIndex((prev) => (prev - 1 + portfolioItems.length) % portfolioItems.length)
+  }, [portfolioItems.length])
+
+  const goToNext = useCallback(() => {
+    if (portfolioItems.length === 0) return
+    setLightboxIndex((prev) => (prev + 1) % portfolioItems.length)
+  }, [portfolioItems.length])
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') goToPrevious()
+      else if (e.key === 'ArrowRight') goToNext()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [lightboxOpen, closeLightbox, goToPrevious, goToNext])
+
+  // Open delete confirmation dialog for a portfolio item
+  const openDeleteImageDialog = (item: any) => {
+    setDeleteImageTarget(item)
+    setDeleteImageReason('')
+    setShowDeleteImageDialog(true)
+  }
+
+  // Handle portfolio image deletion
+  const handleDeletePortfolioItem = async () => {
+    if (!deleteImageTarget || !contractorId) return
+    try {
+      setDeletingImage(true)
+      await adminApi.deleteContractorPortfolioItem(
+        contractorId,
+        deleteImageTarget.id,
+        deleteImageReason || undefined
+      )
+      toast({
+        title: 'Image Deleted',
+        description: `"${deleteImageTarget.title}" has been removed from the contractor's portfolio and storage.`,
+      })
+      setShowDeleteImageDialog(false)
+      setDeleteImageTarget(null)
+      setDeleteImageReason('')
+      // Refresh the portfolio
+      fetchPortfolio()
+      // Close lightbox if it was open
+      if (lightboxOpen) closeLightbox()
+    } catch (error) {
+      handleApiError(error, 'Failed to delete portfolio image')
+    } finally {
+      setDeletingImage(false)
     }
   }
 
@@ -342,8 +446,11 @@ export default function AdminContractorProfile() {
         {/* Right Column - Details Tabs */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="media" onClick={() => { if (portfolioItems.length === 0) fetchPortfolio() }}>
+                <ImageIcon className="h-4 w-4 mr-1" />Media
+              </TabsTrigger>
               <TabsTrigger value="credits">Credits</TabsTrigger>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -436,6 +543,99 @@ export default function AdminContractorProfile() {
                       <span className="text-2xl font-bold">{contractor.activeJobs || 0}</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Media / Portfolio Tab */}
+            <TabsContent value="media" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <ImageIcon className="h-5 w-5" />
+                        Contractor Media Manager
+                      </CardTitle>
+                      <CardDescription>
+                        View and moderate the contractor's portfolio images. These are the same images customers see on the public profile.
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{portfolioItems.length} / 20 images</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchPortfolio}
+                        disabled={loadingPortfolio}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-1 ${loadingPortfolio ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loadingPortfolio ? (
+                    <div className="flex items-center justify-center py-16">
+                      <RefreshCw className="h-8 w-8 animate-spin text-primary mr-2" />
+                      <span>Loading portfolio images...</span>
+                    </div>
+                  ) : portfolioItems.length === 0 ? (
+                    <div className="text-center py-16">
+                      <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground/40 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Portfolio Images</h3>
+                      <p className="text-muted-foreground">
+                        This contractor has not uploaded any portfolio images yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {portfolioItems.map((item: any, index: number) => (
+                        <div key={item.id} className="group relative rounded-lg overflow-hidden border bg-muted">
+                          {/* Thumbnail - clickable for lightbox */}
+                          <button
+                            type="button"
+                            onClick={() => openLightbox(index)}
+                            className="block w-full aspect-square focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
+                          >
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title || 'Portfolio image'}
+                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg" />
+                            </div>
+                          </button>
+
+                          {/* Image details + delete button */}
+                          <div className="p-2 space-y-1">
+                            <p className="text-xs font-medium truncate" title={item.title}>
+                              {item.title || 'Untitled'}
+                            </p>
+                            {item.projectDate && (
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(item.projectDate).toLocaleDateString()}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              Added {new Date(item.createdAt).toLocaleDateString()}
+                            </p>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="w-full mt-1 h-7 text-xs"
+                              onClick={() => openDeleteImageDialog(item)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete / Hide
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -655,6 +855,209 @@ export default function AdminContractorProfile() {
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Portfolio Lightbox Modal */}
+      {lightboxOpen && portfolioItems.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Portfolio image viewer"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={closeLightbox}
+          />
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close lightbox"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 z-10 text-white/80 text-sm font-medium bg-black/50 rounded-full px-3 py-1">
+            {lightboxIndex + 1} / {portfolioItems.length}
+          </div>
+
+          {/* Delete button in lightbox */}
+          <button
+            type="button"
+            onClick={() => openDeleteImageDialog(portfolioItems[lightboxIndex])}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete / Hide
+          </button>
+
+          {/* Previous button */}
+          {portfolioItems.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goToPrevious() }}
+              className="absolute left-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Next button */}
+          {portfolioItems.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goToNext() }}
+              className="absolute right-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Main image container */}
+          <div
+            className="relative z-[1] flex flex-col items-center max-w-[90vw] max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={portfolioItems[lightboxIndex]?.imageUrl}
+              alt={portfolioItems[lightboxIndex]?.title || 'Portfolio image'}
+              className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
+              style={{ aspectRatio: 'auto' }}
+            />
+
+            {/* Image info overlay */}
+            <div className="mt-4 text-center max-w-lg">
+              {portfolioItems[lightboxIndex]?.title && (
+                <h3 className="text-white text-lg font-semibold">
+                  {portfolioItems[lightboxIndex].title}
+                </h3>
+              )}
+              {portfolioItems[lightboxIndex]?.description && (
+                <p className="text-white/70 text-sm mt-1">
+                  {portfolioItems[lightboxIndex].description}
+                </p>
+              )}
+              <div className="flex items-center justify-center gap-4 mt-2 text-white/50 text-xs">
+                {portfolioItems[lightboxIndex]?.projectDate && (
+                  <span>
+                    Project: {new Date(portfolioItems[lightboxIndex].projectDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                  </span>
+                )}
+                <span>
+                  Uploaded: {new Date(portfolioItems[lightboxIndex]?.createdAt).toLocaleDateString()}
+                </span>
+                {portfolioItems[lightboxIndex]?.cloudinaryId && (
+                  <span className="font-mono text-white/30">
+                    {portfolioItems[lightboxIndex].cloudinaryId}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Portfolio Image Confirmation Dialog */}
+      <Dialog open={showDeleteImageDialog} onOpenChange={setShowDeleteImageDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Portfolio Image
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently remove the image from both Cloudinary storage and the database.
+              The contractor will be notified.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteImageTarget && (
+            <div className="space-y-4">
+              {/* Preview of the image being deleted */}
+              <div className="flex gap-4 items-start bg-muted rounded-lg p-3">
+                <div className="w-20 h-20 rounded-md overflow-hidden bg-gray-200 flex-shrink-0">
+                  <img
+                    src={deleteImageTarget.imageUrl}
+                    alt={deleteImageTarget.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{deleteImageTarget.title || 'Untitled'}</p>
+                  {deleteImageTarget.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{deleteImageTarget.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Added {new Date(deleteImageTarget.createdAt).toLocaleDateString()}
+                  </p>
+                  {deleteImageTarget.cloudinaryId && (
+                    <p className="text-xs text-muted-foreground/60 font-mono mt-1">
+                      ID: {deleteImageTarget.cloudinaryId}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">This action cannot be undone</p>
+                    <p className="text-xs text-red-700 mt-1">
+                      The image file will be permanently deleted from cloud storage.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reason */}
+              <div className="grid gap-2">
+                <Label htmlFor="deleteImageReason">Reason for Removal (Optional)</Label>
+                <Textarea
+                  id="deleteImageReason"
+                  value={deleteImageReason}
+                  onChange={(e) => setDeleteImageReason(e.target.value)}
+                  placeholder="e.g., Inappropriate content, Copyright violation, Low quality..."
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This reason will be included in the notification sent to the contractor.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDeleteImageDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeletePortfolioItem}
+              disabled={deletingImage}
+            >
+              {deletingImage ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Image
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

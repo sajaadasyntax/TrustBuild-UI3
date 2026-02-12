@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { contractorsApi, reviewsApi, Contractor, Review, handleApiError } from '@/lib/api'
+import { contractorsApi, reviewsApi, Contractor, Review, PortfolioItem, handleApiError } from '@/lib/api'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -38,7 +38,47 @@ function ContractorProfileContent() {
   const [averageRating, setAverageRating] = useState(0)
   const [logoError, setLogoError] = useState(false)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
-  
+
+  // Lightbox state for portfolio images
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false)
+  }, [])
+
+  const goToPrevious = useCallback(() => {
+    if (!contractor?.portfolio) return
+    setLightboxIndex((prev) => (prev - 1 + contractor.portfolio!.length) % contractor.portfolio!.length)
+  }, [contractor?.portfolio])
+
+  const goToNext = useCallback(() => {
+    if (!contractor?.portfolio) return
+    setLightboxIndex((prev) => (prev + 1) % contractor.portfolio!.length)
+  }, [contractor?.portfolio])
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') goToPrevious()
+      else if (e.key === 'ArrowRight') goToNext()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    // Prevent body scroll when lightbox is open
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [lightboxOpen, closeLightbox, goToPrevious, goToNext])
+
   // Handle back navigation - use browser history if available
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -300,22 +340,35 @@ function ContractorProfileContent() {
             <Card>
               <CardHeader>
                 <CardTitle>Portfolio</CardTitle>
-                <CardDescription>Recent work examples</CardDescription>
+                <CardDescription>Recent work examples &mdash; click to enlarge</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-2">
-                {contractor.portfolio.slice(0, 4).map((item) => (
-                  <div key={item.id} className="aspect-square rounded-md overflow-hidden bg-muted">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover"
+                {contractor.portfolio.slice(0, 4).map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openLightbox(index)}
+                    className="group relative aspect-square rounded-md overflow-hidden bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                     />
-                  </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                      <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 drop-shadow-lg" />
+                    </div>
+                    {item.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <p className="text-white text-xs font-medium truncate">{item.title}</p>
+                      </div>
+                    )}
+                  </button>
                 ))}
               </CardContent>
               {contractor.portfolio.length > 4 && (
                 <CardFooter>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={() => openLightbox(0)}>
                     View All {contractor.portfolio.length} Portfolio Items
                   </Button>
                 </CardFooter>
@@ -557,6 +610,96 @@ function ContractorProfileContent() {
           </Card>
         </div>
       </div>
+
+      {/* Portfolio Lightbox Modal */}
+      {lightboxOpen && contractor.portfolio && contractor.portfolio.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Portfolio image viewer"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={closeLightbox}
+          />
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Close lightbox"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 z-10 text-white/80 text-sm font-medium bg-black/50 rounded-full px-3 py-1">
+            {lightboxIndex + 1} / {contractor.portfolio.length}
+          </div>
+
+          {/* Previous button */}
+          {contractor.portfolio.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goToPrevious() }}
+              className="absolute left-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Next button */}
+          {contractor.portfolio.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); goToNext() }}
+              className="absolute right-4 z-10 rounded-full bg-black/50 hover:bg-black/70 text-white p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Main image container */}
+          <div
+            className="relative z-[1] flex flex-col items-center max-w-[90vw] max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={contractor.portfolio[lightboxIndex].imageUrl}
+              alt={contractor.portfolio[lightboxIndex].title || 'Portfolio image'}
+              className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+              style={{ aspectRatio: 'auto' }}
+            />
+
+            {/* Image info overlay */}
+            <div className="mt-4 text-center max-w-lg">
+              {contractor.portfolio[lightboxIndex].title && (
+                <h3 className="text-white text-lg font-semibold">
+                  {contractor.portfolio[lightboxIndex].title}
+                </h3>
+              )}
+              {contractor.portfolio[lightboxIndex].description && (
+                <p className="text-white/70 text-sm mt-1">
+                  {contractor.portfolio[lightboxIndex].description}
+                </p>
+              )}
+              {contractor.portfolio[lightboxIndex].projectDate && (
+                <p className="text-white/50 text-xs mt-1">
+                  {new Date(contractor.portfolio[lightboxIndex].projectDate!).toLocaleDateString('en-GB', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

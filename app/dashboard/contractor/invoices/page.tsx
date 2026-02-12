@@ -67,8 +67,9 @@ function ManualInvoicePaymentForm({
   onSuccess: () => void
   onCancel: () => void 
 }) {
-  const stripe = useStripe()
-  const elements = useElements()
+  // NOTE: This outer component must NOT call useStripe()/useElements()
+  // because it is rendered outside of an <Elements> provider.
+  // Only the inner InvoicePaymentForm (wrapped in <Elements>) uses Stripe hooks.
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -105,60 +106,6 @@ function ManualInvoicePaymentForm({
 
     createPaymentIntent()
   }, [invoice.id])
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-
-    if (!stripe || !elements || !clientSecret) {
-      return
-    }
-
-    setIsProcessing(true)
-    setError(null)
-
-    try {
-      // Confirm payment with Stripe using PaymentElement (supports Apple Pay, Google Pay, cards, etc.)
-      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/dashboard/contractor/invoices?payment_success=true`,
-        },
-        redirect: 'if_required',
-      })
-
-      if (stripeError) {
-        setError(stripeError.message || 'Payment failed')
-        return
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        // Confirm payment with backend
-        const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/pay-manual-invoice`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getStoredToken()}`
-          },
-          body: JSON.stringify({
-            manualInvoiceId: invoice.id,
-            stripePaymentIntentId: paymentIntent.id
-          })
-        })
-
-        if (!confirmResponse.ok) {
-          const { message } = await confirmResponse.json()
-          throw new Error(message || 'Failed to confirm payment')
-        }
-
-        onSuccess()
-      }
-    } catch (err: any) {
-      console.error('Payment error:', err)
-      setError(err.message || 'Payment failed. Please try again.')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -594,7 +541,7 @@ export default function ContractorInvoicesPage() {
 
       {/* Payment Dialog for Manual Invoices */}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pay Invoice</DialogTitle>
             <DialogDescription>

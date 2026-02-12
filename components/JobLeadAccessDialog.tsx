@@ -19,13 +19,15 @@ import {
   Eye,
   RefreshCw,
   DollarSign,
-  Target
+  Target,
+  Loader2
 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 // Initialize Stripe with enhanced error handling
 const initializeStripe = async () => {
@@ -80,148 +82,23 @@ export interface JobLeadAccessDialogProps {
 interface StripePaymentFormProps {
   leadPrice: number;
   job: JobLeadAccessDialogProps['job'];
-  onSuccess: () => void;
+  onSuccess: (purchaseResult?: any) => void;
   onCancel: () => void;
   contractor: Contractor | null;
-  isSubscriber?: boolean; // Whether this is a subscriber paying lead price
+  isSubscriber?: boolean;
 }
 
-function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, isSubscriber = false }: StripePaymentFormProps) {
+// Inner form component that lives INSIDE <Elements> with clientSecret
+function StripePaymentInnerForm({ leadPrice, job, onSuccess, onCancel, contractor, isSubscriber = false }: StripePaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [stripeLoading, setStripeLoading] = useState(true)
-  const [elementsReady, setElementsReady] = useState(false)
-
-  const createPaymentIntent = useCallback(async () => {
-    try {
-      // Enhanced authentication check with debugging
-      const token = localStorage.getItem('auth_token')
-      console.log('🔍 Payment Intent - Auth Check:', {
-        hasToken: !!token,
-        tokenLength: token?.length,
-        tokenStart: token?.substring(0, 20)
-      })
-      
-      if (!token) {
-        console.error('❌ No auth token found')
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to continue with payment.",
-          variant: "destructive"
-        })
-        // Redirect to login
-        window.location.href = '/login'
-        return
-      }
-
-      // Check if token is expired
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        const isExpired = Date.now() > payload.exp * 1000
-        console.log('🔍 Token Check:', {
-          expires: new Date(payload.exp * 1000),
-          isExpired,
-          userId: payload.id
-        })
-        
-        if (isExpired) {
-          console.error('❌ Token expired')
-          localStorage.removeItem('auth_token')
-          localStorage.removeItem('refresh_token')
-          toast({
-            title: "Session Expired",
-            description: "Your session has expired. Please log in again.",
-            variant: "destructive"
-          })
-          window.location.href = '/login'
-          return
-        }
-      } catch (e) {
-        console.error('❌ Invalid token format:', e)
-        localStorage.removeItem('auth_token')
-        window.location.href = '/login'
-        return
-      }
-
-      console.log('✅ Auth check passed, creating payment intent...')
-      const response = await paymentsApi.createPaymentIntent(job.id)
-      console.log('✅ Payment intent created:', response.data)
-      setClientSecret(response.data.clientSecret)
-    } catch (error) {
-      console.error('❌ Payment Intent Error:', error)
-      
-      // Handle specific authentication errors
-      if (error instanceof Error && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
-        console.error('❌ Authentication error detected')
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('refresh_token')
-        toast({
-          title: "Authentication Failed",
-          description: "Your session is invalid. Please log in again.",
-          variant: "destructive"
-        })
-        window.location.href = '/login'
-        return
-      }
-      
-      // Handle Stripe API key errors
-      if (error instanceof Error && error.message.includes('Invalid API Key')) {
-        console.error('❌ Stripe API key error detected')
-        toast({
-          title: "Payment System Error",
-          description: "There's an issue with our payment system. Please try using credits instead or contact support.",
-          variant: "destructive"
-        })
-        return
-      }
-      
-      handleApiError(error, 'Failed to initialize payment')
-    }
-  }, [job.id])
-
-  useEffect(() => {
-    // Wait for Stripe and Elements to be fully loaded before creating payment intent
-    const initializePayment = async () => {
-      if (!stripe || !elements) {
-        console.log('⏳ Waiting for Stripe to load...')
-        return
-      }
-
-      console.log('✅ Stripe and Elements loaded successfully')
-      setStripeLoading(false)
-      
-      // Create payment intent only after Stripe is ready
-      await createPaymentIntent()
-    }
-
-    // Set a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (stripeLoading) {
-        console.warn('⚠️ Stripe loading timeout - forcing ready state')
-        setStripeLoading(false)
-        setElementsReady(true)
-        toast({
-          title: "Loading Timeout",
-          description: "Payment form took too long to load. You can try to proceed.",
-          variant: "destructive"
-        })
-      }
-    }, 10000) // 10 second timeout
-
-    initializePayment()
-
-    return () => {
-      clearTimeout(loadingTimeout)
-    }
-  }, [stripe, elements, createPaymentIntent, stripeLoading])
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    // Enhanced loading checks
-    if (!stripe || !elements || !clientSecret) {
+    if (!stripe || !elements) {
       toast({
         title: "Payment Error",
         description: "Payment system not ready. Please try again.",
@@ -230,58 +107,26 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
       return
     }
 
-    if (stripeLoading || !elementsReady) {
-      toast({
-        title: "Payment Loading",
-        description: "Please wait for the payment form to fully load.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    const cardElement = elements.getElement(CardElement)
-    if (!cardElement) {
-      toast({
-        title: "Payment Error", 
-        description: "Card information not found. Please try again.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Additional check: Ensure CardElement is ready
-    try {
-      await cardElement.focus()
-    } catch (error) {
-      console.error('❌ CardElement not ready:', error)
-      toast({
-        title: "Card Form Not Ready",
-        description: "Please wait a moment and try again.",
-        variant: "destructive"
-      })
-      return
-    }
-
     setProcessing(true)
+    setError(null)
 
     try {
-      // Confirm payment
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: contractor?.user?.name || 'Contractor',
-          },
+      // Confirm payment using PaymentElement (supports cards, Apple Pay, Google Pay)
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard/contractor?payment_success=true`,
         },
+        redirect: 'if_required',
       })
 
-      if (error) {
-        throw new Error(error.message || 'Payment failed')
+      if (stripeError) {
+        setError(stripeError.message || 'Payment failed')
+        return
       }
 
       if (paymentIntent?.status === 'succeeded') {
         // Call backend to complete job access purchase
-        // Use STRIPE_SUBSCRIBER if this is a subscriber paying lead price, otherwise use STRIPE
         const result = await paymentsApi.purchaseJobAccess({
           jobId: job.id,
           paymentMethod: isSubscriber ? 'STRIPE_SUBSCRIBER' : 'STRIPE',
@@ -297,12 +142,12 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
           description: successMessage,
         })
         
-        // Call the success callback (without passing the result)
-        onSuccess()
+        // Pass the full result (including customerContact) to parent
+        onSuccess(result?.data || result)
       }
-    } catch (error) {
-      console.error('Payment error:', error)
-      handleApiError(error, 'Payment failed')
+    } catch (err) {
+      console.error('Payment error:', err)
+      handleApiError(err, 'Payment failed')
     } finally {
       setProcessing(false)
     }
@@ -311,52 +156,23 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="border rounded-lg p-4">
-        <h4 className="font-medium mb-3">Card Details</h4>
-        <div className="border rounded p-3 bg-white relative">
-          {stripeLoading && (
-            <div className="absolute inset-0 bg-gray-50 flex items-center justify-center rounded z-10">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-sm text-gray-600">Loading payment form...</span>
-              </div>
-            </div>
-          )}
-          <CardElement
-            onReady={() => {
-              console.log('✅ CardElement is ready')
-              setElementsReady(true)
-            }}
-            onChange={(event) => {
-              // Monitor element state changes
-              if (event.error) {
-                console.warn('⚠️ CardElement error:', event.error.message)
-              } else if (event.complete) {
-                console.log('✅ CardElement input complete')
-              }
-            }}
-            onFocus={() => {
-              console.log('👀 CardElement focused')
-            }}
-            onBlur={() => {
-              console.log('👋 CardElement blurred')
-            }}
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
-                  },
-                },
-                invalid: {
-                  color: '#9e2146',
-                },
-              },
-            }}
-          />
-        </div>
+        <h4 className="font-medium mb-1">Payment Method</h4>
+        <p className="text-xs text-muted-foreground mb-3">
+          Pay securely with card, Apple Pay, or Google Pay
+        </p>
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+          }}
+        />
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <div className="flex items-center gap-2 text-blue-800 text-sm">
@@ -377,18 +193,13 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
         </Button>
         <Button
           type="submit"
-          disabled={!stripe || !elements || !clientSecret || stripeLoading || !elementsReady || processing}
+          disabled={!stripe || processing}
           className="flex-1"
         >
           {processing ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Processing...
-            </>
-          ) : stripeLoading || !elementsReady ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Loading...
             </>
           ) : (
             <>
@@ -399,6 +210,145 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
         </Button>
       </div>
     </form>
+  )
+}
+
+// Outer wrapper: creates payment intent first, then renders Elements with clientSecret
+function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, isSubscriber = false }: StripePaymentFormProps) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [initError, setInitError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      try {
+        setIsLoading(true)
+
+        // Authentication check
+        const token = localStorage.getItem('auth_token')
+        if (!token) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to continue with payment.",
+            variant: "destructive"
+          })
+          window.location.href = '/login'
+          return
+        }
+
+        // Check if token is expired
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          if (Date.now() > payload.exp * 1000) {
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('refresh_token')
+            toast({
+              title: "Session Expired",
+              description: "Your session has expired. Please log in again.",
+              variant: "destructive"
+            })
+            window.location.href = '/login'
+            return
+          }
+        } catch {
+          localStorage.removeItem('auth_token')
+          window.location.href = '/login'
+          return
+        }
+
+        const response = await paymentsApi.createPaymentIntent(job.id)
+        setClientSecret(response.data.clientSecret)
+      } catch (error) {
+        console.error('Payment Intent Error:', error)
+
+        if (error instanceof Error && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('refresh_token')
+          toast({
+            title: "Authentication Failed",
+            description: "Your session is invalid. Please log in again.",
+            variant: "destructive"
+          })
+          window.location.href = '/login'
+          return
+        }
+
+        if (error instanceof Error && error.message.includes('Invalid API Key')) {
+          toast({
+            title: "Payment System Error",
+            description: "There's an issue with our payment system. Please try using credits instead or contact support.",
+            variant: "destructive"
+          })
+          setInitError('Payment system configuration error. Please try credits or contact support.')
+          return
+        }
+
+        setInitError(error instanceof Error ? error.message : 'Failed to initialize payment')
+        handleApiError(error, 'Failed to initialize payment')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    createPaymentIntent()
+  }, [job.id])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 p-2">
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <span className="text-sm text-gray-600">Loading payment form...</span>
+          </div>
+          <div className="space-y-3">
+            <div className="h-10 bg-gray-100 rounded animate-pulse" />
+            <div className="h-10 bg-gray-100 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {initError || 'Failed to initialize payment. Please try again.'}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={onCancel} className="w-full">
+          Cancel
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#2563eb',
+            fontFamily: 'system-ui, sans-serif',
+          },
+        },
+      }}
+    >
+      <StripePaymentInnerForm
+        leadPrice={leadPrice}
+        job={job}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+        contractor={contractor}
+        isSubscriber={isSubscriber}
+      />
+    </Elements>
   )
 }
 
@@ -502,8 +452,8 @@ export default function JobLeadAccessDialog({
         description: `Job details unlocked using 1 credit. Credits remaining: ${result.data?.updatedCreditsBalance || 'unknown'}`,
       })
       
-      // Call the access granted callback
-      if (onAccessGranted) onAccessGranted()
+      // Pass customer contact data from the purchase result to the parent
+      if (onAccessGranted) onAccessGranted(result?.data || result)
       onClose()
     } catch (error) {
       handleApiError(error, 'Failed to purchase job access')
@@ -518,10 +468,10 @@ export default function JobLeadAccessDialog({
     setShowStripeForm(true)
   }
 
-  const handleStripeSuccess = (paymentResult?: any) => {
+  const handleStripeSuccess = (purchaseResult?: any) => {
     setShowStripeForm(false)
-    // Call the access granted callback (without passing the result)
-    if (onAccessGranted) onAccessGranted()
+    // Pass customer contact data from the purchase result to the parent
+    if (onAccessGranted) onAccessGranted(purchaseResult)
     onClose()
   }
 
@@ -758,16 +708,14 @@ export default function JobLeadAccessDialog({
           )}
 
           {showStripeForm ? (
-            <Elements stripe={stripePromise}>
-              <StripePaymentForm
-                leadPrice={leadPrice}
-                job={job}
-                onSuccess={handleStripeSuccess}
-                onCancel={handleStripeCancel}
-                contractor={contractor}
-                isSubscriber={hasSubscription && paymentMethod === 'STRIPE_SUBSCRIBER'}
-              />
-            </Elements>
+            <StripePaymentForm
+              leadPrice={leadPrice}
+              job={job}
+              onSuccess={handleStripeSuccess}
+              onCancel={handleStripeCancel}
+              contractor={contractor}
+              isSubscriber={hasSubscription && paymentMethod === 'STRIPE_SUBSCRIBER'}
+            />
           ) : hasSubscription ? (
             <>
               {/* Subscription Access - Show both options */}
@@ -848,12 +796,13 @@ export default function JobLeadAccessDialog({
                     paymentsApi.purchaseJobAccess({
                       jobId: job.id,
                       paymentMethod: 'CREDIT'
-                    }).then(() => {
+                    }).then((result) => {
                       toast({
                         title: "Access Granted!",
                         description: `Job details unlocked with credits. 5% commission will apply after completion.`,
                       });
-                      if (onAccessGranted) onAccessGranted();
+                      // Pass customer contact data from the purchase result to the parent
+                      if (onAccessGranted) onAccessGranted(result?.data || result);
                       onClose();
                     }).catch(error => {
                       handleApiError(error, 'Failed to access job details');
@@ -973,12 +922,12 @@ export default function JobLeadAccessDialog({
                         className="w-4 h-4 text-blue-600"
                       />
                       <div>
-                        <div className="font-medium">Pay with Card</div>
+                        <div className="font-medium">Pay with Card or Wallet</div>
                         <div className="text-sm text-gray-600">
-                          One-time payment • Secure card processing
+                          One-time payment • Secure processing via Stripe
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          💳 Visa, Mastercard, Amex accepted
+                          Visa, Mastercard, Amex, Apple Pay, Google Pay
                         </div>
                       </div>
                     </div>

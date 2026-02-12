@@ -2,12 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { DollarSign, AlertTriangle, RefreshCw, Search, Calendar, User, FileText } from "lucide-react"
+import { DollarSign, AlertTriangle, RefreshCw, Search, Calendar, User, FileText, CheckCircle, Shield, AlertCircle, Send, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useAdminAuth } from "@/contexts/AdminAuthContext"
 import adminApi from "@/lib/adminApi"
 import { useToast } from "@/hooks/use-toast"
@@ -47,6 +56,19 @@ export default function UnpaidCommissionsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<"PENDING" | "OVERDUE" | "ALL">("ALL")
+
+  // Manual override state
+  const [showOverrideDialog, setShowOverrideDialog] = useState(false)
+  const [overrideCommission, setOverrideCommission] = useState<UnpaidCommission | null>(null)
+  const [overrideReason, setOverrideReason] = useState("")
+  const [overrideNotes, setOverrideNotes] = useState("")
+  const [processingOverride, setProcessingOverride] = useState(false)
+
+  // Send Reminder state
+  const [showReminderDialog, setShowReminderDialog] = useState(false)
+  const [reminderCommission, setReminderCommission] = useState<UnpaidCommission | null>(null)
+  const [reminderMessage, setReminderMessage] = useState("")
+  const [sendingReminder, setSendingReminder] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !admin) {
@@ -116,6 +138,82 @@ export default function UnpaidCommissionsPage() {
       return <Badge variant="outline">Pending</Badge>
     }
     return <Badge variant="default">{status}</Badge>
+  }
+
+  const openOverrideDialog = (commission: UnpaidCommission) => {
+    setOverrideCommission(commission)
+    setOverrideReason("")
+    setOverrideNotes("")
+    setShowOverrideDialog(true)
+  }
+
+  const handleManualOverride = async () => {
+    if (!overrideCommission) return
+    if (!overrideReason.trim()) {
+      toast({ title: "Validation Error", description: "Please provide a reason for the manual override.", variant: "destructive" })
+      return
+    }
+
+    try {
+      setProcessingOverride(true)
+      const result = await adminApi.manualOverrideCommission(overrideCommission.id, {
+        reason: overrideReason.trim(),
+        notes: overrideNotes.trim() || undefined,
+      })
+
+      toast({
+        title: "Commission Marked as Paid",
+        description: result.message || `Commission for ${overrideCommission.contractor.businessName} has been manually marked as paid.`,
+      })
+      setShowOverrideDialog(false)
+      fetchUnpaidCommissions() // Refresh the list
+    } catch (error: any) {
+      console.error("Manual override error:", error)
+      toast({
+        title: "Override Failed",
+        description: error.message || "Failed to process manual override. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessingOverride(false)
+    }
+  }
+
+  const openReminderDialog = (commission: UnpaidCommission) => {
+    setReminderCommission(commission)
+    setReminderMessage("")
+    setShowReminderDialog(true)
+  }
+
+  const handleSendReminder = async () => {
+    if (!reminderCommission) return
+
+    try {
+      setSendingReminder(true)
+      await adminApi.sendCommissionReminder(
+        reminderCommission.id,
+        reminderMessage.trim() || undefined
+      )
+
+      toast({
+        title: "Reminder Sent",
+        description: `Email and in-app notification sent to ${reminderCommission.contractor.businessName} (${reminderCommission.contractor.user.email}).`,
+      })
+      setShowReminderDialog(false)
+      setReminderCommission(null)
+      setReminderMessage("")
+      // Refresh the list so remindersSent count updates
+      fetchUnpaidCommissions()
+    } catch (error: any) {
+      console.error("Send reminder error:", error)
+      toast({
+        title: "Reminder Failed",
+        description: error.message || "Failed to send reminder. Check the email service and recipient address.",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingReminder(false)
+    }
   }
 
   const filteredCommissions = commissions.filter(comm => {
@@ -334,19 +432,25 @@ export default function UnpaidCommissionsPage() {
                           {comm.invoice?.invoiceNumber || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Navigate to contractor details or send reminder
-                              toast({
-                                title: "Reminder Sent",
-                                description: `Reminder sent to ${comm.contractor.businessName}`,
-                              })
-                            }}
-                          >
-                            Send Reminder
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openReminderDialog(comm)}
+                            >
+                              <Mail className="h-3 w-3 mr-1" />
+                              Send Reminder
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => openOverrideDialog(comm)}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Mark as Paid
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -357,6 +461,225 @@ export default function UnpaidCommissionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Send Reminder Confirmation Dialog */}
+      <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-blue-600" />
+              Send Commission Reminder
+            </DialogTitle>
+            <DialogDescription>
+              This will send an <strong>email</strong> and an <strong>in-app notification</strong> to the contractor about their outstanding commission payment.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reminderCommission && (
+            <div className="space-y-4">
+              {/* Commission summary */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Contractor</span>
+                  <span className="font-medium">{reminderCommission.contractor.businessName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Recipient Email</span>
+                  <span className="font-mono text-xs">{reminderCommission.contractor.user.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Job</span>
+                  <span className="max-w-[250px] truncate">{reminderCommission.job.title}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t pt-2 mt-2">
+                  <span>Total Due</span>
+                  <span className="text-destructive">{formatCurrency(reminderCommission.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Due Date</span>
+                  <span className={new Date(reminderCommission.dueDate) < new Date() ? 'text-destructive font-medium' : ''}>
+                    {formatDate(reminderCommission.dueDate)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Optional custom message */}
+              <div className="space-y-2">
+                <Label htmlFor="reminder-message">Custom Message (optional)</Label>
+                <Textarea
+                  id="reminder-message"
+                  placeholder="Add a personal message to include in the reminder email, e.g. 'Please contact us if you are having payment difficulties...'"
+                  value={reminderMessage}
+                  onChange={(e) => setReminderMessage(e.target.value)}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This message will appear in a highlighted section of the email. Leave blank to send the standard reminder.
+                </p>
+              </div>
+
+              {/* Info about what gets sent */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    The contractor will receive an <strong>email</strong> at <strong>{reminderCommission.contractor.user.email}</strong> with
+                    invoice details and payment instructions, plus an <strong>in-app notification</strong> visible on their dashboard.
+                  </span>
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReminderDialog(false)}
+                  disabled={sendingReminder}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendReminder}
+                  disabled={sendingReminder}
+                >
+                  {sendingReminder ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send Reminder
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Override Confirmation Dialog */}
+      <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-600" />
+              Manual Override — Mark Commission as Paid
+            </DialogTitle>
+            <DialogDescription>
+              This will mark the commission as paid <strong>without</strong> a Stripe payment. This action will be recorded in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+
+          {overrideCommission && (
+            <div className="space-y-4">
+              {/* Commission summary */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Contractor</span>
+                  <span className="font-medium">{overrideCommission.contractor.businessName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Contact</span>
+                  <span>{overrideCommission.contractor.user.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Job</span>
+                  <span className="max-w-[250px] truncate">{overrideCommission.job.title}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Commission Amount</span>
+                  <span>{formatCurrency(overrideCommission.commissionAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">VAT</span>
+                  <span>{formatCurrency(overrideCommission.vatAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t pt-2 mt-2">
+                  <span>Total Due</span>
+                  <span>{formatCurrency(overrideCommission.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Due Date</span>
+                  <span className={new Date(overrideCommission.dueDate) < new Date() ? 'text-destructive font-medium' : ''}>
+                    {formatDate(overrideCommission.dueDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Current Status</span>
+                  <span>{getStatusBadge(overrideCommission.status, overrideCommission.dueDate)}</span>
+                </div>
+              </div>
+
+              {/* Reason (required) */}
+              <div className="space-y-2">
+                <Label htmlFor="override-reason">Reason for Manual Override *</Label>
+                <Textarea
+                  id="override-reason"
+                  placeholder="e.g. Payment received via bank transfer, offline payment confirmed, goodwill write-off..."
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Notes (optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="override-notes">Additional Notes (optional)</Label>
+                <Textarea
+                  id="override-notes"
+                  placeholder="Any additional context or reference numbers..."
+                  value={overrideNotes}
+                  onChange={(e) => setOverrideNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              {/* Warning */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-sm text-amber-800 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    This action bypasses the standard Stripe payment flow. The commission will be marked as <strong>Paid</strong>, 
+                    the related job will be updated, and a transaction record will be created in the ledger. 
+                    Your name and this action will be recorded in the admin activity log.
+                  </span>
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOverrideDialog(false)}
+                  disabled={processingOverride}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleManualOverride}
+                  disabled={processingOverride || !overrideReason.trim()}
+                >
+                  {processingOverride ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Confirm — Mark as Paid
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

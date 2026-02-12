@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,6 +58,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 interface PaymentStats {
   totalRevenue: number;
@@ -93,6 +94,146 @@ interface Transaction {
   stripePaymentId: string;
 }
 
+// Refunds Tab — shows all refunded transactions
+function RefundsTab({ 
+  formatCurrency, 
+  getStatusBadge,
+  getTypeBadge,
+  openTransactionDialog,
+}: { 
+  formatCurrency: (amount: number, currency?: string) => string
+  getStatusBadge: (status: string) => React.ReactNode
+  getTypeBadge: (type: string) => React.ReactNode
+  openTransactionDialog: (transaction: Transaction) => void
+}) {
+  const [refundedTransactions, setRefundedTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refundPage, setRefundPage] = useState(1)
+  const [refundTotalPages, setRefundTotalPages] = useState(1)
+
+  const fetchRefunds = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await adminApi.getPaymentTransactions({
+        page: refundPage,
+        limit: 20,
+        status: 'refunded',
+      })
+      setRefundedTransactions(response.data.transactions || [])
+      setRefundTotalPages(response.data.pagination?.pages || 1)
+    } catch (error) {
+      console.error('Error fetching refunds:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [refundPage])
+
+  useEffect(() => {
+    fetchRefunds()
+  }, [fetchRefunds])
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ArrowDownRight className="h-5 w-5" />
+          Refund History
+        </CardTitle>
+        <CardDescription>All refunded transactions with admin audit trail</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+            <span>Loading refunds...</span>
+          </div>
+        ) : refundedTransactions.length === 0 ? (
+          <div className="text-center py-12">
+            <ArrowDownRight className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Refunds Yet</h3>
+            <p className="text-muted-foreground">
+              When payments are refunded they will appear here
+            </p>
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {refundedTransactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">#{transaction.id}</p>
+                        <p className="text-xs text-muted-foreground">{transaction.stripePaymentId}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{transaction.customer.name}</p>
+                        <p className="text-xs text-muted-foreground">{transaction.customer.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency(transaction.amount, transaction.currency)}
+                    </TableCell>
+                    <TableCell>{getTypeBadge(transaction.type)}</TableCell>
+                    <TableCell>{getStatusBadge(transaction.status)}</TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(transaction.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => openTransactionDialog(transaction)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {refundTotalPages > 1 && (
+              <div className="flex items-center justify-between space-x-2 py-4 px-6">
+                <div className="text-sm text-muted-foreground">
+                  Page {refundPage} of {refundTotalPages}
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRefundPage(refundPage - 1)}
+                    disabled={refundPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRefundPage(refundPage + 1)}
+                    disabled={refundPage >= refundTotalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function AdminPaymentsContent() {
   const searchParams = useSearchParams()
   const { admin, loading: authLoading } = useAdminAuth()
@@ -111,6 +252,14 @@ function AdminPaymentsContent() {
   const [exporting, setExporting] = useState(false)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<string>('transactions')
+
+  // Refund state
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
+  const [refundTransaction, setRefundTransaction] = useState<Transaction | null>(null)
+  const [refundReason, setRefundReason] = useState('')
+  const [refundAmount, setRefundAmount] = useState<string>('')
+  const [isFullRefund, setIsFullRefund] = useState(true)
+  const [processingRefund, setProcessingRefund] = useState(false)
   
   // Set active tab from URL query parameter
   useEffect(() => {
@@ -234,6 +383,64 @@ function AdminPaymentsContent() {
     } finally {
       setExporting(false)
     }
+  }
+
+  // --- Refund logic ---
+  const openRefundDialog = (transaction: Transaction) => {
+    setRefundTransaction(transaction)
+    setRefundReason('')
+    setRefundAmount('')
+    setIsFullRefund(true)
+    setShowRefundDialog(true)
+  }
+
+  const handleProcessRefund = async () => {
+    if (!refundTransaction) return
+    if (!refundReason.trim()) {
+      toast({ title: 'Validation Error', description: 'Please provide a reason for the refund.', variant: 'destructive' })
+      return
+    }
+    if (!isFullRefund && (!refundAmount || Number(refundAmount) <= 0)) {
+      toast({ title: 'Validation Error', description: 'Please enter a valid partial refund amount.', variant: 'destructive' })
+      return
+    }
+    if (!isFullRefund && Number(refundAmount) > refundTransaction.amount) {
+      toast({ title: 'Validation Error', description: 'Partial refund amount cannot exceed the transaction amount.', variant: 'destructive' })
+      return
+    }
+
+    try {
+      setProcessingRefund(true)
+      const payload: { reason: string; amount?: number } = { reason: refundReason.trim() }
+      if (!isFullRefund) {
+        payload.amount = Number(refundAmount)
+      }
+
+      const result = await adminApi.refundPayment(refundTransaction.id, payload)
+      
+      toast({
+        title: 'Refund Processed',
+        description: result.message || `Refund of ${formatCurrency(isFullRefund ? refundTransaction.amount : Number(refundAmount))} was successful.`,
+      })
+      setShowRefundDialog(false)
+      setShowTransactionDialog(false)
+      // Refresh data
+      fetchPaymentStats()
+      fetchTransactions()
+    } catch (error: any) {
+      console.error('Refund error:', error)
+      toast({
+        title: 'Refund Failed',
+        description: error.message || 'Failed to process refund. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setProcessingRefund(false)
+    }
+  }
+
+  const canRefund = (transaction: Transaction) => {
+    return transaction.status === 'succeeded' || transaction.status === 'completed'
   }
 
   const getStatusBadge = (status: string) => {
@@ -646,11 +853,17 @@ function AdminPaymentsContent() {
                                 <ArrowUpRight className="mr-2 h-4 w-4" />
                                 View in Stripe
                               </DropdownMenuItem>
-                              {(transaction.status === 'succeeded' || transaction.status === 'completed') && (
-                                <DropdownMenuItem>
-                                  <ArrowDownRight className="mr-2 h-4 w-4" />
-                                  Issue Refund
-                                </DropdownMenuItem>
+                              {canRefund(transaction) && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => openRefundDialog(transaction)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <ArrowDownRight className="mr-2 h-4 w-4" />
+                                    Issue Refund
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -697,15 +910,12 @@ function AdminPaymentsContent() {
         </TabsContent>
 
         <TabsContent value="refunds" className="space-y-4">
-          <Card>
-            <CardContent className="text-center py-12">
-              <ArrowDownRight className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Refund Management</h3>
-              <p className="text-muted-foreground">
-                Refund processing and management features coming soon
-              </p>
-            </CardContent>
-          </Card>
+          <RefundsTab 
+            formatCurrency={formatCurrency} 
+            getStatusBadge={getStatusBadge} 
+            getTypeBadge={getTypeBadge}
+            openTransactionDialog={openTransactionDialog}
+          />
         </TabsContent>
       </Tabs>
 
@@ -786,6 +996,170 @@ function AdminPaymentsContent() {
                   <p><strong>Owner:</strong> {selectedTransaction.contractor.user.name}</p>
                 </div>
               )}
+
+              {/* Refund Action */}
+              {canRefund(selectedTransaction) && (
+                <div className="border-t pt-4">
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => openRefundDialog(selectedTransaction)}
+                    className="w-full"
+                  >
+                    <ArrowDownRight className="mr-2 h-4 w-4" />
+                    Refund This Payment
+                  </Button>
+                </div>
+              )}
+
+              {selectedTransaction.status === 'refunded' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <ArrowDownRight className="h-4 w-4" />
+                    <span className="font-medium">This payment has been refunded</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Confirmation Dialog */}
+      <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Process Refund
+            </DialogTitle>
+            <DialogDescription>
+              This action will refund money to the customer via Stripe and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {refundTransaction && (
+            <div className="space-y-4">
+              {/* Transaction summary */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Transaction</span>
+                  <span className="font-mono">#{refundTransaction.id}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Customer</span>
+                  <span>{refundTransaction.customer.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Original Amount</span>
+                  <span className="font-bold">{formatCurrency(refundTransaction.amount, refundTransaction.currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Stripe ID</span>
+                  <span className="font-mono text-xs">{refundTransaction.stripePaymentId}</span>
+                </div>
+              </div>
+
+              {/* Refund type */}
+              <div className="space-y-2">
+                <Label>Refund Type</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="refundType"
+                      checked={isFullRefund}
+                      onChange={() => { setIsFullRefund(true); setRefundAmount('') }}
+                      className="accent-red-600"
+                    />
+                    <span className="text-sm">Full Refund ({formatCurrency(refundTransaction.amount, refundTransaction.currency)})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="refundType"
+                      checked={!isFullRefund}
+                      onChange={() => setIsFullRefund(false)}
+                      className="accent-red-600"
+                    />
+                    <span className="text-sm">Partial Refund</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Partial amount input */}
+              {!isFullRefund && (
+                <div className="space-y-2">
+                  <Label htmlFor="refund-amount">Refund Amount ({refundTransaction.currency.toUpperCase()})</Label>
+                  <Input
+                    id="refund-amount"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={refundTransaction.amount}
+                    placeholder="0.00"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum: {formatCurrency(refundTransaction.amount, refundTransaction.currency)}
+                  </p>
+                </div>
+              )}
+
+              {/* Reason */}
+              <div className="space-y-2">
+                <Label htmlFor="refund-reason">Reason for Refund *</Label>
+                <Textarea
+                  id="refund-reason"
+                  placeholder="Explain why this refund is being issued..."
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Warning */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    This will initiate a{' '}
+                    <strong>
+                      {isFullRefund ? 'full' : `partial (${formatCurrency(Number(refundAmount) || 0, refundTransaction.currency)})`}
+                    </strong>{' '}
+                    refund through Stripe. The funds will be returned to the customer's original payment method. 
+                    This action will be logged with your admin credentials.
+                  </span>
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRefundDialog(false)}
+                  disabled={processingRefund}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleProcessRefund}
+                  disabled={processingRefund || !refundReason.trim()}
+                >
+                  {processingRefund ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownRight className="mr-2 h-4 w-4" />
+                      Confirm Refund
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

@@ -17,7 +17,10 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  Lock
+  Lock,
+  Phone,
+  Mail,
+  PhoneCall
 } from 'lucide-react'
 import { jobsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
@@ -85,39 +88,53 @@ export default function JobDetailsPage() {
     }
   }
 
-  const handleAccessGranted = async (customerContactData?: any) => {
+  // Silent re-fetch that does NOT reset loading/checkingAccess states (used after purchase)
+  const refreshJobQuietly = async (jobId: string) => {
+    try {
+      const jobData = await jobsApi.getById(jobId)
+      setJob(jobData)
+      // Re-verify access quietly without touching loading state
+      try {
+        const accessData = await jobsApi.checkAccess(jobId)
+        setHasAccess(accessData.hasAccess)
+      } catch {
+        // Keep the optimistic hasAccess = true if the check fails
+      }
+    } catch (error) {
+      console.error('Silent job refresh failed:', error)
+    }
+  }
+
+  const handleAccessGranted = async (purchaseResult?: any) => {
+    // Optimistically set access immediately so the UI updates instantly
     setHasAccess(true)
     setShowAccessDialog(false)
     
-    // Refresh job data to get full details
     if (job) {
-      // Immediately update the job with customer contact details if provided
-      if (customerContactData && customerContactData.customerContact) {
-        // Create an updated job object with the customer contact details
+      // Immediately update the job with customer contact details from the purchase response
+      if (purchaseResult && purchaseResult.customerContact) {
         const updatedJob = {
           ...job,
           customer: {
             ...job.customer,
-            phone: customerContactData.customerContact.phone || job.customer.phone,
+            phone: purchaseResult.customerContact.phone || job.customer.phone,
             user: {
               ...job.customer.user,
-              name: customerContactData.customerContact.name || job.customer.user.name,
-              email: customerContactData.customerContact.email || job.customer.user.email
+              name: purchaseResult.customerContact.name || job.customer.user.name,
+              email: purchaseResult.customerContact.email || job.customer.user.email
             }
           }
         };
-        
-        // Update the job state immediately
         setJob(updatedJob);
-        
-        toast({
-          title: "Access Granted",
-          description: "Customer contact details are now available.",
-        });
       }
       
-      // Still fetch the complete job data to ensure everything is up to date
-      await fetchJob(job.id)
+      toast({
+        title: "Access Granted! 🎉",
+        description: "Customer contact details are now available.",
+      });
+      
+      // Quietly refresh full job data in the background without resetting the page to loading
+      await refreshJobQuietly(job.id)
     }
   }
 
@@ -449,18 +466,62 @@ export default function JobDetailsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar>
-                      <AvatarFallback>
-                        {job.customer.user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{job.customer.user.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Member since {new Date(job.customer.createdAt).getFullYear()}
-                      </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>
+                          {job.customer.user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{job.customer.user.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Member since {new Date(job.customer.createdAt).getFullYear()}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Contact details - visible after purchase */}
+                    {hasAccess && (
+                      <div className="space-y-3 pt-3 border-t">
+                        {job.customer.phone && (
+                          <div className="flex items-center gap-3">
+                            <Phone className="h-4 w-4 text-green-600" />
+                            <a 
+                              href={`tel:${job.customer.phone}`}
+                              className="font-semibold text-green-700 hover:text-green-800 underline"
+                            >
+                              {job.customer.phone}
+                            </a>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="ml-auto border-green-300 text-green-700 hover:bg-green-50"
+                              onClick={() => window.location.href = `tel:${job.customer.phone}`}
+                            >
+                              <PhoneCall className="h-3 w-3 mr-1" />
+                              Call
+                            </Button>
+                          </div>
+                        )}
+                        {job.customer.user.email && (
+                          <div className="flex items-center gap-3">
+                            <Mail className="h-4 w-4 text-blue-600" />
+                            <a 
+                              href={`mailto:${job.customer.user.email}`}
+                              className="text-blue-700 hover:text-blue-800 underline text-sm"
+                            >
+                              {job.customer.user.email}
+                            </a>
+                          </div>
+                        )}
+                        {!job.customer.phone && !job.customer.user.email && (
+                          <p className="text-sm text-muted-foreground">
+                            No contact details available for this customer.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

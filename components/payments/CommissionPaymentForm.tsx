@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
   Elements,
-  CardElement,
+  PaymentElement,
   useStripe,
   useElements
 } from '@stripe/react-stripe-js'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, CreditCard, CheckCircle, AlertCircle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Loader2, Lock, AlertCircle } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
@@ -24,7 +24,14 @@ interface CommissionPaymentFormProps {
   onCancel: () => void
 }
 
-function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCancel }: CommissionPaymentFormProps) {
+// Inner form component rendered inside <Elements> with clientSecret
+function CommissionPaymentInnerForm({ 
+  commissionPaymentId, 
+  amount, 
+  jobTitle, 
+  onSuccess, 
+  onCancel 
+}: CommissionPaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -33,14 +40,6 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
   // Safely convert amount to number
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
   const formattedAmount = isNaN(numericAmount) ? '0.00' : numericAmount.toFixed(2)
-  
-  // Debug logging
-  console.log('🔍 CommissionPaymentForm - Amount data:', {
-    originalAmount: amount,
-    type: typeof amount,
-    numericAmount,
-    formattedAmount
-  })
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -53,31 +52,14 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
     setError(null)
 
     try {
-      // Create payment intent
-      const response = await fetch('/api/payments/create-commission-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      // Confirm payment with Stripe using PaymentElement (supports Apple Pay, Google Pay, cards, etc.)
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard/contractor?payment_success=true`,
         },
-        body: JSON.stringify({ commissionPaymentId })
+        redirect: 'if_required',
       })
-
-      const { data } = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create payment intent')
-      }
-
-      // Confirm payment with Stripe
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        data.clientSecret,
-        {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-          }
-        }
-      )
 
       if (stripeError) {
         setError(stripeError.message || 'Payment failed')
@@ -119,30 +101,20 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
-            Card Details
+          <label className="text-sm font-medium text-gray-700 mb-1 block">
+            Payment Method
           </label>
-          <div className="p-3 border border-gray-300 rounded-md">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': {
-                      color: '#aab7c4',
-                    },
-                  },
-                  invalid: {
-                    color: '#9e2146',
-                  },
-                },
-              }}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Pay securely with card, Apple Pay, or Google Pay
+          </p>
+          <PaymentElement 
+            options={{
+              layout: 'tabs',
+            }}
+          />
         </div>
 
         {error && (
@@ -152,15 +124,20 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
           </Alert>
         )}
 
-        <div className="bg-gray-50 p-4 rounded-md">
+        <div className="bg-gray-50 p-4 rounded-md space-y-1">
           <div className="flex justify-between text-sm">
             <span>Commission Amount:</span>
-            <span className="font-medium">£{formattedAmount}</span>
+            <span className="font-semibold">£{formattedAmount}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-600 mt-1">
+          <div className="flex justify-between text-sm text-gray-600">
             <span>Job:</span>
             <span className="truncate ml-2">{jobTitle}</span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Lock className="h-3.5 w-3.5" />
+          <span>Your payment is secured by Stripe</span>
         </div>
       </div>
 
@@ -185,10 +162,7 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
               Processing...
             </>
           ) : (
-            <>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Pay £{formattedAmount}
-            </>
+            `Pay £${formattedAmount}`
           )}
         </Button>
       </div>
@@ -196,10 +170,104 @@ function PaymentForm({ commissionPaymentId, amount, jobTitle, onSuccess, onCance
   )
 }
 
-export default function CommissionPaymentForm(props: CommissionPaymentFormProps) {
+// Outer wrapper: creates payment intent first, then renders Elements with clientSecret
+export default function CommissionPaymentForm({ 
+  commissionPaymentId, 
+  amount, 
+  jobTitle, 
+  onSuccess, 
+  onCancel 
+}: CommissionPaymentFormProps) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Create payment intent on mount (before rendering Elements)
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/payments/create-commission-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: JSON.stringify({ commissionPaymentId })
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.message || result.data?.message || 'Failed to create payment intent')
+        }
+
+        const secret = result.data?.clientSecret || result.clientSecret
+        if (!secret) {
+          throw new Error('No client secret received from server')
+        }
+
+        setClientSecret(secret)
+      } catch (err: any) {
+        console.error('Error creating commission payment intent:', err)
+        setError(err.message || 'Failed to initialize payment')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    createPaymentIntent()
+  }, [commissionPaymentId])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-[200px] w-full" />
+        <div className="flex gap-3">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 flex-1" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error || 'Failed to initialize payment. Please try again.'}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={onCancel} className="w-full">
+          Cancel
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <Elements stripe={stripePromise}>
-      <PaymentForm {...props} />
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#10b981',
+            fontFamily: 'system-ui, sans-serif',
+          },
+        },
+      }}
+    >
+      <CommissionPaymentInnerForm
+        commissionPaymentId={commissionPaymentId}
+        amount={amount}
+        jobTitle={jobTitle}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+      />
     </Elements>
   )
 }

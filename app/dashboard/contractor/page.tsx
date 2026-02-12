@@ -118,12 +118,14 @@ export default function ContractorDashboard() {
       const reviewsData = await reviewsApi.getMyReceived()
       setRecentReviews(reviewsData.slice(0, 5)) // Get latest 5 reviews
 
-      // Calculate stats using actual earnings data and properly fetched jobs
+      // Calculate stats using actual earnings data and live profile counts
+      // contractorData now returns live-computed reviewCount, averageRating, and jobsCompleted
+      // from the backend (not stale aggregate columns)
       const earningsData = await contractorsApi.getMyEarnings()
       setStats({
         totalApplications: applicationsData.length,
         activeJobs: activeJobsResponse.jobs?.length || 0,
-        completedJobs: completedJobsResponse.jobs?.length || 0,
+        completedJobs: contractorData.jobsCompleted ?? completedJobsResponse.jobs?.length ?? 0,
         totalEarnings: earningsData.totalEarnings,
         monthlyEarnings: earningsData.monthlyEarnings,
         averageRating: contractorData.averageRating || 0,

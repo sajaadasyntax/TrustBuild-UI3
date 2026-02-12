@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'
+    let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'
+    
+    // Ensure API URL doesn't end with /api to avoid double /api/api/
+    if (apiUrl.endsWith('/api')) {
+      apiUrl = apiUrl.slice(0, -4)
+    }
 
     // Forward the request to the backend API
     const response = await fetch(`${apiUrl}/api/payments/pay-commission`, {

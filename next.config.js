@@ -39,6 +39,16 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Apple Pay domain verification file must be served as plain text
+        source: '/.well-known/apple-developer-merchantid-domain-association',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/octet-stream'
+          }
+        ]
+      },
+      {
         source: '/:path*',
         headers: [
           {
