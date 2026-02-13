@@ -76,7 +76,7 @@ export interface JobLeadAccessDialogProps {
     maxContractorsPerJob?: number;
     spotsRemaining?: number;
   };
-  onAccessGranted?: () => void;
+  onAccessGranted?: (purchaseResult?: any) => void;
 }
 
 interface StripePaymentFormProps {
