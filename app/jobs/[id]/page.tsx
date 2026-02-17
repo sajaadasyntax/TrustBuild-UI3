@@ -186,7 +186,7 @@ export default function JobDetailsPage() {
   // Show loading if data is loading OR if contractor access check is in progress
   if (loading || (user?.role === 'CONTRACTOR' && checkingAccess)) {
     return (
-      <div className="container py-32">
+      <div className="container py-16 md:py-32">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
@@ -227,7 +227,7 @@ export default function JobDetailsPage() {
           
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
+              <h1 className="text-xl md:text-3xl font-bold mb-2">
                 {showRestrictedContent() ? 'Job Available' : job.title}
               </h1>
               <div className="flex items-center gap-4 text-muted-foreground">
@@ -293,7 +293,7 @@ export default function JobDetailsPage() {
                     </div>
                     
                     {/* Only show basic job info */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <div>
                         <Label className="text-sm font-medium text-gray-600">Service Type</Label>
                         <p className="text-sm">{job.service?.name || 'General'}</p>
@@ -326,7 +326,7 @@ export default function JobDetailsPage() {
                   <CardTitle>Job Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium">Service Type</Label>
                       <p className="text-muted-foreground">{job.service?.name || 'General'}</p>

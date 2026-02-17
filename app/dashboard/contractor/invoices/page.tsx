@@ -414,7 +414,7 @@ export default function ContractorInvoicesPage() {
     <div className="container px-4 py-6 md:py-10 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Invoices</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">My Invoices</h1>
           <p className="text-muted-foreground">
             View and manage all your invoices including admin-issued invoices
           </p>

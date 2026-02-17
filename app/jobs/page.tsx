@@ -175,7 +175,7 @@ export default function JobsPage() {
   return (
     <div className="container py-16 md:py-32">
       <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4">Find Your Next Project</h1>
+        <h1 className="text-2xl md:text-4xl font-bold mb-4">Find Your Next Project</h1>
         <p className="text-xl text-muted-foreground mb-8">
           Browse available jobs and apply to the ones that match your skills
         </p>

@@ -118,7 +118,7 @@ export default function ContractorCompletedJobs() {
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
               Completed Jobs
             </h1>
@@ -147,7 +147,7 @@ export default function ContractorCompletedJobs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-700 font-medium">Total Completed</p>
-                  <p className="text-3xl font-bold text-green-800">{completedJobs.length}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-green-800">{completedJobs.length}</p>
                   <p className="text-xs text-green-600 mt-1">Jobs</p>
                 </div>
                 <CheckCircle2 className="h-10 w-10 text-green-500" />
@@ -159,7 +159,7 @@ export default function ContractorCompletedJobs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-700 font-medium">Total Earnings</p>
-                  <p className="text-3xl font-bold text-blue-800">{formatCurrency(totalEarnings)}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-blue-800">{formatCurrency(totalEarnings)}</p>
                   <p className="text-xs text-blue-600 mt-1">From completed work</p>
                 </div>
                 <PoundSterling className="h-10 w-10 text-blue-500" />
@@ -171,7 +171,7 @@ export default function ContractorCompletedJobs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-yellow-700 font-medium">Reviews Received</p>
-                  <p className="text-3xl font-bold text-yellow-800">{reviewedJobsCount}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-yellow-800">{reviewedJobsCount}</p>
                   <p className="text-xs text-yellow-600 mt-1">Of {completedJobs.length} jobs</p>
                 </div>
                 <Star className="h-10 w-10 text-yellow-500" />
@@ -183,7 +183,7 @@ export default function ContractorCompletedJobs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-700 font-medium">Average Rating</p>
-                  <p className="text-3xl font-bold text-purple-800">
+                  <p className="text-2xl md:text-3xl font-bold text-purple-800">
                     {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
                   </p>
                   <p className="text-xs text-purple-600 mt-1">Out of 5 stars</p>

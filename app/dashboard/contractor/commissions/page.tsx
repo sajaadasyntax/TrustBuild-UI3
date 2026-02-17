@@ -234,7 +234,7 @@ export default function ContractorCommissions() {
   return (
     <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Commission Payments</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Commission Payments</h1>
         <p className="text-muted-foreground">
           View and manage your 5% commission payments on completed job amounts
         </p>

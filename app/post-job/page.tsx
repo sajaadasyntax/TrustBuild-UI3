@@ -209,7 +209,7 @@ export default function PostJobPage() {
   return (
     <div className="container mx-auto max-w-3xl py-16 md:py-32">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-4">Post a Job</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-4">Post a Job</h1>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
           Looking for a reliable contractor? Get started in minutes. Just tell us what you need, your location, and when you&apos;d like the work done. We&apos;ll match your request with trusted contractors in your area.
         </p>

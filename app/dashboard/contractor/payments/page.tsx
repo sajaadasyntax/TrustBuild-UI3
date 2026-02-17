@@ -351,7 +351,7 @@ export default function ContractorPayments() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Payments & Earnings</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Payments & Earnings</h1>
         <p className="text-muted-foreground">
           Manage your earnings, withdrawals, and job lead credits
         </p>
