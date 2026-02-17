@@ -207,7 +207,7 @@ export default function PostJobPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl py-32">
+    <div className="container mx-auto max-w-3xl py-16 md:py-32">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold mb-4">Post a Job</h1>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">

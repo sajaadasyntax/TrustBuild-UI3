@@ -159,7 +159,7 @@ function ContractorProfileContent() {
 
   if (!contractor) {
     return (
-      <div className="container py-32">
+      <div className="container py-16 md:py-32">
         <Card>
           <CardContent className="py-10 text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
@@ -180,7 +180,7 @@ function ContractorProfileContent() {
   // Block contractors from viewing other contractors' profiles
   if (user?.role === 'CONTRACTOR' && user?.contractor?.id !== contractor.id) {
     return (
-      <div className="container py-32">
+      <div className="container py-16 md:py-32">
         <Card className="max-w-2xl mx-auto">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
@@ -212,7 +212,7 @@ function ContractorProfileContent() {
   const internalReviews = reviews.filter(review => !review.isExternal)
 
   return (
-    <div className="container py-32">
+    <div className="container py-16 md:py-32">
       <div className="mb-8">
         <Button variant="outline" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />

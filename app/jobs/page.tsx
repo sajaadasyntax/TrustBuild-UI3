@@ -152,7 +152,7 @@ export default function JobsPage() {
 
   if (loading && jobs.length === 0) {
     return (
-      <div className="container py-32">
+      <div className="container py-16 md:py-32">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -173,7 +173,7 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="container py-32">
+    <div className="container py-16 md:py-32">
       <div className="mb-12 text-center">
         <h1 className="text-4xl font-bold mb-4">Find Your Next Project</h1>
         <p className="text-xl text-muted-foreground mb-8">

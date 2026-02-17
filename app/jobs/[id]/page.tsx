@@ -200,7 +200,7 @@ export default function JobDetailsPage() {
 
   if (!job) {
     return (
-      <div className="container py-32">
+      <div className="container py-16 md:py-32">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Job not found</h1>
           <Link href="/jobs">
@@ -215,7 +215,7 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="container py-32">
+    <div className="container py-16 md:py-32">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link href="/jobs">
