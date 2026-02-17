@@ -36,7 +36,12 @@ import {
   AlertCircle,
   Download,
   ExternalLink,
+  CalendarPlus,
+  Send,
+  AlertTriangle,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 
 interface KycRecord {
   id: string;
@@ -86,6 +91,15 @@ export default function AdminKycPage() {
   const [approvalNotes, setApprovalNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionNotes, setRejectionNotes] = useState('');
+  
+  // Extend deadline dialog state
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
+  const [extendDays, setExtendDays] = useState('14');
+  const [extendReason, setExtendReason] = useState('');
+  
+  // Send reminder dialog state
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
 
   // Helper function to normalize document path for URL construction
   // Converts absolute paths to relative paths and ensures proper encoding
@@ -229,6 +243,81 @@ export default function AdminKycPage() {
     }
   };
 
+  const getDaysInfo = (dueBy: string | null) => {
+    if (!dueBy) return null;
+    const now = new Date();
+    const due = new Date(dueBy);
+    const diffMs = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const handleExtendDeadline = async () => {
+    if (!selectedKyc) return;
+    setActionLoading(true);
+    setError('');
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/${selectedKyc.id}/extend-deadline`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
+          },
+          body: JSON.stringify({ days: parseInt(extendDays), reason: extendReason }),
+        }
+      );
+      if (response.ok) {
+        toast({ title: 'Deadline Extended', description: `Deadline extended by ${extendDays} days.` });
+        setShowExtendDialog(false);
+        setExtendDays('14');
+        setExtendReason('');
+        setSelectedKyc(null);
+        fetchKycs();
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to extend deadline');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSendReminder = async () => {
+    if (!selectedKyc) return;
+    setActionLoading(true);
+    setError('');
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/${selectedKyc.id}/send-reminder`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
+          },
+          body: JSON.stringify({ message: reminderMessage }),
+        }
+      );
+      if (response.ok) {
+        toast({ title: 'Reminder Sent', description: 'Verification reminder sent to contractor.' });
+        setShowReminderDialog(false);
+        setReminderMessage('');
+        setSelectedKyc(null);
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to send reminder');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; label: string }> = {
       PENDING: { variant: 'secondary', label: 'Pending' },
@@ -324,9 +413,31 @@ export default function AdminKycPage() {
                         : <span className="text-gray-400">-</span>}
                     </TableCell>
                     <TableCell>
-                      {kyc.dueBy
-                        ? new Date(kyc.dueBy).toLocaleDateString()
-                        : <span className="text-gray-400">-</span>}
+                      {kyc.dueBy ? (
+                        <div>
+                          <div>{new Date(kyc.dueBy).toLocaleDateString()}</div>
+                          {(() => {
+                            const days = getDaysInfo(kyc.dueBy);
+                            if (days === null) return null;
+                            if (days < 0) return (
+                              <span className="text-xs font-semibold text-red-600 flex items-center gap-1 mt-0.5">
+                                <AlertTriangle className="w-3 h-3" />
+                                {Math.abs(days)} days overdue
+                              </span>
+                            );
+                            if (days <= 3) return (
+                              <span className="text-xs font-semibold text-orange-600 mt-0.5">
+                                {days} days left
+                              </span>
+                            );
+                            return (
+                              <span className="text-xs text-muted-foreground mt-0.5">
+                                {days} days left
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      ) : <span className="text-gray-400">-</span>}
                     </TableCell>
                     <TableCell>{getStatusBadge(kyc.status)}</TableCell>
                     <TableCell className="text-right">
@@ -370,6 +481,33 @@ export default function AdminKycPage() {
                         )}
                         {kyc.status === 'SUBMITTED' && !canApproveKyc && (
                           <span className="text-sm text-muted-foreground">Review only</span>
+                        )}
+                        {/* Extend Deadline & Send Reminder - for non-approved records */}
+                        {kyc.status !== 'APPROVED' && canWriteKyc && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedKyc(kyc);
+                                setShowExtendDialog(true);
+                              }}
+                            >
+                              <CalendarPlus className="w-4 h-4 mr-1" />
+                              Extend
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedKyc(kyc);
+                                setShowReminderDialog(true);
+                              }}
+                            >
+                              <Send className="w-4 h-4 mr-1" />
+                              Remind
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -751,6 +889,100 @@ export default function AdminKycPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Deadline Dialog */}
+      <Dialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Extend Verification Deadline</DialogTitle>
+            <DialogDescription>
+              Extend the KYC submission deadline for this contractor. They will be notified by email and in-app notification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedKyc && (
+              <div className="text-sm bg-gray-50 p-3 rounded-lg">
+                <p><strong>Contractor:</strong> {selectedKyc.contractor.user.name}</p>
+                <p><strong>Current deadline:</strong> {selectedKyc.dueBy ? new Date(selectedKyc.dueBy).toLocaleDateString() : 'Not set'}</p>
+                <p><strong>Status:</strong> {selectedKyc.status}</p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="extendDays">Extend by (days)</Label>
+              <Input
+                id="extendDays"
+                type="number"
+                min="1"
+                max="90"
+                value={extendDays}
+                onChange={(e) => setExtendDays(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="extendReason">Reason (Optional)</Label>
+              <Textarea
+                id="extendReason"
+                placeholder="Why is the deadline being extended?"
+                value={extendReason}
+                onChange={(e) => setExtendReason(e.target.value)}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExtendDialog(false)}>Cancel</Button>
+            <Button onClick={handleExtendDeadline} disabled={actionLoading || !extendDays}>
+              {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CalendarPlus className="w-4 h-4 mr-2" />}
+              {actionLoading ? 'Extending...' : `Extend by ${extendDays} days`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Reminder Dialog */}
+      <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Verification Reminder</DialogTitle>
+            <DialogDescription>
+              Send an email and in-app notification reminding this contractor to complete their verification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedKyc && (
+              <div className="text-sm bg-gray-50 p-3 rounded-lg">
+                <p><strong>Contractor:</strong> {selectedKyc.contractor.user.name}</p>
+                <p><strong>Email:</strong> {selectedKyc.contractor.user.email}</p>
+                <p><strong>Status:</strong> {selectedKyc.status}</p>
+                {selectedKyc.dueBy && (() => {
+                  const days = getDaysInfo(selectedKyc.dueBy);
+                  if (days !== null && days < 0) return (
+                    <p className="text-red-600 font-semibold">Overdue by {Math.abs(days)} days</p>
+                  );
+                  return days !== null ? <p>Due in {days} days</p> : null;
+                })()}
+              </div>
+            )}
+            <div>
+              <Label htmlFor="reminderMessage">Custom Message (Optional)</Label>
+              <Textarea
+                id="reminderMessage"
+                placeholder="Add a personal message to include in the reminder..."
+                value={reminderMessage}
+                onChange={(e) => setReminderMessage(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReminderDialog(false)}>Cancel</Button>
+            <Button onClick={handleSendReminder} disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {actionLoading ? 'Sending...' : 'Send Reminder'}
             </Button>
           </DialogFooter>
         </DialogContent>
