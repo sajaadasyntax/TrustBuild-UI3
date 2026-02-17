@@ -528,8 +528,9 @@ export default function AdminUsersPage() {
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
@@ -601,6 +602,7 @@ export default function AdminUsersPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -669,8 +671,9 @@ export default function AdminUsersPage() {
                       No administrators found
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
                         <TableRow>
                           <TableHead>Admin</TableHead>
                           <TableHead>Role</TableHead>
@@ -758,6 +761,7 @@ export default function AdminUsersPage() {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>

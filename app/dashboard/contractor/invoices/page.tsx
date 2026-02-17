@@ -451,51 +451,53 @@ export default function ContractorInvoicesPage() {
             </div>
           ) : filteredInvoices.length > 0 ? (
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">
-                        {invoice.invoiceNumber}
-                      </TableCell>
-                      <TableCell>{getTypeBadge(invoice.type)}</TableCell>
-                      <TableCell>{formatDate(invoice.issuedAt || invoice.createdAt)}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{invoice.description}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(Number(invoice.totalAmount))}</TableCell>
-                      <TableCell>{getStatusBadge(invoice)}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        {canPayInvoice(invoice) && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              setSelectedInvoice(invoice)
-                              setShowPaymentDialog(true)
-                            }}
-                          >
-                            <CreditCard className="h-4 w-4 mr-1" />
-                            Pay
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline" onClick={() => handleDownload(invoice.id, invoice.type)}>
-                          <Download className="h-4 w-4 mr-1" />
-                          PDF
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">
+                          {invoice.invoiceNumber}
+                        </TableCell>
+                        <TableCell>{getTypeBadge(invoice.type)}</TableCell>
+                        <TableCell>{formatDate(invoice.issuedAt || invoice.createdAt)}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{invoice.description}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(Number(invoice.totalAmount))}</TableCell>
+                        <TableCell>{getStatusBadge(invoice)}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          {canPayInvoice(invoice) && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedInvoice(invoice)
+                                setShowPaymentDialog(true)
+                              }}
+                            >
+                              <CreditCard className="h-4 w-4 mr-1" />
+                              Pay
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => handleDownload(invoice.id, invoice.type)}>
+                            <Download className="h-4 w-4 mr-1" />
+                            PDF
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-center">

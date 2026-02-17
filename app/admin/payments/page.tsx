@@ -157,8 +157,9 @@ function RefundsTab({
           </div>
         ) : (
           <>
-            <Table>
-              <TableHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                 <TableRow>
                   <TableHead>Transaction</TableHead>
                   <TableHead>Customer</TableHead>
@@ -201,6 +202,7 @@ function RefundsTab({
                 ))}
               </TableBody>
             </Table>
+            </div>
 
             {refundTotalPages > 1 && (
               <div className="flex items-center justify-between space-x-2 py-4 px-6">
@@ -789,8 +791,9 @@ function AdminPaymentsContent() {
                   <span>Loading transactions...</span>
                 </div>
               ) : (
-              <Table>
-                <TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                   <TableRow>
                     <TableHead>Transaction</TableHead>
                     <TableHead>Customer</TableHead>
@@ -873,6 +876,7 @@ function AdminPaymentsContent() {
                   )}
                 </TableBody>
               </Table>
+              </div>
               )}
 
               {/* Pagination */}
@@ -921,7 +925,7 @@ function AdminPaymentsContent() {
 
       {/* Transaction Details Dialog */}
       <Dialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Transaction Details</DialogTitle>
             <DialogDescription>

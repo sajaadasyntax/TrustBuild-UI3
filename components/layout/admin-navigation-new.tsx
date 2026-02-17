@@ -1,8 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder, PoundSterling } from "lucide-react"
+import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder, PoundSterling, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -30,6 +31,8 @@ export function AdminNavigationNew() {
   const { notifications, unreadCount, loading, markAsRead, deleteNotification, fetchNotifications } = useAdminNotifications()
   const pathname = usePathname()
   const router = useRouter()
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   if (!admin) return null
 
@@ -61,8 +64,18 @@ export function AdminNavigationNew() {
           </Link>
         </div>
 
-        {/* Main Navigation - Organized Dropdowns */}
-        <nav className="flex items-center space-x-1 text-sm font-medium">
+        {/* Mobile menu toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden mr-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+
+        {/* Main Navigation - Hidden on mobile, shown on md+ */}
+        <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
           {/* Dashboard */}
           <Link
             href="/admin"
@@ -499,6 +512,78 @@ export function AdminNavigationNew() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <nav className="container py-3 space-y-1 max-h-[70vh] overflow-y-auto">
+            <Link href="/admin" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+              Dashboard
+            </Link>
+            {canAccessContractors && (
+              <>
+                <Link href="/admin/contractors" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                  Contractors
+                </Link>
+                <Link href="/admin/kyc" className="block px-3 py-2 rounded-md text-sm hover:bg-accent pl-6" onClick={() => setMobileMenuOpen(false)}>
+                  KYC Verification
+                </Link>
+              </>
+            )}
+            {canAccessJobs && (
+              <>
+                <Link href="/admin/jobs" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                  Jobs
+                </Link>
+                <Link href="/admin/final-price-confirmations" className="block px-3 py-2 rounded-md text-sm hover:bg-accent pl-6" onClick={() => setMobileMenuOpen(false)}>
+                  Final Price Confirmations
+                </Link>
+                <Link href="/admin/disputes" className="block px-3 py-2 rounded-md text-sm hover:bg-accent pl-6" onClick={() => setMobileMenuOpen(false)}>
+                  Disputes
+                </Link>
+              </>
+            )}
+            {canAccessFinance && (
+              <>
+                <Link href="/admin/payments" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                  Payments
+                </Link>
+                <Link href="/admin/invoices" className="block px-3 py-2 rounded-md text-sm hover:bg-accent pl-6" onClick={() => setMobileMenuOpen(false)}>
+                  Invoices
+                </Link>
+                <Link href="/admin/unpaid-commissions" className="block px-3 py-2 rounded-md text-sm hover:bg-accent pl-6" onClick={() => setMobileMenuOpen(false)}>
+                  Unpaid Commissions
+                </Link>
+              </>
+            )}
+            {canAccessUsers && (
+              <Link href="/admin/users" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                Users
+              </Link>
+            )}
+            {canAccessReviews && (
+              <Link href="/admin/reviews" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                Reviews
+              </Link>
+            )}
+            {canAccessContent && (
+              <Link href="/admin/content" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                Content
+              </Link>
+            )}
+            {canAccessSupport && (
+              <Link href="/admin/support" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                Support
+              </Link>
+            )}
+            {canAccessSettings && (
+              <Link href="/admin/settings" className="block px-3 py-2 rounded-md text-sm hover:bg-accent" onClick={() => setMobileMenuOpen(false)}>
+                Settings
+              </Link>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

@@ -495,91 +495,93 @@ export default function ContractorPayments() {
                 </div>
               ) : (
                 <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.length === 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
-                            <div className="text-muted-foreground">
-                              <Receipt className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                              <p>No transactions found</p>
-                              <p className="text-sm">Your payment history will appear here</p>
-                            </div>
-                          </TableCell>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                      ) : (
-                        transactions.map((transaction) => (
-                          <TableRow key={transaction.id}>
-                            <TableCell className="text-sm">
-                              {formatDate(transaction.createdAt)}
-                            </TableCell>
-                            <TableCell>
-                              {getTypeBadge(transaction.type)}
-                            </TableCell>
-                            <TableCell className="max-w-xs">
-                              <div className="truncate">{transaction.description}</div>
-                              {transaction.job && (
-                                <div className="text-xs text-muted-foreground">
-                                  Job: {transaction.job.title}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <span className={transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}>
-                                {transaction.amount > 0 ? '+' : ''}
-                                {formatCurrency(transaction.amount, transaction.currency)}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              {getStatusBadge(transaction.status)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  {transaction.isStripeTransaction && (
-                                    <>
-                                      <DropdownMenuItem>
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Stripe Receipt
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem>
-                                        <CreditCard className="mr-2 h-4 w-4" />
-                                        View in Stripe Dashboard
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem>
-                                    Copy Transaction ID
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <div className="text-muted-foreground">
+                                <Receipt className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                                <p>No transactions found</p>
+                                <p className="text-sm">Your payment history will appear here</p>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          transactions.map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell className="text-sm">
+                                {formatDate(transaction.createdAt)}
+                              </TableCell>
+                              <TableCell>
+                                {getTypeBadge(transaction.type)}
+                              </TableCell>
+                              <TableCell className="max-w-xs">
+                                <div className="truncate">{transaction.description}</div>
+                                {transaction.job && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Job: {transaction.job.title}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <span className={transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {transaction.amount > 0 ? '+' : ''}
+                                  {formatCurrency(transaction.amount, transaction.currency)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(transaction.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    {transaction.isStripeTransaction && (
+                                      <>
+                                        <DropdownMenuItem>
+                                          <Download className="mr-2 h-4 w-4" />
+                                          Download Stripe Receipt
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                          <CreditCard className="mr-2 h-4 w-4" />
+                                          View in Stripe Dashboard
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem>
+                                      Copy Transaction ID
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
 

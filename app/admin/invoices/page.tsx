@@ -338,7 +338,7 @@ export default function AdminInvoicesPage() {
               Create Manual Invoice
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Manual Invoice</DialogTitle>
               <DialogDescription>
@@ -587,8 +587,9 @@ export default function AdminInvoicesPage() {
             </div>
           ) : invoices.length > 0 ? (
             <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Date</TableHead>
@@ -633,6 +634,7 @@ export default function AdminInvoicesPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-center">

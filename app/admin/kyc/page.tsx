@@ -379,8 +379,9 @@ export default function AdminKycPage() {
               <p>No KYC records found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                 <TableRow>
                   <TableHead>Contractor</TableHead>
                   <TableHead>Business Name</TableHead>
@@ -515,6 +516,7 @@ export default function AdminKycPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -639,7 +641,7 @@ export default function AdminKycPage() {
 
       {/* View Details Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>KYC Document Review</DialogTitle>
             <DialogDescription>

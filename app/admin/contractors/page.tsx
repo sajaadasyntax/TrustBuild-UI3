@@ -1129,7 +1129,7 @@ export default function AdminContractors() {
 
       {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {approvalData.approved ? 'Approve' : 'Reject'} Contractor
@@ -1311,7 +1311,7 @@ export default function AdminContractors() {
 
       {/* Credit Adjustment Dialog */}
       <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Contractor Credits</DialogTitle>
             <DialogDescription>
