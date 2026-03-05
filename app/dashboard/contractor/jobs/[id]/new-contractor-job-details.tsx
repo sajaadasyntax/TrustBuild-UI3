@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, PhoneCall, MessageCircle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor, JobApplication } from '@/lib/api'
@@ -273,6 +273,57 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
           </div>
         </div>
 
+        {/* Customer Contact - Prominently at top for easy access */}
+        {(hasAccess || isJobWinner) && job.customer && (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-green-900">
+                <PhoneCall className="w-5 h-5 text-green-600" />
+                Customer Contact
+              </CardTitle>
+              <CardDescription>
+                Call or email the customer directly to discuss the job
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium">{job.customer.user?.name}</span>
+                </div>
+                {job.customer.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-green-600" />
+                    <a
+                      href={`tel:${job.customer.phone}`}
+                      className="font-semibold text-green-700 hover:text-green-800 underline"
+                    >
+                      {job.customer.phone}
+                    </a>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => window.location.href = `tel:${job.customer.phone}`}
+                    >
+                      <PhoneCall className="w-4 h-4 mr-1" />
+                      Call
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <a
+                    href={`mailto:${job.customer.user?.email}`}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    {job.customer.user?.email}
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Subscription Status Banner */}
         {subscription?.isActive && (
           <Card className="border-green-200 bg-green-50">
@@ -469,7 +520,6 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
             <CardTitle>Job Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-gray-500" />
@@ -484,43 +534,6 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                   <span>Budget: {job.budget ? `£${job.budget}` : 'Not specified'}</span>
                 </div>
               </div>
-              
-              {/* Customer Contact - Visible after purchasing access or if contractor won */}
-              {(hasAccess || isJobWinner) && job.customer && (
-                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold flex items-center gap-2 text-blue-900">
-                    <PhoneCall className="w-5 h-5 text-blue-600" />
-                    Customer Contact
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium">{job.customer.user?.name}</span>
-                    </div>
-                    {job.customer.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-green-600" />
-                        <a 
-                          href={`tel:${job.customer.phone}`}
-                          className="font-semibold text-green-700 hover:text-green-800 underline"
-                        >
-                          {job.customer.phone}
-                        </a>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <a 
-                        href={`mailto:${job.customer.user?.email}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {job.customer.user?.email}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             <div>
               <h4 className="font-semibold mb-2">Description</h4>

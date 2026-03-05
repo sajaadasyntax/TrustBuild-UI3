@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { ArrowLeft, Star, User, Calendar, MapPin, Globe, Instagram, Mail, Phone, FileText, CheckCircle2, AlertTriangle, X, ChevronLeft, ChevronRight, ZoomIn, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -227,7 +227,15 @@ function ContractorProfileContent() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{contractor.businessName || contractor.user?.name}</CardTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="text-2xl">{contractor.businessName || contractor.user?.name}</CardTitle>
+                    {(contractor.kyc?.status === 'APPROVED' || (contractor as any).manuallyApprovedBy) && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 gap-1">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Identity Verified
+                      </Badge>
+                    )}
+                  </div>
                   <CardDescription>{contractor.servicesProvided}</CardDescription>
                 </div>
                 <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">

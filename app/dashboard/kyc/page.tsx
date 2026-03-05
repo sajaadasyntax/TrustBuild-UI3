@@ -80,8 +80,8 @@ export default function KycPage() {
     setError('');
     setSuccess('');
 
-    if (!idDocument || !utilityBill || !insuranceDoc) {
-      setError('Please upload all required documents (ID, utility bill, and insurance certificate)');
+    if (!idDocument || !utilityBill) {
+      setError('Please upload ID document and utility bill (proof of address). Insurance is optional.');
       return;
     }
 
@@ -91,7 +91,9 @@ export default function KycPage() {
       const formData = new FormData();
       formData.append('idDocument', idDocument);
       formData.append('utilityBill', utilityBill);
-      formData.append('insuranceDoc', insuranceDoc);
+      if (insuranceDoc) {
+        formData.append('insuranceDoc', insuranceDoc);
+      }
       if (companyDoc) {
         formData.append('companyDoc', companyDoc);
       }
@@ -342,17 +344,16 @@ export default function KycPage() {
               {/* Insurance Document */}
               <div>
                 <Label htmlFor="insuranceDoc" className="text-base font-medium">
-                  Public Liability Insurance *
+                  Public Liability Insurance (optional, preferred)
                 </Label>
                 <p className="text-sm text-gray-600 mb-2">
-                  Valid insurance certificate showing public liability coverage
+                  Valid insurance certificate showing public liability coverage. Recommended but not required at this stage.
                 </p>
                 <Input
                   id="insuranceDoc"
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setInsuranceDoc(e.target.files?.[0] || null)}
-                  required
                 />
               </div>
 

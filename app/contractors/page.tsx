@@ -8,7 +8,7 @@ import { contractorsApi, Contractor, handleApiError } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Star, XCircle } from 'lucide-react'
+import { Star, XCircle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function ContractorsDirectory() {
@@ -126,7 +126,15 @@ export default function ContractorsDirectory() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <CardTitle>{contractor.businessName || contractor.user?.name}</CardTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle>{contractor.businessName || contractor.user?.name}</CardTitle>
+                    {(contractor.kyc?.status === 'APPROVED' || (contractor as any).manuallyApprovedBy) && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300 flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
                   {contractor.servicesProvided && (
                     <p className="text-sm text-muted-foreground">{contractor.servicesProvided}</p>
                   )}

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp, Loader2 } from "lucide-react"
+import { ArrowRight, Award, Building, CheckCircle, Star, Wrench, TrendingUp, Loader2, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { contractorsApi, contentApi, handleApiError, Contractor } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
@@ -276,6 +276,12 @@ export default function Home() {
                         <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full flex items-center ${badgeInfo.className}`}>
                           <badgeInfo.icon className="h-3 w-3 mr-1" />
                           {badgeInfo.text}
+                        </div>
+                      )}
+                      {(contractor.kyc?.status === 'APPROVED' || (contractor as any).manuallyApprovedBy) && (
+                        <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded-full flex items-center bg-green-600 text-white">
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                          Verified
                         </div>
                       )}
                     </div>

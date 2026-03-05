@@ -72,6 +72,8 @@ export interface Contractor {
   payments?: Payment[];
   jobAccess?: JobAccess[];
   creditTransactions?: CreditTransaction[];
+  kyc?: { status: string };
+  manuallyApprovedBy?: string | null;
   subscription?: {
     status?: string;
     nextBillingDate?: string;

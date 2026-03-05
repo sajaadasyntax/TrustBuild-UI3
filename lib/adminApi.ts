@@ -418,7 +418,7 @@ export const adminApi = {
 
   // Get jobs with rejected final prices
   getJobsWithRejectedFinalPrice: async () => {
-    const response = await adminApiRequest<any>('/jobs/rejected-final-prices');
+    const response = await adminApiRequest<any>('/admin/jobs/rejected-final-prices');
     return response;
   },
 
