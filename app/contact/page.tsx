@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail, MapPin, Clock, MessageCircle } from "lucide-react"
+import { Mail, MapPin, Clock, MessageCircle, Phone } from "lucide-react"
 
 export default function ContactPage() {
   return (
@@ -11,16 +11,29 @@ export default function ContactPage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto mb-16">
         <Card>
           <CardHeader>
             <Mail className="h-8 w-8 text-primary mb-2" />
             <CardTitle>Email</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-2">support@trustbuild.uk</p>
+            <a href="mailto:support@trustbuild.uk" className="text-muted-foreground mb-2 hover:text-primary transition-colors block">support@trustbuild.uk</a>
             <p className="text-sm text-muted-foreground">
               Send us an email and we&apos;ll get back to you as soon as possible.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Phone className="h-8 w-8 text-primary mb-2" />
+            <CardTitle>Phone</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <a href="tel:02080814143" className="text-muted-foreground mb-2 hover:text-primary transition-colors block font-medium">020 8081 4143</a>
+            <p className="text-sm text-muted-foreground">
+              Call us directly for urgent enquiries.
             </p>
           </CardContent>
         </Card>

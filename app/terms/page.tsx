@@ -18,7 +18,8 @@ export default function TermsPage() {
       </Link>
       
       <h1 className="text-3xl font-bold mb-6">TrustBuild – Terms of Use</h1>
-      <p className="text-sm text-muted-foreground mb-8">Effective Date: April 15, 2023</p>
+      <p className="text-sm text-muted-foreground mb-2">Effective Date: April 15, 2023</p>
+      <p className="text-sm text-muted-foreground mb-8">TrustBuild is operated by TrustBuilders Ltd.</p>
       
       <p className="mb-6">Welcome to TrustBuild. By accessing or using our platform, you agree to be bound by these Terms of Use. Please read them carefully.</p>
       
@@ -75,7 +76,11 @@ export default function TermsPage() {
         
         <section>
           <h2 className="text-xl font-semibold mb-2">11. Contact</h2>
-          <p>If you have any questions, please contact us at: <a href="mailto:support@trustbuild.com" className="text-primary hover:underline">support@trustbuild.com</a></p>
+          <p>If you have any questions, please contact us at: <a href="mailto:support@trustbuild.uk" className="text-primary hover:underline">support@trustbuild.uk</a> or call <a href="tel:02080814143" className="text-primary hover:underline">020 8081 4143</a>.</p>
+        </section>
+
+        <section className="border-t pt-6">
+          <p className="text-sm text-muted-foreground">TrustBuild is operated by TrustBuilders Ltd. Registered in England and Wales.</p>
         </section>
       </div>
     </div>

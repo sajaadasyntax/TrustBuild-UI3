@@ -65,6 +65,9 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
   const [reviewRequest, setReviewRequest] = useState('')
   const [showReviewRequest, setShowReviewRequest] = useState(false)
   const [showFinalPriceDialog, setShowFinalPriceDialog] = useState(false)
+  const [immediateCustomerContact, setImmediateCustomerContact] = useState<{
+    phone?: string; name?: string; email?: string
+  } | null>(null)
 
   // Memoized application lookup - single source of truth
   const myApplication = useMemo(() => 
@@ -143,7 +146,12 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     setShowAccessDialog(true)
   }
 
-  const handleAccessGranted = useCallback(async () => {
+  const handleAccessGranted = useCallback(async (purchaseResult?: any) => {
+    // Immediately store customer contact from purchase response so the top card shows it instantly
+    if (purchaseResult?.customerContact) {
+      setImmediateCustomerContact(purchaseResult.customerContact)
+    }
+
     // Refresh all data after access is granted
     await Promise.all([
       fetchContractorData(),
@@ -274,55 +282,60 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
         </div>
 
         {/* Customer Contact - Prominently at top for easy access */}
-        {(hasAccess || isJobWinner) && job.customer && (
-          <Card className="border-green-200 bg-green-50/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg text-green-900">
-                <PhoneCall className="w-5 h-5 text-green-600" />
-                Customer Contact
-              </CardTitle>
-              <CardDescription>
-                Call or email the customer directly to discuss the job
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium">{job.customer.user?.name}</span>
-                </div>
-                {job.customer.phone && (
+        {(hasAccess || isJobWinner) && job.customer && (() => {
+          const displayPhone = immediateCustomerContact?.phone || job.customer.phone
+          const displayName = immediateCustomerContact?.name || job.customer.user?.name
+          const displayEmail = immediateCustomerContact?.email || job.customer.user?.email
+          return (
+            <Card className="border-green-200 bg-green-50/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg text-green-900">
+                  <PhoneCall className="w-5 h-5 text-green-600" />
+                  Customer Contact
+                </CardTitle>
+                <CardDescription>
+                  Call or email the customer directly to discuss the job
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-green-600" />
-                    <a
-                      href={`tel:${job.customer.phone}`}
-                      className="font-semibold text-green-700 hover:text-green-800 underline"
-                    >
-                      {job.customer.phone}
-                    </a>
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => window.location.href = `tel:${job.customer.phone}`}
-                    >
-                      <PhoneCall className="w-4 h-4 mr-1" />
-                      Call
-                    </Button>
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">{displayName}</span>
                   </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <a
-                    href={`mailto:${job.customer.user?.email}`}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    {job.customer.user?.email}
-                  </a>
+                  {displayPhone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-green-600" />
+                      <a
+                        href={`tel:${displayPhone}`}
+                        className="font-semibold text-green-700 hover:text-green-800 underline"
+                      >
+                        {displayPhone}
+                      </a>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => window.location.href = `tel:${displayPhone}`}
+                      >
+                        <PhoneCall className="w-4 h-4 mr-1" />
+                        Call
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <a
+                      href={`mailto:${displayEmail}`}
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      {displayEmail}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         {/* Subscription Status Banner */}
         {subscription?.isActive && (

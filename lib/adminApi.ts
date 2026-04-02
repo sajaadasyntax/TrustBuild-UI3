@@ -365,7 +365,16 @@ export const adminApi = {
     return response;
   },
 
-  // Admin override final price
+  // Admin approve final price (confirms the contractor's proposed price as-is)
+  adminApproveFinalPrice: async (jobId: string) => {
+    const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/approve-final-price`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return response;
+  },
+
+  // Admin override final price (force-complete with reason)
   adminOverrideFinalPrice: async (jobId: string, finalAmount: number, reason: string) => {
     const response = await adminApiRequest<any>(`/admin/jobs/${jobId}/override-final-price`, {
       method: 'POST',

@@ -1,10 +1,51 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { CheckCheck, CreditCard, Clock, Star, Users, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
+const DEFAULT_PRICING = {
+  monthly: 40,
+  sixMonths: 180,
+  yearly: 300,
+  currency: 'GBP',
+}
+
+function formatPrice(amount: number, currency: string) {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
 export default function PricingPage() {
+  const [pricing, setPricing] = useState(DEFAULT_PRICING)
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/content/pricing`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.data?.pricing) {
+          setPricing(data.data.pricing)
+        }
+      })
+      .catch(() => {
+        // Use defaults on error
+      })
+  }, [])
+
+  const monthlySixMonth = pricing.monthly * 6
+  const monthlyYearly = pricing.monthly * 12
+  const saveSixMonths = monthlySixMonth - pricing.sixMonths
+  const saveYearly = monthlyYearly - pricing.yearly
+
   return (
     <div className="container py-32">
       <div className="text-center mb-16">
@@ -19,7 +60,7 @@ export default function PricingPage() {
         <Card className="relative">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Monthly Plan</CardTitle>
-            <div className="text-4xl font-bold">£40</div>
+            <div className="text-4xl font-bold">{formatPrice(pricing.monthly, pricing.currency)}</div>
             <div className="text-muted-foreground">per month</div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -54,8 +95,10 @@ export default function PricingPage() {
           </div>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">6-Month Plan</CardTitle>
-            <div className="text-4xl font-bold">£180</div>
-            <div className="text-muted-foreground">Save £60</div>
+            <div className="text-4xl font-bold">{formatPrice(pricing.sixMonths, pricing.currency)}</div>
+            <div className="text-muted-foreground">
+              {saveSixMonths > 0 ? `Save ${formatPrice(saveSixMonths, pricing.currency)}` : '6 months'}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -89,8 +132,10 @@ export default function PricingPage() {
           </div>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Annual Plan</CardTitle>
-            <div className="text-4xl font-bold">£300</div>
-            <div className="text-muted-foreground">Save £180</div>
+            <div className="text-4xl font-bold">{formatPrice(pricing.yearly, pricing.currency)}</div>
+            <div className="text-muted-foreground">
+              {saveYearly > 0 ? `Save ${formatPrice(saveYearly, pricing.currency)}` : '12 months'}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -199,4 +244,4 @@ export default function PricingPage() {
       </div>
     </div>
   )
-} 
+}

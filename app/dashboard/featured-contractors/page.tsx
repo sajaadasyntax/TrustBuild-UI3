@@ -1,13 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star, MapPin, Briefcase, Award, CheckCircle } from 'lucide-react';
+import { Star, MapPin, Briefcase, Award, CheckCircle, Quote } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+
+interface ContractorReview {
+  id: string;
+  rating: number;
+  comment?: string;
+  customerName: string;
+  createdAt: string;
+}
 
 interface FeaturedContractor {
   id: string;
@@ -21,6 +29,8 @@ interface FeaturedContractor {
   revenue: number;
   businessName?: string;
   avatarUrl?: string;
+  reviewCount?: number;
+  reviews?: ContractorReview[];
 }
 
 export default function FeaturedContractorsPage() {
@@ -181,6 +191,32 @@ export default function FeaturedContractorsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Recent Reviews */}
+              {contractor.reviews && contractor.reviews.length > 0 && (
+                <div className="pt-4 border-t space-y-3">
+                  <p className="text-sm font-medium flex items-center gap-1">
+                    <Quote className="h-4 w-4 text-muted-foreground" />
+                    Customer Reviews ({contractor.reviewCount || contractor.reviews.length})
+                  </p>
+                  {contractor.reviews.slice(0, 2).map((review) => (
+                    <div key={review.id} className="bg-muted/50 rounded-md p-3 space-y-1">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`h-3 w-3 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                          />
+                        ))}
+                        <span className="text-xs text-muted-foreground ml-1">{review.customerName}</span>
+                      </div>
+                      {review.comment && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">&ldquo;{review.comment}&rdquo;</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users, UserCheck } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface Setting {
   key: string;
@@ -38,6 +39,10 @@ export default function AdminSettingsPage() {
   
   // Max contractors per job
   const [maxContractorsPerJob, setMaxContractorsPerJob] = useState('5');
+
+  // Registration controls
+  const [contractorRegistrationOpen, setContractorRegistrationOpen] = useState(true);
+  const [customerRegistrationOpen, setCustomerRegistrationOpen] = useState(true);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -85,6 +90,12 @@ export default function AdminSettingsPage() {
       if (settingsObject['MAX_CONTRACTORS_PER_JOB']) {
         const maxContractorsValue = settingsObject['MAX_CONTRACTORS_PER_JOB'].value;
         setMaxContractorsPerJob(maxContractorsValue?.defaultMax?.toString() || '5');
+      }
+
+      if (settingsObject['REGISTRATION_OPEN']) {
+        const regValue = settingsObject['REGISTRATION_OPEN'].value;
+        setContractorRegistrationOpen(regValue?.contractors !== false);
+        setCustomerRegistrationOpen(regValue?.customers !== false);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -163,6 +174,22 @@ export default function AdminSettingsPage() {
     updateSetting('MAX_CONTRACTORS_PER_JOB', {
       defaultMax: parseInt(maxContractorsPerJob),
       description: 'Default maximum contractors that can purchase access to each job',
+    });
+  };
+
+  const handleToggleContractorRegistration = (open: boolean) => {
+    setContractorRegistrationOpen(open);
+    updateSetting('REGISTRATION_OPEN', {
+      contractors: open,
+      customers: customerRegistrationOpen,
+    });
+  };
+
+  const handleToggleCustomerRegistration = (open: boolean) => {
+    setCustomerRegistrationOpen(open);
+    updateSetting('REGISTRATION_OPEN', {
+      contractors: contractorRegistrationOpen,
+      customers: open,
     });
   };
 
@@ -322,6 +349,68 @@ export default function AdminSettingsPage() {
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Max Contractors Setting
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Registration Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Registration Controls
+          </CardTitle>
+          <CardDescription>
+            Temporarily close registrations for contractors or customers. When closed, the registration page will display a message and prevent new sign-ups for that role.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center gap-3">
+              <UserCheck className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium">Contractor Registrations</p>
+                <p className="text-sm text-muted-foreground">
+                  {contractorRegistrationOpen
+                    ? 'Open — new contractors can sign up'
+                    : 'Closed — new contractor registrations are paused'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${contractorRegistrationOpen ? 'text-green-600' : 'text-red-600'}`}>
+                {contractorRegistrationOpen ? 'Open' : 'Closed'}
+              </span>
+              <Switch
+                checked={contractorRegistrationOpen}
+                onCheckedChange={handleToggleContractorRegistration}
+                disabled={saving}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="font-medium">Customer Registrations</p>
+                <p className="text-sm text-muted-foreground">
+                  {customerRegistrationOpen
+                    ? 'Open — new customers can sign up'
+                    : 'Closed — new customer registrations are paused'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${customerRegistrationOpen ? 'text-green-600' : 'text-red-600'}`}>
+                {customerRegistrationOpen ? 'Open' : 'Closed'}
+              </span>
+              <Switch
+                checked={customerRegistrationOpen}
+                onCheckedChange={handleToggleCustomerRegistration}
+                disabled={saving}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

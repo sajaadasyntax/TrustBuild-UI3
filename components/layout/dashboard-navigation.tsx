@@ -104,9 +104,9 @@ export function DashboardNavigation() {
             <Image 
               src="/images/Logo.svg" 
               alt="TrustBuild Logo" 
-              width={24} 
-              height={24} 
-              className="h-6 w-6"
+              width={32} 
+              height={32} 
+              className="h-8 w-8"
             />
             <span className="hidden font-bold sm:inline-block">TrustBuild</span>
           </Link>
@@ -142,9 +142,9 @@ export function DashboardNavigation() {
               <Image 
                 src="/images/Logo.svg" 
                 alt="TrustBuild Logo" 
-                width={24} 
-                height={24} 
-                className="h-6 w-6"
+                width={32} 
+                height={32} 
+                className="h-8 w-8"
               />
               <span className="font-bold">TrustBuild</span>
             </Link>

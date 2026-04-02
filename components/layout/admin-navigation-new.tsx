@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Shield, LogOut, User, Bell, Building2, FileText, Users, CreditCard, Settings, Activity, ShieldCheck, DollarSign, CheckCircle, LifeBuoy, Star, AlertTriangle, Receipt, Folder, PoundSterling, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -59,7 +60,13 @@ export function AdminNavigationNew() {
         {/* Logo */}
         <div className="mr-6 flex items-center">
           <Link href="/admin" className="flex items-center space-x-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <Image
+              src="/images/Logo.svg"
+              alt="TrustBuild Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
             <span className="font-bold hidden md:inline">TrustBuild Admin</span>
           </Link>
         </div>

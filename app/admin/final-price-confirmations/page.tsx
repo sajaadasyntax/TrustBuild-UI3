@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Clock, User, MapPin, DollarSign, AlertTriangle, XCircle } from "lucide-react"
+import { Clock, User, MapPin, DollarSign, AlertTriangle, XCircle, CheckCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/hooks/use-toast"
 import { adminApi } from '@/lib/adminApi'
@@ -95,6 +95,7 @@ export default function FinalPriceConfirmationsPage() {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false)
   const [overrideReason, setOverrideReason] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [approvingJobId, setApprovingJobId] = useState<string | null>(null)
 
   useEffect(() => {
     // Wait for authentication to be ready before fetching data
@@ -118,6 +119,23 @@ export default function FinalPriceConfirmationsPage() {
       handleApiError(error, 'Failed to load jobs')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApprove = async (job: Job) => {
+    try {
+      setApprovingJobId(job.id)
+      await adminApi.adminApproveFinalPrice(job.id)
+      toast({
+        title: "Final Price Approved",
+        description: `The proposed price of ${formatCurrency(job.contractorProposedAmount!)} has been approved. Job is now completed.`,
+      })
+      fetchJobs()
+    } catch (error) {
+      console.error('Failed to approve final price:', error)
+      handleApiError(error, 'Failed to approve final price')
+    } finally {
+      setApprovingJobId(null)
     }
   }
 
@@ -270,7 +288,15 @@ export default function FinalPriceConfirmationsPage() {
                           <p>Deadline: {new Date(job.finalPriceTimeoutAt!).toLocaleDateString()}</p>
                         </div>
                         
-                        <div className="pt-4 border-t">
+                        <div className="pt-4 border-t flex flex-col gap-2">
+                          <Button
+                            onClick={() => handleApprove(job)}
+                            disabled={approvingJobId === job.id}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {approvingJobId === job.id ? 'Approving...' : 'Approve Price'}
+                          </Button>
                           <Button
                             onClick={() => {
                               setSelectedJob(job)

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter } from "lucide-react"
+import { Facebook, Instagram, Twitter, Phone } from "lucide-react"
 
 export function SiteFooter() {
   return (
@@ -12,15 +12,19 @@ export function SiteFooter() {
               <Image 
                 src="/images/Logo.svg" 
                 alt="TrustBuild Logo" 
-                width={24} 
-                height={24}
-                className="h-6 w-6" 
+                width={32} 
+                height={32}
+                className="h-8 w-8" 
               />
               <span className="text-lg font-bold">TrustBuild</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Connecting customers with trusted contractors for all construction and renovation projects.
             </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone size={14} />
+              <a href="tel:02080814143" className="hover:text-primary transition-colors">020 8081 4143</a>
+            </div>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Facebook size={20} />
@@ -116,9 +120,12 @@ export function SiteFooter() {
           </div>
         </div>
         
-        <div className="border-t mt-8 pt-8">
+        <div className="border-t mt-8 pt-8 space-y-2">
           <p className="text-sm text-muted-foreground text-center">
-            © {new Date().getFullYear()} TrustBuild. All rights reserved.
+            TrustBuild is operated by TrustBuilders Ltd.
+          </p>
+          <p className="text-sm text-muted-foreground text-center">
+            © {new Date().getFullYear()} TrustBuilders Ltd. All rights reserved.
           </p>
         </div>
       </div>

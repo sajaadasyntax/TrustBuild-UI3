@@ -18,7 +18,8 @@ export default function PrivacyPage() {
       </Link>
       
       <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-8">Effective Date: April 15, 2023</p>
+      <p className="text-sm text-muted-foreground mb-2">Effective Date: April 15, 2023</p>
+      <p className="text-sm text-muted-foreground mb-8">TrustBuild is operated by TrustBuilders Ltd.</p>
       
       <p className="mb-6">We take your privacy seriously. TrustBuild collects only the necessary information to provide our services. Your data is never sold to third parties.</p>
       
@@ -79,12 +80,11 @@ export default function PrivacyPage() {
         
         <section>
           <h2 className="text-xl font-semibold mb-2">8. Contact</h2>
-          <p>For questions regarding this Privacy Policy, please contact us at: <a href="mailto:privacy@trustbuild.com" className="text-primary hover:underline">privacy@trustbuild.com</a></p>
+          <p>For questions regarding this Privacy Policy, please contact us at: <a href="mailto:support@trustbuild.uk" className="text-primary hover:underline">support@trustbuild.uk</a> or call <a href="tel:02080814143" className="text-primary hover:underline">020 8081 4143</a>.</p>
         </section>
-        
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Full Privacy Policy</h2>
-          <p>For full details, please read our <a href="#" className="text-primary hover:underline">Full Privacy Policy</a> (link to full document).</p>
+
+        <section className="border-t pt-6">
+          <p className="text-sm text-muted-foreground">TrustBuild is operated by TrustBuilders Ltd. Registered in England and Wales. We comply with the UK GDPR and the Data Protection Act 2018.</p>
         </section>
       </div>
     </div>
