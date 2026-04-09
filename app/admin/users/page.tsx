@@ -179,10 +179,13 @@ export default function AdminUsersPage() {
               'users:read',
               'pricing:read',
               'pricing:write',
+              'final_price:read',
+              'final_price:write',
             ]
           : [
               // Support Admin permissions
               'users:read',
+              'users:write',
               'jobs:read',
               'jobs:write',
               'contractors:read',
@@ -193,6 +196,8 @@ export default function AdminUsersPage() {
               'support:read',
               'support:write',
               'payments:read',
+              'final_price:read',
+              'final_price:write',
             ]
         adminData.permissions = defaultPermissions
       }

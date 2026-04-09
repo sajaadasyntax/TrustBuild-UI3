@@ -52,7 +52,7 @@ export function AdminNavigationNew() {
   const canAccessSupport = isSuperAdmin || hasAnyPermission(permissions, ['support:read', 'support:write'])
   const canAccessDisputes = isSuperAdmin || hasAnyPermission(permissions, ['disputes:read', 'disputes:write'])
   const canAccessReviews = isSuperAdmin || hasAnyPermission(permissions, ['reviews:read', 'reviews:write'])
-  const canAccessFinalPrice = isSuperAdmin || hasAnyPermission(permissions, ['final_price:read', 'final_price:write'])
+  const canAccessFinalPrice = isSuperAdmin || canAccessJobs || hasAnyPermission(permissions, ['final_price:read', 'final_price:write'])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

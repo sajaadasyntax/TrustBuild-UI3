@@ -126,12 +126,18 @@ function StripePaymentInnerForm({ leadPrice, job, onSuccess, onCancel, contracto
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        // Call backend to complete job access purchase
-        const result = await paymentsApi.purchaseJobAccess({
-          jobId: job.id,
-          paymentMethod: isSubscriber ? 'STRIPE_SUBSCRIBER' : 'STRIPE',
-          stripePaymentIntentId: paymentIntent.id
-        })
+        let result: any
+        try {
+          // Call backend to complete job access purchase
+          result = await paymentsApi.purchaseJobAccess({
+            jobId: job.id,
+            paymentMethod: isSubscriber ? 'STRIPE_SUBSCRIBER' : 'STRIPE',
+            stripePaymentIntentId: paymentIntent.id
+          })
+        } catch (purchaseError) {
+          // Safety fallback: payment succeeded at Stripe but local write may have failed/raced.
+          result = await paymentsApi.reconcilePaymentIntent(paymentIntent.id)
+        }
         
         const successMessage = isSubscriber 
           ? `Job access purchased. No commission will be charged. Invoice #${result.invoice?.invoiceNumber || 'generated'}.`

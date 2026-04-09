@@ -81,6 +81,12 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     [job, contractor?.id, myApplication]
   )
 
+  // Local access source of truth from job payload (already purchased access in DB)
+  const hasPurchasedAccessInJob = useMemo(() => {
+    if (!contractor?.id || !job.jobAccess) return false
+    return job.jobAccess.some(access => access.contractorId === contractor.id)
+  }, [job.jobAccess, contractor?.id])
+
   // Check if contractor has already claimed "I won the job"
   const hasClaimedWon = useMemo(() => {
     if (!contractor?.id || !job.jobAccess) return false
@@ -104,10 +110,10 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
 
   // Update hasAccess immediately when job.hasAccess changes (from job refetch)
   useEffect(() => {
-    if ((job as any).hasAccess) {
+    if ((job as any).hasAccess || hasPurchasedAccessInJob) {
       setHasAccess(true)
     }
-  }, [(job as any).hasAccess])
+  }, [(job as any).hasAccess, hasPurchasedAccessInJob])
 
   // Re-check access when jobAccess or applications change
   useEffect(() => {
@@ -134,9 +140,10 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     try {
       setCheckingAccess(true)
       const accessData = await jobsApi.checkAccess(job.id)
-      setHasAccess(accessData.hasAccess)
+      setHasAccess(Boolean(accessData.hasAccess) || hasPurchasedAccessInJob || Boolean((job as any).hasAccess))
     } catch (error) {
-      setHasAccess(false)
+      // Do not hide contact details on transient API failure if we already know access exists.
+      setHasAccess(prev => prev || hasPurchasedAccessInJob || Boolean((job as any).hasAccess))
     } finally {
       setCheckingAccess(false)
     }
@@ -151,6 +158,7 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
     if (purchaseResult?.customerContact) {
       setImmediateCustomerContact(purchaseResult.customerContact)
     }
+    setHasAccess(true)
 
     // Refresh all data after access is granted
     await Promise.all([

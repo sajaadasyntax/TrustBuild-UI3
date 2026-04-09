@@ -117,10 +117,10 @@ export default function JobWorkflowButtons({
 
     try {
       setLoading(true);
-      await jobsApi.markAsCompleted(jobId, amount);
+      await jobsApi.proposeFinalPrice(jobId, amount);
       toast({
         title: 'Success',
-        description: 'Final price submitted. Customer will be asked to confirm.',
+        description: 'Final price proposed. Customer will be asked to confirm.',
       });
       setShowMarkCompletedDialog(false);
       setCompletionAmount('');
@@ -207,7 +207,27 @@ export default function JobWorkflowButtons({
     try {
       setLoading(true);
       
-      if (action === 'confirm') {
+      if (action === 'suggest') {
+        await handleSuggestPriceChange();
+        return; // handleSuggestPriceChange already handles loading state
+      }
+
+      // Final-price confirmation flow
+      if (jobStatus === 'AWAITING_FINAL_PRICE_CONFIRMATION') {
+        await jobsApi.confirmFinalPrice(
+          jobId,
+          action === 'confirm' ? 'confirm' : 'reject',
+          feedback || undefined
+        );
+        toast({
+          title: action === 'confirm' ? 'Price Confirmed' : 'Price Rejected',
+          description:
+            action === 'confirm'
+              ? 'Final price confirmed and job completed.'
+              : 'Final price rejected. The contractor has been notified.',
+        });
+      } else if (action === 'confirm') {
+        // Legacy completion confirmation flow
         await jobsApi.confirmJobCompletionNew(jobId, true, feedback || 'Job completed successfully');
         toast({
           title: 'Success',
@@ -219,9 +239,6 @@ export default function JobWorkflowButtons({
           title: 'Job Disputed',
           description: 'The job has been marked as disputed. Admin will review.',
         });
-      } else if (action === 'suggest') {
-        await handleSuggestPriceChange();
-        return; // handleSuggestPriceChange already handles loading state
       }
       
       setShowConfirmDialog(false);

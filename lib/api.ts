@@ -2217,28 +2217,6 @@ export const paymentsApi = {
     return response.data.payment;
   },
 
-  createStripePaymentIntent: async (amount: number, description: string, metadata?: any): Promise<{
-    clientSecret: string;
-    paymentIntentId: string;
-  }> => {
-    const response = await apiRequest<{ data: any }>('/payments/stripe/create-intent', {
-      method: 'POST',
-      body: JSON.stringify({ amount, description, metadata }),
-    });
-    return response.data;
-  },
-
-  confirmPayment: async (paymentIntentId: string, paymentMethodId: string): Promise<{
-    success: boolean;
-    payment?: Payment;
-  }> => {
-    const response = await apiRequest<{ data: any }>('/payments/stripe/confirm', {
-      method: 'POST',
-      body: JSON.stringify({ paymentIntentId, paymentMethodId }),
-    });
-    return response.data;
-  },
-
   checkJobAccess: (jobId: string) => apiRequest<any>(`/payments/job-access/${jobId}`),
   
   purchaseJobAccess: (data: { jobId: string; paymentMethod: 'CREDIT' | 'STRIPE' | 'STRIPE_SUBSCRIBER'; stripePaymentIntentId?: string }) =>
@@ -2246,6 +2224,12 @@ export const paymentsApi = {
     
   createPaymentIntent: (jobId: string) => 
     apiRequest<any>('/payments/create-payment-intent', { method: 'POST', body: JSON.stringify({ jobId }) }),
+
+  reconcilePaymentIntent: (stripePaymentIntentId: string) =>
+    apiRequest<any>('/payments/reconcile-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ stripePaymentIntentId }),
+    }),
     
   getPaymentHistory: (page = 1, limit = 10) => 
     apiRequest<any>(`/payments/history?page=${page}&limit=${limit}`),

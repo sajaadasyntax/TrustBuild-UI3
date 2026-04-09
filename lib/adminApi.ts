@@ -220,9 +220,10 @@ export const adminApi = {
   },
 
   // Manage user (activate, deactivate, delete)
-  manageUser: async (userId: string, action: 'activate' | 'deactivate' | 'delete') => {
-    const response = await adminApiRequest<any>(`/admin/users/${userId}/${action}`, {
-      method: action === 'delete' ? 'DELETE' : 'PATCH',
+  manageUser: async (userId: string, action: 'activate' | 'deactivate' | 'delete', reason?: string) => {
+    const response = await adminApiRequest<any>(`/admin/users/${userId}/manage`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, reason }),
     });
     return response;
   },
