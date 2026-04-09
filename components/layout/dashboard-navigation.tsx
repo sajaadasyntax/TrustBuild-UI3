@@ -102,7 +102,7 @@ export function DashboardNavigation() {
         <div className="mr-4 hidden md:flex">
           <Link href={user?.role === "CONTRACTOR" ? "/dashboard/contractor" : user?.role === "ADMIN" ? "/admin" : "/dashboard/client"} className="mr-6 flex items-center space-x-2">
             <Image 
-              src="/images/Logo.svg" 
+              src="/logo.svg" 
               alt="TrustBuild Logo" 
               width={32} 
               height={32} 
@@ -140,7 +140,7 @@ export function DashboardNavigation() {
           <div className="w-full flex-1 md:w-auto md:flex-none">
             <Link href={user?.role === "CONTRACTOR" ? "/dashboard/contractor" : user?.role === "ADMIN" ? "/admin" : "/dashboard/client"} className="flex items-center space-x-2 md:hidden">
               <Image 
-                src="/images/Logo.svg" 
+                src="/logo.svg" 
                 alt="TrustBuild Logo" 
                 width={32} 
                 height={32} 

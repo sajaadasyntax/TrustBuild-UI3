@@ -61,7 +61,7 @@ export function AdminNavigationNew() {
         <div className="mr-6 flex items-center">
           <Link href="/admin" className="flex items-center space-x-2">
             <Image
-              src="/images/Logo.svg"
+              src="/logo.svg"
               alt="TrustBuild Logo"
               width={32}
               height={32}

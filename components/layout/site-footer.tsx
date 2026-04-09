@@ -10,7 +10,7 @@ export function SiteFooter() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Image 
-                src="/images/Logo.svg" 
+                src="/logo.svg" 
                 alt="TrustBuild Logo" 
                 width={32} 
                 height={32}

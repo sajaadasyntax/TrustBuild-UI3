@@ -46,7 +46,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         {/* Logo with pulse animation */}
         <div className="relative h-24 w-24 md:h-32 md:w-32">
           <Image 
-            src="/images/Logo.svg" 
+            src="/logo.svg" 
             alt="TrustBuild Logo" 
             fill
             className="object-contain animate-pulse"

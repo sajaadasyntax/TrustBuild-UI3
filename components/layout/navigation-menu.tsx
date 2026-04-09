@@ -49,7 +49,7 @@ export function NavigationMenu() {
       <div className="container mx-auto py-3 md:py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center space-x-2">
           <Image 
-            src="/images/Logo.svg" 
+            src="/logo.svg" 
             alt="TrustBuild Logo" 
             width={40} 
             height={40} 
