@@ -537,6 +537,11 @@ export default function JobLeadAccessDialog({
 
   const baseLeadPrice = getEffectiveLeadPrice();
   const creditsBalance = contractor?.creditsBalance || 0;
+  const isRestrictedTrialCredit =
+    !hasSubscription &&
+    creditsBalance > 0 &&
+    (contractor as any)?.hasUsedFreeTrial === false &&
+    creditsBalance <= ((contractor as any)?.freeJobAllocation ?? 1)
   
   // Use the calculated lead price from service/job settings
   const leadPrice = baseLeadPrice;
@@ -678,17 +683,19 @@ export default function JobLeadAccessDialog({
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-green-900">Free Trial Credit Available</h4>
+                  <h4 className="font-medium text-green-900">
+                    {isRestrictedTrialCredit ? 'Free Trial Credit Available' : 'Credits Available'}
+                  </h4>
                   <p className="text-sm text-green-700">
-                    You have {creditsBalance} free trial {creditsBalance === 1 ? 'credit' : 'credits'} available
+                    You have {creditsBalance} {isRestrictedTrialCredit ? 'free trial ' : ''}{creditsBalance === 1 ? 'credit' : 'credits'} available
                   </p>
-                  {job.jobSize === 'SMALL' ? (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✓ Can be used for SMALL jobs only
+                  {isRestrictedTrialCredit ? (
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠ Free trial credits can only be used for SMALL jobs.
                     </p>
                   ) : (
-                    <p className="text-xs text-orange-600 mt-1">
-                      ⚠ Free trial credits can only be used for SMALL jobs. This job requires payment or subscription.
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Credits can be used for all job sizes
                     </p>
                   )}
                 </div>
@@ -826,8 +833,8 @@ export default function JobLeadAccessDialog({
               <div className="space-y-4">
                 <h3 className="font-semibold">Choose Payment Method</h3>
                 
-                {/* Credits Option - Available for non-subscribers with free trial credits on SMALL jobs */}
-                {creditsBalance > 0 && job.jobSize === 'SMALL' ? (
+                {/* Credits Option - Available for non-subscribers with any credits */}
+                {creditsBalance > 0 && !(isRestrictedTrialCredit && job.jobSize !== 'SMALL') ? (
                   <div className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                     paymentMethod === 'CREDIT' ? 'border-green-500 bg-green-50' : 'border-gray-300'
                   }`}
@@ -842,13 +849,15 @@ export default function JobLeadAccessDialog({
                         />
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            Use Free Trial Credit
+                            Use Credit
                             <Badge className="bg-green-100 text-green-800 text-xs">
-                              Free Access
+                              {isRestrictedTrialCredit ? 'SMALL Jobs Only' : 'All Job Sizes'}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600">
-                            Use 1 free trial credit (SMALL jobs only)
+                            {isRestrictedTrialCredit
+                              ? 'Use 1 free trial credit (SMALL jobs only)'
+                              : 'Use 1 credit for this job'}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             ✓ 5% commission after completion
@@ -858,7 +867,7 @@ export default function JobLeadAccessDialog({
                       <div className="text-lg font-semibold text-green-600">FREE</div>
                     </div>
                   </div>
-                ) : creditsBalance > 0 && job.jobSize !== 'SMALL' ? (
+                ) : creditsBalance > 0 && isRestrictedTrialCredit && job.jobSize !== 'SMALL' ? (
                   <div className="border border-gray-200 bg-gray-50 rounded-lg p-4 opacity-60">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -878,7 +887,7 @@ export default function JobLeadAccessDialog({
                             Free trial credits can only be used for SMALL jobs
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            Subscribe or pay with card for {job.jobSize} jobs
+                            Pay with card for this {job.jobSize?.toLowerCase()} job
                           </div>
                         </div>
                       </div>
@@ -982,7 +991,7 @@ export default function JobLeadAccessDialog({
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                {(hasSubscription || (creditsBalance > 0 && job.jobSize === 'SMALL')) && paymentMethod === 'CREDIT' ? (
+                {(hasSubscription || creditsBalance > 0) && paymentMethod === 'CREDIT' ? (
                   <Button 
                     onClick={handleCreditPayment} 
                     disabled={processingPayment || creditsBalance < 1}
