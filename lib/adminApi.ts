@@ -293,6 +293,23 @@ export const adminApi = {
     return response;
   },
 
+  // Update contractor weekly lead limit (0 disables weekly cap)
+  updateContractorWeeklyLeadLimit: async (contractorId: string, weeklyCreditsLimit: number) => {
+    const response = await adminApiRequest<any>(`/admin/payments/contractors/${contractorId}/credit-limit`, {
+      method: 'PUT',
+      body: JSON.stringify({ weeklyCreditsLimit }),
+    });
+    return response;
+  },
+
+  // Trigger weekly credit reset for all contractors
+  resetWeeklyCredits: async () => {
+    const response = await adminApiRequest<any>('/admin/payments/reset-weekly-credits', {
+      method: 'POST',
+    });
+    return response;
+  },
+
   // Get all jobs with filters
   getAllJobs: async (params?: any) => {
     const queryParams = new URLSearchParams(params);

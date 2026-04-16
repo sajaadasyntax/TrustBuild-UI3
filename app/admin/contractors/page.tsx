@@ -203,6 +203,7 @@ export default function AdminContractors() {
     amount: 1,
     reason: ''
   })
+  const [weeklyLeadLimitInput, setWeeklyLeadLimitInput] = useState<number>(0)
   const [processing, setProcessing] = useState(false)
   const [exporting, setExporting] = useState(false)
 
@@ -347,9 +348,34 @@ export default function AdminContractors() {
     }
   }
 
+  const handleWeeklyLeadLimitUpdate = async () => {
+    if (!selectedContractor) return
+
+    try {
+      setProcessing(true)
+      await adminApi.updateContractorWeeklyLeadLimit(selectedContractor.id, weeklyLeadLimitInput)
+      toast({
+        title: 'Weekly Lead Limit Updated',
+        description:
+          weeklyLeadLimitInput === 0
+            ? `Weekly cap disabled for ${selectedContractor.businessName}`
+            : `Weekly lead limit set to ${weeklyLeadLimitInput} for ${selectedContractor.businessName}`,
+      })
+      fetchContractors()
+      setSelectedContractor((prev) =>
+        prev ? { ...prev, weeklyCreditsLimit: weeklyLeadLimitInput } : prev
+      )
+    } catch (error) {
+      handleApiError(error, 'Failed to update weekly lead limit')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const openCreditDialog = async (contractor: Contractor) => {
     setSelectedContractor(contractor)
     setCreditData({ type: 'ADDITION', amount: 1, reason: '' })
+    setWeeklyLeadLimitInput(contractor.weeklyCreditsLimit ?? 0)
     setShowCreditDialog(true)
     setShowTransactionHistory(false)
     
@@ -1353,7 +1379,34 @@ export default function AdminContractors() {
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Weekly Limit:</span>
-                  <span>{selectedContractor.weeklyCreditsLimit || 3}</span>
+                  <span>{selectedContractor.weeklyCreditsLimit ?? 0}</span>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-4 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="weekly-lead-limit">Weekly Lead Limit</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Set max weekly credit-based lead purchases. Use `0` to disable the weekly cap.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    id="weekly-lead-limit"
+                    type="number"
+                    min={0}
+                    value={weeklyLeadLimitInput}
+                    onChange={(e) => setWeeklyLeadLimitInput(Math.max(0, Number(e.target.value) || 0))}
+                    disabled={processing}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleWeeklyLeadLimitUpdate}
+                    disabled={processing}
+                  >
+                    Save Limit
+                  </Button>
                 </div>
               </div>
 

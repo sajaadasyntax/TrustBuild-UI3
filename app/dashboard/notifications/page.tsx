@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bell, Check, CheckCheck, Trash2, Filter, BellOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,6 +27,15 @@ export default function NotificationsPage() {
   } = useNotifications()
 
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const [pushSupport, setPushSupport] = useState<'supported' | 'unsupported' | 'unknown'>('unknown')
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unknown'>('unknown')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+    setPushSupport(supported ? 'supported' : 'unsupported')
+    setNotificationPermission(supported ? Notification.permission : 'unknown')
+  }, [])
 
   // Get notification type color
   const getTypeColor = (type: string) => {
@@ -245,7 +254,32 @@ export default function NotificationsPage() {
                   id="push-notifications"
                   checked={isPushEnabled}
                   onCheckedChange={handleTogglePush}
+                  disabled={pushSupport !== 'supported'}
                 />
+              </div>
+
+              <div className="text-xs space-y-1">
+                <p className="text-muted-foreground">
+                  Status:{' '}
+                  <span className="font-medium">
+                    {pushSupport !== 'supported'
+                      ? 'Not supported on this browser/device'
+                      : isPushEnabled
+                      ? 'Enabled'
+                      : 'Disabled'}
+                  </span>
+                </p>
+                {pushSupport === 'supported' && (
+                  <p className="text-muted-foreground">
+                    Permission:{' '}
+                    <span className="font-medium capitalize">{notificationPermission}</span>
+                  </p>
+                )}
+                {pushSupport === 'supported' && !isPushEnabled && (
+                  <p className="text-muted-foreground">
+                    New job alerts will still appear in-app even when push is disabled.
+                  </p>
+                )}
               </div>
 
               <div className="pt-4 border-t">

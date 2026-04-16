@@ -88,26 +88,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   // Removed handleSelectContractor, confirmContractorSelection, handleChangeContractor, and handleAcceptApplication
   // Customers can only view applications and contractor profiles, not select/accept contractors
 
-  const handleStartWork = async () => {
-    if (!selectedContractor) return
-
-    try {
-      setUpdating(true)
-      await jobsApi.startWork(job.id)
-      
-      toast({
-        title: "Work Started!",
-        description: "The contractor can now begin work on your job.",
-      })
-      
-      onJobUpdate()
-    } catch (error) {
-      handleApiError(error, 'Failed to start work')
-    } finally {
-      setUpdating(false)
-    }
-  }
-
   const handleCompleteJob = async () => {
     try {
       setUpdating(true)
@@ -639,12 +619,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
 
         {/* Action Buttons */}
         <div className="flex gap-4">
-          {selectedContractor && job.status === 'POSTED' && (
-            <Button onClick={handleStartWork} disabled={updating} className="flex-1">
-              {updating ? 'Starting...' : 'Start Work with Selected Contractor'}
-            </Button>
-          )}
-          
           {canComplete && (
             <Button onClick={handleCompleteJob} disabled={updating} className="flex-1">
               {updating ? 'Processing...' : 'Complete Job & Pay Contractor'}

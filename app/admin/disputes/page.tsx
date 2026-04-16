@@ -62,6 +62,7 @@ interface Dispute {
       user: { name: string; email: string };
     };
     wonByContractor?: {
+      businessName?: string | null;
       user: { name: string; email: string };
     };
     service: {
@@ -558,7 +559,7 @@ export default function AdminDisputesPage() {
                         <div className="font-medium">
                           {dispute.raisedByRole === 'CUSTOMER'
                             ? dispute.job.customer.user.name
-                            : dispute.job.wonByContractor?.user.name}
+                            : dispute.job.wonByContractor?.businessName || dispute.job.wonByContractor?.user.name}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {dispute.raisedByRole}
@@ -645,7 +646,9 @@ export default function AdminDisputesPage() {
                         <Label className="text-sm font-medium text-muted-foreground">
                           Contractor
                         </Label>
-                        <p className="mt-1">{selectedDispute.job.wonByContractor.user.name}</p>
+                        <p className="mt-1">
+                          {selectedDispute.job.wonByContractor.businessName || selectedDispute.job.wonByContractor.user.name}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {selectedDispute.job.wonByContractor.user.email}
                         </p>

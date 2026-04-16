@@ -176,6 +176,8 @@ export default function JobDetailsPage() {
 
   const myApplication = getMyApplication()
   const isJobWinner = getIsJobWinner()
+  const canShowTopCustomerContact =
+    user?.role === 'CONTRACTOR' && hasAccess && !showRestrictedContent() && !!job?.customer
 
 
   // Helper function to show restricted content for contractors without access
@@ -267,6 +269,58 @@ export default function JobDetailsPage() {
             </div>
           </div>
         </div>
+
+        {canShowTopCustomerContact && job.customer && (
+          <Card className="mb-6 border-green-200 bg-green-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-green-900">
+                <PhoneCall className="h-5 w-5 text-green-600" />
+                Customer Contact
+              </CardTitle>
+              <CardDescription>
+                Contact the customer directly to confirm details and agree next steps.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{job.customer.user.name}</span>
+                </div>
+                {job.customer.phone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-green-600" />
+                    <a
+                      href={`tel:${job.customer.phone}`}
+                      className="font-semibold text-green-700 hover:text-green-800 underline"
+                    >
+                      {job.customer.phone}
+                    </a>
+                    <Button
+                      size="sm"
+                      className="ml-auto bg-green-600 hover:bg-green-700"
+                      onClick={() => window.location.href = `tel:${job.customer.phone}`}
+                    >
+                      <PhoneCall className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                  </div>
+                )}
+                {job.customer.user.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-blue-600" />
+                    <a
+                      href={`mailto:${job.customer.user.email}`}
+                      className="text-blue-700 hover:text-blue-800 underline text-sm"
+                    >
+                      {job.customer.user.email}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -481,45 +535,11 @@ export default function JobDetailsPage() {
                       </div>
                     </div>
 
-                    {/* Contact details - visible after purchase */}
-                    {hasAccess && (
-                      <div className="space-y-3 pt-3 border-t">
-                        {job.customer.phone && (
-                          <div className="flex items-center gap-3">
-                            <Phone className="h-4 w-4 text-green-600" />
-                            <a 
-                              href={`tel:${job.customer.phone}`}
-                              className="font-semibold text-green-700 hover:text-green-800 underline"
-                            >
-                              {job.customer.phone}
-                            </a>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="ml-auto border-green-300 text-green-700 hover:bg-green-50"
-                              onClick={() => window.location.href = `tel:${job.customer.phone}`}
-                            >
-                              <PhoneCall className="h-3 w-3 mr-1" />
-                              Call
-                            </Button>
-                          </div>
-                        )}
-                        {job.customer.user.email && (
-                          <div className="flex items-center gap-3">
-                            <Mail className="h-4 w-4 text-blue-600" />
-                            <a 
-                              href={`mailto:${job.customer.user.email}`}
-                              className="text-blue-700 hover:text-blue-800 underline text-sm"
-                            >
-                              {job.customer.user.email}
-                            </a>
-                          </div>
-                        )}
-                        {!job.customer.phone && !job.customer.user.email && (
-                          <p className="text-sm text-muted-foreground">
-                            No contact details available for this customer.
-                          </p>
-                        )}
+                    {hasAccess && user?.role === 'CONTRACTOR' && (
+                      <div className="pt-3 border-t">
+                        <p className="text-sm text-muted-foreground">
+                          Contact details are shown at the top of this page.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -529,12 +549,12 @@ export default function JobDetailsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Job Claims Status</CardTitle>
+                <CardTitle>Application Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Contractors Who Claimed</span>
+                    <span className="text-sm">Contractor Applications</span>
                     <span className="font-medium">{job.applications?.length || 0}</span>
                   </div>
                   
@@ -543,17 +563,12 @@ export default function JobDetailsPage() {
                       {job.applications?.some(app => app.contractor?.userId === user.id) ? (
                         <>
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          You have claimed this job
-                        </>
-                      ) : job.wonByContractorId ? (
-                        <>
-                          <AlertCircle className="h-4 w-4 text-orange-500" />
-                          This job has been won by another contractor
+                          You have applied to this job
                         </>
                       ) : job.status !== 'POSTED' ? (
                         <>
                           <AlertCircle className="h-4 w-4 text-yellow-500" />
-                          Job is no longer available
+                          Applications are currently closed for this job
                         </>
                       ) : null}
                     </div>
