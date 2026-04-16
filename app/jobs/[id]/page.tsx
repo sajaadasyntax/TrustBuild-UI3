@@ -176,14 +176,15 @@ export default function JobDetailsPage() {
 
   const myApplication = getMyApplication()
   const isJobWinner = getIsJobWinner()
-  const canShowTopCustomerContact =
-    user?.role === 'CONTRACTOR' && hasAccess && !showRestrictedContent() && !!job?.customer
 
 
   // Helper function to show restricted content for contractors without access
   const showRestrictedContent = () => {
     return user?.role === 'CONTRACTOR' && !hasAccess && !checkingAccess
   }
+
+  const canShowTopCustomerContact =
+    user?.role === 'CONTRACTOR' && hasAccess && !showRestrictedContent() && !!job?.customer
 
   // Show loading if data is loading OR if contractor access check is in progress
   if (loading || (user?.role === 'CONTRACTOR' && checkingAccess)) {
