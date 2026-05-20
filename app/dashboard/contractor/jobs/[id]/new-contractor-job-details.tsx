@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, PhoneCall, MessageCircle } from "lucide-react"
+import { Calendar, MapPin, User, Phone, Mail, Clock, DollarSign, Star, CheckCircle, AlertCircle, PhoneCall, MessageCircle, RefreshCw } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor, JobApplication } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -19,6 +19,7 @@ import Link from 'next/link'
 interface ContractorJobDetailsProps {
   job: Job
   onJobUpdate: (jobId: string) => void
+  silentRefreshing?: boolean
 }
 
 /**
@@ -53,7 +54,7 @@ function checkIsJobWinner(
   return false
 }
 
-export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetailsProps) {
+export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = false }: ContractorJobDetailsProps) {
   const { user } = useAuth()
   const [updating, setUpdating] = useState(false)
   // Initialize hasAccess from job.hasAccess if available (backend sends this flag)
@@ -275,7 +276,12 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-3xl font-bold">{job.title}</h1>
+              {silentRefreshing && (
+                <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {getStatusBadge(job.status)}
               {getApplicationStatusBadge(applicationStatus)}
@@ -434,68 +440,24 @@ export function NewContractorJobDetails({ job, onJobUpdate }: ContractorJobDetai
                 <div>
                   <h3 className="font-semibold text-green-800">Access Granted! 🎉</h3>
                   <p className="text-green-700">
-                    You can now see the customer&apos;s contact details below. <strong>Call them directly</strong> to discuss the job and agree on terms.
+                    You can see the customer&apos;s contact details at the top of this page. <strong>Call them directly</strong> to discuss the job and agree on terms.
                   </p>
                 </div>
               </div>
-              
-              {/* Customer Contact Card - Prominent display for direct contact */}
-              {job.customer && (
-                <div className="bg-white rounded-lg border border-green-200 p-4 mt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <PhoneCall className="w-5 h-5 text-green-600" />
-                    Contact Customer Now
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <User className="w-5 h-5 text-gray-500" />
-                      <span className="text-lg font-medium">{job.customer.user?.name}</span>
-                    </div>
-                    {job.customer.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-green-600" />
-                        <a 
-                          href={`tel:${job.customer.phone}`} 
-                          className="text-lg font-semibold text-green-700 hover:text-green-800 underline"
-                        >
-                          {job.customer.phone}
-                        </a>
-                        <Button 
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => window.location.href = `tel:${job.customer.phone}`}
-                        >
-                          <PhoneCall className="w-4 h-4 mr-1" />
-                          Call Now
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-gray-500" />
-                      <a 
-                        href={`mailto:${job.customer.user?.email}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {job.customer.user?.email}
-                      </a>
-                    </div>
-                  </div>
-                  {!hasClaimedWon && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>Next Step:</strong> Call the customer to discuss the job details, negotiate price, and agree on terms. 
-                        Once they agree to hire you, click <strong>&quot;I Won the Job&quot;</strong> below.
-                      </p>
-                    </div>
-                  )}
-                  {hasClaimedWon && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        <strong>✅ You&apos;ve already claimed this job!</strong> The customer has been notified and will confirm if you won. 
-                        Please wait for their confirmation.
-                      </p>
-                    </div>
-                  )}
+              {!hasClaimedWon && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Next Step:</strong> Call the customer to discuss the job details, negotiate price, and agree on terms.
+                    Once they agree to hire you, click <strong>&quot;I Won the Job&quot;</strong> below.
+                  </p>
+                </div>
+              )}
+              {hasClaimedWon && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>✅ You&apos;ve already claimed this job!</strong> The customer has been notified and will confirm if you won.
+                    Please wait for their confirmation.
+                  </p>
                 </div>
               )}
             </CardContent>

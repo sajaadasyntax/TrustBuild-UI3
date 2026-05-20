@@ -449,6 +449,26 @@ export const adminApi = {
     return response;
   },
 
+  // Get price confirmation history log
+  getPriceConfirmationHistory: async (params: {
+    q?: string;
+    action?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+  } = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.action) searchParams.set('action', params.action);
+    if (params.from) searchParams.set('from', params.from);
+    if (params.to) searchParams.set('to', params.to);
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    const response = await adminApiRequest<any>(`/admin/price-confirmations/history?${searchParams.toString()}`);
+    return response;
+  },
+
   // Get contractor's completed jobs
   getContractorCompletedJobs: async (contractorId: string) => {
     const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}/completed-jobs`);

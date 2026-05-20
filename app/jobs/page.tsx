@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, DollarSign, Search, Briefcase, TrendingUp } from 'lucide-react'
+import { Clock, MapPin, DollarSign, Search, Briefcase, TrendingUp, Users } from 'lucide-react'
 import { jobsApi, servicesApi, handleApiError, Job } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
@@ -150,6 +150,15 @@ export default function JobsPage() {
     return isUrgent ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
   }
 
+  const formatUrgency = (urgency?: string) => {
+    switch (urgency) {
+      case 'asap': return 'ASAP'
+      case 'within_week': return 'Within a week'
+      case 'flexible': return 'Flexible'
+      default: return urgency || 'Flexible'
+    }
+  }
+
   if (loading && jobs.length === 0) {
     return (
       <div className="container py-16 md:py-32">
@@ -282,7 +291,7 @@ export default function JobsPage() {
                         </Badge>
                       )}
                     </div>
-                    <CardDescription className="flex items-center gap-4 text-sm">
+                    <CardDescription className="flex flex-wrap items-center gap-3 text-sm">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         {formatLocation(job)}
@@ -291,6 +300,12 @@ export default function JobsPage() {
                         <DollarSign className="h-3 w-3" />
                         {formatBudget(job.budget)}
                       </span>
+                      {job.urgency && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatUrgency(job.urgency)}
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -308,7 +323,13 @@ export default function JobsPage() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-between">
+                      {user?.role === 'CONTRACTOR' && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Users className="h-3 w-3" />
+                          {job.applicationCount ?? 0} applied
+                        </span>
+                      )}
                       <Badge variant={job.status === 'POSTED' ? 'default' : 'secondary'}>
                         {job.status.toLowerCase().replace('_', ' ')}
                       </Badge>

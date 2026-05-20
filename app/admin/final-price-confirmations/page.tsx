@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Clock, User, MapPin, DollarSign, AlertTriangle, XCircle, CheckCircle } from "lucide-react"
+import { Clock, User, MapPin, DollarSign, AlertTriangle, XCircle, CheckCircle, History, Search } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/hooks/use-toast"
 import { adminApi } from '@/lib/adminApi'
@@ -89,8 +90,17 @@ export default function FinalPriceConfirmationsPage() {
   }
   const [jobs, setJobs] = useState<Job[]>([])
   const [rejectedJobs, setRejectedJobs] = useState<Job[]>([])
-  const [activeTab, setActiveTab] = useState<'awaiting' | 'rejected'>('awaiting')
+  const [activeTab, setActiveTab] = useState<'awaiting' | 'rejected' | 'history'>('awaiting')
   const [loading, setLoading] = useState(true)
+
+  // History tab state
+  const [historyLogs, setHistoryLogs] = useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyQ, setHistoryQ] = useState('')
+  const [historyAction, setHistoryAction] = useState('all')
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyTotal, setHistoryTotal] = useState(0)
+  const [historyPages, setHistoryPages] = useState(1)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showOverrideDialog, setShowOverrideDialog] = useState(false)
   const [overrideReason, setOverrideReason] = useState('')
@@ -121,6 +131,34 @@ export default function FinalPriceConfirmationsPage() {
       setLoading(false)
     }
   }
+
+  const fetchHistory = async (q: string, action: string, page: number) => {
+    try {
+      setHistoryLoading(true)
+      const response = await adminApi.getPriceConfirmationHistory({
+        q: q || undefined,
+        action: action !== 'all' ? action : undefined,
+        page,
+        limit: 20,
+      })
+      setHistoryLogs(response?.data?.logs ?? [])
+      setHistoryTotal(response?.data?.pagination?.total ?? 0)
+      setHistoryPages(response?.data?.pagination?.pages ?? 1)
+    } catch (error) {
+      console.error('Failed to fetch history:', error)
+      handleApiError(error, 'Failed to load price confirmation history')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      const timer = setTimeout(() => fetchHistory(historyQ, historyAction, historyPage), 300)
+      return () => clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, historyQ, historyAction, historyPage])
 
   const handleApprove = async (job: Job) => {
     try {
@@ -223,7 +261,7 @@ export default function FinalPriceConfirmationsPage() {
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'awaiting' | 'rejected')} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'awaiting' | 'rejected' | 'history')} className="space-y-6">
           <TabsList>
             <TabsTrigger value="awaiting" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -232,6 +270,10 @@ export default function FinalPriceConfirmationsPage() {
             <TabsTrigger value="rejected" className="flex items-center gap-2">
               <XCircle className="w-4 h-4" />
               Customer Rejected ({rejectedJobs.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              History
             </TabsTrigger>
           </TabsList>
 
@@ -401,6 +443,109 @@ export default function FinalPriceConfirmationsPage() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history">
+            <div className="space-y-4">
+              {/* Search & Filter */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by contractor name or email..."
+                    value={historyQ}
+                    onChange={(e) => { setHistoryQ(e.target.value); setHistoryPage(1) }}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={historyAction} onValueChange={(v) => { setHistoryAction(v); setHistoryPage(1) }}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="All Actions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Actions</SelectItem>
+                    <SelectItem value="PROPOSED">Proposed</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                    <SelectItem value="ADMIN_OVERRIDE">Admin Override</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Table */}
+              {historyLoading ? (
+                <div className="animate-pulse space-y-2">
+                  {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-gray-200 rounded" />)}
+                </div>
+              ) : historyLogs.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No history found</h3>
+                    <p className="text-gray-500">No price confirmation events match your search.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Date</th>
+                        <th className="px-4 py-3 text-left">Contractor</th>
+                        <th className="px-4 py-3 text-left">Job</th>
+                        <th className="px-4 py-3 text-left">Action</th>
+                        <th className="px-4 py-3 text-right">Amount</th>
+                        <th className="px-4 py-3 text-left">Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {historyLogs.map((log: any) => (
+                        <tr key={log.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap text-gray-500">
+                            {new Date(log.createdAt).toLocaleDateString('en-GB')}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium">{log.contractor?.businessName || log.contractor?.user?.name || '—'}</div>
+                            <div className="text-xs text-gray-400">{log.contractor?.user?.email}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-medium">{log.job?.title || '—'}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={
+                              log.action === 'CONFIRMED' ? 'default' :
+                              log.action === 'REJECTED' ? 'destructive' :
+                              log.action === 'ADMIN_OVERRIDE' ? 'secondary' : 'outline'
+                            }>
+                              {log.action.replace('_', ' ').toLowerCase()}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">
+                            {log.proposedAmount != null ? `£${Number(log.proposedAmount).toFixed(2)}` : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
+                            {log.rejectionReason || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {historyPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-sm text-gray-500">{historyTotal} total records</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}>Previous</Button>
+                    <span className="flex items-center text-sm px-2">Page {historyPage} of {historyPages}</span>
+                    <Button variant="outline" size="sm" disabled={historyPage >= historyPages} onClick={() => setHistoryPage(p => p + 1)}>Next</Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
 

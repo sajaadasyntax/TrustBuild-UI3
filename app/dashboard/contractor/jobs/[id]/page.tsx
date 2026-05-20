@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { NewContractorJobDetails } from "./new-contractor-job-details"
 import { jobsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
@@ -44,26 +44,33 @@ export default function ContractorJobPage() {
   const [job, setJob] = useState<Job | null>(null)
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [loading, setLoading] = useState(true)
+  const [silentRefreshing, setSilentRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const contractorRef = useRef<Contractor | null>(null)
 
-  const fetchJob = useCallback(async (jobId: string) => {
+  const fetchJob = useCallback(async (jobId: string, opts: { silent?: boolean } = {}) => {
     try {
-      setLoading(true)
+      if (opts.silent) {
+        setSilentRefreshing(true)
+      } else {
+        setLoading(true)
+      }
       setError(null)
       
-      // Fetch job data and contractor profile in parallel
-      const [jobData, contractorData] = await Promise.all([
-        jobsApi.getById(jobId),
-        contractorsApi.getMyProfile()
-      ])
-      
-      setContractor(contractorData)
+      // Fetch job data (and contractor profile on first load)
+      const jobData = await jobsApi.getById(jobId)
+      let contractorData = contractorRef.current
+      if (!contractorData) {
+        contractorData = await contractorsApi.getMyProfile()
+        contractorRef.current = contractorData
+        setContractor(contractorData)
+      }
       
       // Check access permission
       const hasPermission = checkJobAccessPermission(jobData, contractorData)
       
-      if (!hasPermission) {
-        // Redirect to contractor dashboard if no access
+      if (!hasPermission && !opts.silent) {
+        // Redirect to contractor dashboard if no access (only on initial load)
         router.push('/dashboard/contractor')
         return
       }
@@ -71,11 +78,13 @@ export default function ContractorJobPage() {
       setJob(jobData)
     } catch (err) {
       handleApiError(err, 'Failed to fetch job details')
-      setError('Failed to load job details')
-      // Redirect on error
-      router.push('/dashboard/contractor')
+      if (!opts.silent) {
+        setError('Failed to load job details')
+        router.push('/dashboard/contractor')
+      }
     } finally {
       setLoading(false)
+      setSilentRefreshing(false)
     }
   }, [router])
 
@@ -86,7 +95,7 @@ export default function ContractorJobPage() {
     }
   }, [params.id, fetchJob])
 
-  // Loading state
+  // Loading state (only on initial load, not silent refresh)
   if (loading) {
     return (
       <div className="container px-4 py-6 md:py-12 max-w-7xl mx-auto">
@@ -123,5 +132,11 @@ export default function ContractorJobPage() {
     )
   }
 
-  return <NewContractorJobDetails job={job} onJobUpdate={fetchJob} />
+  return (
+    <NewContractorJobDetails
+      job={job}
+      onJobUpdate={(jobId: string) => fetchJob(jobId, { silent: true })}
+      silentRefreshing={silentRefreshing}
+    />
+  )
 }

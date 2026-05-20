@@ -185,6 +185,7 @@ export interface Job {
   hasAccess?: boolean; // Computed field
   currentLeadPrice?: number; // Computed field
   accessCount?: number; // Computed field - number of contractors who purchased access
+  applicationCount?: number; // Computed field - number of contractors who applied/purchased
   contractorsWithAccess?: number; // Computed field - number of contractors with access
   spotsRemaining?: number; // Computed field - remaining spots for contractors
   purchasedBy?: Array<{
@@ -2084,6 +2085,39 @@ export const adminApi = {
       body: JSON.stringify({ reason }),
     });
     return response.data.job;
+  },
+
+  getPriceConfirmationHistory: async (params: {
+    q?: string;
+    action?: 'PROPOSED' | 'CONFIRMED' | 'REJECTED' | 'ADMIN_OVERRIDE';
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{
+    data: {
+      logs: Array<{
+        id: string;
+        action: string;
+        proposedAmount?: number | null;
+        previousAmount?: number | null;
+        rejectionReason?: string | null;
+        performedByRole: string;
+        createdAt: string;
+        job: { id: string; title: string; status: string };
+        contractor: { id: string; businessName?: string | null; user: { name: string; email: string } };
+      }>;
+      pagination: { page: number; limit: number; total: number; pages: number };
+    };
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.action) searchParams.set('action', params.action);
+    if (params.from) searchParams.set('from', params.from);
+    if (params.to) searchParams.set('to', params.to);
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    return apiRequest(`/admin/price-confirmations/history?${searchParams.toString()}`);
   },
 };
 
