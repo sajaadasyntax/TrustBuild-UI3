@@ -18,9 +18,11 @@ import { CommissionExplanation } from '@/components/subscription/CommissionExpla
 import { KycStatusBanner } from '@/components/auth/KycStatusBanner'
 
 import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/contexts/NotificationContext'
 
 export default function ContractorDashboard() {
   const { logout } = useAuth()
+  const { notifications, unreadCount } = useNotifications()
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [applications, setApplications] = useState<JobApplication[]>([])
   const [activeJobs, setActiveJobs] = useState<Job[]>([])
@@ -256,6 +258,33 @@ export default function ContractorDashboard() {
 
       {/* KYC Status Banner */}
       <KycStatusBanner />
+
+      {/* New Jobs Alert — show when there are unread job notifications */}
+      {(() => {
+        const newJobNotifs = notifications.filter(
+          n => !n.isRead && n.title === 'New Job Posted'
+        )
+        if (newJobNotifs.length === 0) return null
+        return (
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <Bell className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">
+              {newJobNotifs.length} New Job{newJobNotifs.length > 1 ? 's' : ''} Available
+            </AlertTitle>
+            <AlertDescription className="text-blue-700">
+              New jobs matching your services have been posted.{' '}
+              <Link href="/jobs" className="font-semibold underline">
+                Browse available jobs
+              </Link>
+              {' '}or{' '}
+              <Link href="/dashboard/notifications" className="font-semibold underline">
+                view all notifications
+              </Link>
+              .
+            </AlertDescription>
+          </Alert>
+        )
+      })()}
 
       {/* Commission Reminder Banner - Always visible if there are pending commissions */}
       {pendingCommissions.length > 0 && (

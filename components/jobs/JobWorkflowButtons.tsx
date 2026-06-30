@@ -34,6 +34,7 @@ interface JobWorkflowButtonsProps {
   selectedContractorId?: string | null;  // Customer's selected contractor ID
   customerConfirmed?: boolean;  // Whether customer has confirmed the job completion
   onUpdate: () => void;
+  onClaimWonOptimistic?: () => void;  // Called immediately on success to update UI before refetch
 }
 
 export default function JobWorkflowButtons({
@@ -52,10 +53,10 @@ export default function JobWorkflowButtons({
   selectedContractorId = null,
   customerConfirmed = false,
   onUpdate,
+  onClaimWonOptimistic,
 }: JobWorkflowButtonsProps) {
   // Determine if the job is fully completed (customer has confirmed)
   const isJobFullyCompleted = customerConfirmed;
-  const [showClaimWonDialog, setShowClaimWonDialog] = useState(false);
   const [showMarkCompletedDialog, setShowMarkCompletedDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showConfirmWinnerDialog, setShowConfirmWinnerDialog] = useState(false);
@@ -77,18 +78,19 @@ export default function JobWorkflowButtons({
     }
   };
 
-  // Contractor: Claim "I won the job" - sends notification but doesn't close job
+  // Contractor: Claim "I won the job" - single click, no dialog
   const handleClaimWon = async () => {
     try {
       setLoading(true);
       await jobsApi.claimWon(jobId);
+      // Optimistically update parent UI before the refetch arrives
+      onClaimWonOptimistic?.();
       toast({
-        title: 'Success',
-        description: 'Customer has been notified. They will confirm if you won the job.',
+        title: 'Claim submitted!',
+        description: 'The customer has been notified. Please wait for their confirmation.',
       });
-      setShowClaimWonDialog(false);
-      // Refresh job data to update hasClaimedWon status
-      debouncedUpdate();
+      // Always trigger a refresh (not debounced) so status updates immediately
+      onUpdate();
     } catch (error: any) {
       console.error('Error claiming job as won:', error);
       const errorMessage = error?.message || error?.response?.data?.message || 'Failed to claim job as won';
@@ -262,22 +264,20 @@ export default function JobWorkflowButtons({
       {/* Contractor Buttons */}
       {isContractor && (
         <>
-          {/* "I won the job" button - Available to any contractor who has purchased access */}
+          {/* "I Won the Job" button — single click, no confirmation dialog */}
           {hasAccess && jobStatus === 'POSTED' && !isWonByMe && (
             <>
-              {/* Check if contractor has already claimed won - need to pass this prop */}
-              {!hasClaimedWon && (
+              {!hasClaimedWon ? (
                 <Button
-                  onClick={() => setShowClaimWonDialog(true)}
+                  onClick={handleClaimWon}
+                  disabled={loading}
                   className="w-full bg-green-600 hover:bg-green-700"
                   variant="default"
                 >
                   <Trophy className="h-4 w-4 mr-2" />
-                  I Won the Job
+                  {loading ? 'Submitting...' : 'I Won the Job'}
                 </Button>
-              )}
-              
-              {hasClaimedWon && (
+              ) : (
                 <div className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-yellow-800">
                     <CheckCircle className="h-4 w-4" />
@@ -288,47 +288,6 @@ export default function JobWorkflowButtons({
                   </p>
                 </div>
               )}
-
-              <Dialog open={showClaimWonDialog} onOpenChange={setShowClaimWonDialog}>
-                <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg sm:text-xl">Confirm You Won the Job</DialogTitle>
-                    <DialogDescription className="text-sm">
-                      Click this after you&apos;ve spoken to the customer and they&apos;ve agreed to hire you.
-                      The customer will receive a notification to confirm.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Job: <span className="font-semibold">{jobTitle}</span>
-                    </p>
-                    <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-xs text-green-800">
-                        <strong>✅ Checklist before clicking:</strong>
-                      </p>
-                      <ul className="text-xs text-green-700 mt-2 space-y-1 ml-4">
-                        <li>• You&apos;ve spoken to the customer</li>
-                        <li>• They&apos;ve agreed to hire you</li>
-                        <li>• You&apos;ve discussed the price and terms</li>
-                      </ul>
-                    </div>
-                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs text-blue-800">
-                        <strong>Note:</strong> The customer will receive a notification and must confirm 
-                        before the job moves to &quot;In Progress&quot;.
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowClaimWonDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleClaimWon} disabled={loading} className="bg-green-600 hover:bg-green-700">
-                      {loading ? 'Processing...' : 'Confirm I Won'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </>
           )}
 

@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function JobsPage() {
   const { user } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
+  const purchasedJobIdsRef = useRef<Set<string>>(new Set())
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -71,6 +72,13 @@ export default function JobsPage() {
         jobsArray = response.data;
         totalPagesValue = (response.data as any)?.pagination?.pages || 1;
       }
+
+      // Client-side defense: remove any jobs the contractor has already purchased
+      // (backend filters via optionalAuth + getAllJobs, this handles stale/race conditions)
+      if (user?.role === 'CONTRACTOR' && purchasedJobIdsRef.current.size > 0) {
+        jobsArray = jobsArray.filter(j => !purchasedJobIdsRef.current.has(j.id));
+      }
+
       setJobs(jobsArray);
       setTotalPages(totalPagesValue);
     } catch (error) {
@@ -78,7 +86,17 @@ export default function JobsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm])
+  }, [page, selectedCategory, selectedLocation, selectedBudget, searchTerm, user?.role])
+
+  // Fetch purchased job IDs for contractors so we can filter them out client-side (ref, no re-render)
+  useEffect(() => {
+    if (user?.role !== 'CONTRACTOR') return
+    jobsApi.getMyAllJobs({ status: 'ACTIVE' })
+      .then(({ jobs: myJobs }) => {
+        purchasedJobIdsRef.current = new Set(myJobs.map(j => j.id))
+      })
+      .catch(() => { /* non-critical; backend filter is primary */ })
+  }, [user?.role])
 
   useEffect(() => {
     fetchJobs()

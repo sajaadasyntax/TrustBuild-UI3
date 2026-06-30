@@ -60,6 +60,7 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
   // Initialize hasAccess from job.hasAccess if available (backend sends this flag)
   const [hasAccess, setHasAccess] = useState<boolean>((job as any).hasAccess ?? false)
   const [checkingAccess, setCheckingAccess] = useState(true)
+  const [optimisticClaimedWon, setOptimisticClaimedWon] = useState(false)
   const [showAccessDialog, setShowAccessDialog] = useState(false)
   const [contractor, setContractor] = useState<Contractor | null>(null)
   const [subscription, setSubscription] = useState<any>(null)
@@ -89,11 +90,13 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
   }, [job.jobAccess, contractor?.id])
 
   // Check if contractor has already claimed "I won the job"
+  // optimisticClaimedWon is set immediately on button click before the API refetch returns
   const hasClaimedWon = useMemo(() => {
+    if (optimisticClaimedWon) return true
     if (!contractor?.id || !job.jobAccess) return false
     const myAccess = job.jobAccess.find(access => access.contractorId === contractor.id)
     return myAccess?.claimedWon === true
-  }, [job.jobAccess, contractor?.id])
+  }, [job.jobAccess, contractor?.id, optimisticClaimedWon])
 
   // Computed status values
   const applicationStatus = myApplication?.status || 'none'
@@ -116,10 +119,10 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
     }
   }, [(job as any).hasAccess, hasPurchasedAccessInJob])
 
-  // Re-check access when jobAccess or applications change
+  // Re-check access silently when jobAccess or applications change (no skeleton flash)
   useEffect(() => {
     if (contractor?.id) {
-      checkJobAccess()
+      checkJobAccess({ silent: true })
     }
   }, [job.jobAccess, job.applications, contractor?.id])
 
@@ -137,16 +140,16 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
     }
   }
 
-  const checkJobAccess = async () => {
+  const checkJobAccess = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setCheckingAccess(true)
+      if (!silent) setCheckingAccess(true)
       const accessData = await jobsApi.checkAccess(job.id)
       setHasAccess(Boolean(accessData.hasAccess) || hasPurchasedAccessInJob || Boolean((job as any).hasAccess))
     } catch (error) {
       // Do not hide contact details on transient API failure if we already know access exists.
       setHasAccess(prev => prev || hasPurchasedAccessInJob || Boolean((job as any).hasAccess))
     } finally {
-      setCheckingAccess(false)
+      if (!silent) setCheckingAccess(false)
     }
   }
 
@@ -177,8 +180,8 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
     await checkJobAccess()
     
     toast({
-      title: "Access Granted! 🎉",
-      description: "You can now see the customer's contact details. Call them directly to discuss the job!",
+      title: "Access Granted!",
+      description: "You can now see the customer's contact details. This job has been added to your Current Jobs.",
     })
   }, [job.id, onJobUpdate])
 
@@ -491,9 +494,7 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
           myApplication={myApplication}
           isJobWinner={isJobWinner}
           hasClaimedWon={hasClaimedWon}
-          onClaimWon={() => {
-            // This will be handled by JobWorkflowButtons, but we show the guidance here
-          }}
+          onClaimWon={() => onJobUpdate(job.id)}
           onProposeFinalPrice={() => setShowFinalPriceDialog(true)}
         />
 
@@ -617,6 +618,7 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
           hasClaimedWon={hasClaimedWon}
           contractorName={undefined}
           onUpdate={() => onJobUpdate(job.id)}
+          onClaimWonOptimistic={() => setOptimisticClaimedWon(true)}
         />
 
         {/* Action Buttons */}

@@ -300,7 +300,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold text-lg">
                           {contractor.contractorName}
                         </h4>
@@ -316,6 +316,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                           </Badge>
                         )}
                       </div>
+                      {(contractor as any).contractorPersonalName && (contractor as any).contractorPersonalName !== contractor.contractorName && (
+                        <p className="text-sm text-gray-500">{(contractor as any).contractorPersonalName}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <Star className="w-4 h-4 text-yellow-500" />
                         <span>{contractor.averageRating?.toFixed(1) || 'No rating'}</span>
@@ -395,6 +398,9 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                       <h4 className="font-semibold text-lg">
                         {contractor.contractorName}
                       </h4>
+                      {(contractor as any).contractorPersonalName && (contractor as any).contractorPersonalName !== contractor.contractorName && (
+                        <p className="text-sm text-gray-500">{(contractor as any).contractorPersonalName}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <Star className="w-4 h-4 text-yellow-500" />
                         <span>{contractor.averageRating?.toFixed(1) || 'No rating'}</span>
@@ -457,17 +463,27 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="font-semibold text-lg">
-                        {application.contractor?.user?.name}
-                      </h4>
-                      <p className="text-gray-600">
-                        {application.contractor?.businessName}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-lg">
+                          {application.contractor?.businessName || application.contractor?.user?.name}
+                        </h4>
+                        {(application.contractor as any)?.kyc?.status === 'APPROVED' && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                            Identity Verified
+                          </Badge>
+                        )}
+                      </div>
+                      {application.contractor?.businessName && application.contractor?.user?.name && (
+                        <p className="text-sm text-gray-500">{application.contractor.user.name}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <Star className="w-4 h-4 text-yellow-500" />
                         <span>{application.contractor?.averageRating?.toFixed(1) || 'No rating'}</span>
                         <span className="text-gray-500">
                           ({application.contractor?.reviewCount || 0} reviews)
+                        </span>
+                        <span className="text-gray-500">
+                          • {application.contractor?.jobsCompleted || 0} jobs completed
                         </span>
                       </div>
                     </div>
