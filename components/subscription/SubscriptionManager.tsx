@@ -40,13 +40,13 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { handleApiError } from '@/lib/api'
+import { getHumanReadableError } from '@/lib/humanErrorHandler'
 import subscriptionApi from '@/lib/subscriptionApi'
-import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { getStripePromise, paymentElementOptions } from '@/lib/stripeConfig'
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51OUW6uDYzE0QVbJQXgYYXzDPPIVEzXG2NQmIYIyDdUOWDrTrUHvPkBGpGxEVOyRgzrJQOxqZKhkzs5yFYRFLrPuQ00Qx5XkWzZ')
+const stripePromise = getStripePromise()
 
 interface SubscriptionPlan {
   id: string
@@ -129,11 +129,11 @@ const PaymentForm = ({
           })
           onSuccess()
         } catch (confirmError: any) {
-          setError(confirmError.message || 'Failed to confirm subscription')
+          setError(getHumanReadableError(confirmError, 'Failed to confirm subscription'))
         }
       }
     } catch (err: any) {
-      setError('An unexpected error occurred. Please try again.')
+      setError(getHumanReadableError(err, 'An unexpected error occurred. Please try again.'))
       console.error('Payment error:', err)
     } finally {
       setProcessing(false)
@@ -161,7 +161,7 @@ const PaymentForm = ({
       </div>
       
       <div className="space-y-4">
-        <PaymentElement />
+        <PaymentElement options={paymentElementOptions} />
         
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm">

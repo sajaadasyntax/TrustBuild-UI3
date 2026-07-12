@@ -1,6 +1,7 @@
 // API configuration and utilities for TrustBuild frontend-backend communication
 
 import { toast } from '@/hooks/use-toast';
+import { getHumanReadableError } from './humanErrorHandler';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk';
 
@@ -2728,19 +2729,12 @@ export const milestonesApi = {
 
 // Utility function for handling API errors with toast notifications
 export const handleApiError = (error: unknown, fallbackMessage = 'An error occurred') => {
-  if (error instanceof ApiError) {
-    toast({
-      title: 'Error',
-      description: error.message,
-      variant: 'destructive',
-    });
-  } else {
-    toast({
-      title: 'Error',
-      description: fallbackMessage,
-      variant: 'destructive',
-    });
-  }
+  const description = getHumanReadableError(error, fallbackMessage);
+  toast({
+    title: 'Error',
+    description,
+    variant: 'destructive',
+  });
   console.error('API Error:', error);
 };
 

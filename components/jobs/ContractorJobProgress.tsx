@@ -88,11 +88,7 @@ export function ContractorJobProgress({
         '💰 Agree on the price directly with the customer',
         '✅ Once they agree to hire you, click "I Won the Job" below'
       ] : undefined,
-      action: hasAccessAndPosted && !hasClaimedWon && !isJobWinner ? {
-        label: 'I Won the Job',
-        onClick: onClaimWon,
-        variant: 'default'
-      } : undefined,
+      action: undefined,
     })
     
     // Step 4: Customer Confirms (Waiting step)

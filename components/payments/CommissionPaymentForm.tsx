@@ -1,20 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import {
   Elements,
   PaymentElement,
   useStripe,
   useElements
 } from '@stripe/react-stripe-js'
+import { getStripePromise, paymentElementOptions } from '@/lib/stripeConfig'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Loader2, Lock, AlertCircle } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { getHumanReadableError } from '@/lib/humanErrorHandler'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = getStripePromise()
 
 interface CommissionPaymentFormProps {
   commissionPaymentId: string
@@ -62,7 +63,7 @@ function CommissionPaymentInnerForm({
       })
 
       if (stripeError) {
-        setError(stripeError.message || 'Payment failed')
+        setError(getHumanReadableError(stripeError, 'Payment failed. Please try again.'))
         return
       }
 
@@ -94,7 +95,7 @@ function CommissionPaymentInnerForm({
       }
     } catch (err: any) {
       console.error('Payment error:', err)
-      setError(err.message || 'Payment failed. Please try again.')
+      setError(getHumanReadableError(err, 'Payment failed. Please try again.'))
     } finally {
       setIsProcessing(false)
     }
@@ -110,11 +111,7 @@ function CommissionPaymentInnerForm({
           <p className="text-xs text-muted-foreground mb-3">
             Pay securely with card, Apple Pay, or Google Pay
           </p>
-          <PaymentElement 
-            options={{
-              layout: 'tabs',
-            }}
-          />
+          <PaymentElement options={paymentElementOptions} />
         </div>
 
         {error && (

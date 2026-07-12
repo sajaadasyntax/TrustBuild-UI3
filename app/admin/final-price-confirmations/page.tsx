@@ -43,6 +43,10 @@ interface Job {
       email?: string
     }
   }
+  winnerConfirmedBy?: {
+    role: 'ADMIN' | 'CUSTOMER'
+    name: string
+  }
 }
 
 const handleApiError = (error: any, defaultMessage: string) => {
@@ -328,6 +332,15 @@ export default function FinalPriceConfirmationsPage() {
                         <div className="text-xs text-gray-500 space-y-1">
                           <p>Proposed: {new Date(job.finalPriceProposedAt!).toLocaleDateString()}</p>
                           <p>Deadline: {new Date(job.finalPriceTimeoutAt!).toLocaleDateString()}</p>
+                          {job.winnerConfirmedBy && (
+                            <p className="flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              Winner confirmed by:{' '}
+                              <span className={job.winnerConfirmedBy.role === 'ADMIN' ? 'font-medium text-blue-700' : 'font-medium'}>
+                                {job.winnerConfirmedBy.role === 'ADMIN' ? 'Admin' : 'Customer'} — {job.winnerConfirmedBy.name}
+                              </span>
+                            </p>
+                          )}
                         </div>
                         
                         <div className="pt-4 border-t flex flex-col gap-2">
@@ -423,6 +436,15 @@ export default function FinalPriceConfirmationsPage() {
                         {job.finalPriceRejectedAt && (
                           <p>Rejected: {new Date(job.finalPriceRejectedAt).toLocaleDateString()}</p>
                         )}
+                        {job.winnerConfirmedBy && (
+                          <p className="flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-green-600" />
+                            Winner confirmed by:{' '}
+                            <span className={job.winnerConfirmedBy.role === 'ADMIN' ? 'font-medium text-blue-700' : 'font-medium'}>
+                              {job.winnerConfirmedBy.role === 'ADMIN' ? 'Admin' : 'Customer'} — {job.winnerConfirmedBy.name}
+                            </span>
+                          </p>
+                        )}
                       </div>
                       
                       <div className="pt-4 border-t">
@@ -495,6 +517,7 @@ export default function FinalPriceConfirmationsPage() {
                         <th className="px-4 py-3 text-left">Contractor</th>
                         <th className="px-4 py-3 text-left">Job</th>
                         <th className="px-4 py-3 text-left">Action</th>
+                        <th className="px-4 py-3 text-left">Approved By</th>
                         <th className="px-4 py-3 text-right">Amount</th>
                         <th className="px-4 py-3 text-left">Reason</th>
                       </tr>
@@ -520,6 +543,16 @@ export default function FinalPriceConfirmationsPage() {
                             }>
                               {log.action.replace('_', ' ').toLowerCase()}
                             </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {log.performedByName ? (
+                              <span className={['ADMIN', 'SUPER_ADMIN'].includes(log.performedByRole) ? 'text-blue-700 font-medium' : ''}>
+                                {log.performedByName}
+                                <span className="ml-1 text-xs text-gray-400">
+                                  ({['ADMIN', 'SUPER_ADMIN'].includes(log.performedByRole) ? 'Admin' : log.performedByRole.toLowerCase()})
+                                </span>
+                              </span>
+                            ) : '—'}
                           </td>
                           <td className="px-4 py-3 text-right font-medium">
                             {log.proposedAmount != null ? `£${Number(log.proposedAmount).toFixed(2)}` : '—'}

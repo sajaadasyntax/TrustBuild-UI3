@@ -31,14 +31,15 @@ import {
 } from "@/components/ui/dialog"
 import { Download, FileText, Search, CreditCard, AlertCircle } from "lucide-react"
 import { invoicesApi, handleApiError, getStoredToken } from '@/lib/api'
+import { getHumanReadableError } from '@/lib/humanErrorHandler'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { getStripePromise, paymentElementOptions } from '@/lib/stripeConfig'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = getStripePromise()
 
 interface ContractorInvoice {
   id: string
@@ -80,7 +81,7 @@ function ManualInvoicePaymentForm({
     const createPaymentIntent = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/create-manual-invoice-payment-intent`, {
+        const response = await fetch(`/api/payments/create-manual-invoice-payment-intent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -201,12 +202,12 @@ function InvoicePaymentForm({
       })
 
       if (stripeError) {
-        setError(stripeError.message || 'Payment failed')
+        setError(getHumanReadableError(stripeError, 'Payment failed. Please try again.'))
         return
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        const confirmResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk'}/payments/pay-manual-invoice`, {
+        const confirmResponse = await fetch(`/api/payments/pay-manual-invoice`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -227,7 +228,7 @@ function InvoicePaymentForm({
       }
     } catch (err: any) {
       console.error('Payment error:', err)
-      setError(err.message || 'Payment failed. Please try again.')
+      setError(getHumanReadableError(err, 'Payment failed. Please try again.'))
     } finally {
       setIsProcessing(false)
     }
@@ -243,7 +244,7 @@ function InvoicePaymentForm({
           <p className="text-xs text-muted-foreground mb-3">
             Pay securely with card, Apple Pay, or Google Pay
           </p>
-          <PaymentElement />
+          <PaymentElement options={paymentElementOptions} />
         </div>
 
         {error && (

@@ -25,7 +25,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
   const { user } = useAuth()
   const [updating, setUpdating] = useState(false)
   const [applications, setApplications] = useState<JobApplication[]>([])
-  const [selectedContractor, setSelectedContractor] = useState<string | null>(null)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [showFinalPriceConfirmation, setShowFinalPriceConfirmation] = useState(false)
   const [hasReview, setHasReview] = useState(false)
@@ -37,32 +36,17 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     try {
       const applicationsData = await jobsApi.getApplications(job.id)
       setApplications(applicationsData)
-      
-      // Check if there's already a selected contractor (winner)
-      const winner = applicationsData.find(app => 
-        job.wonByContractorId && app.contractorId === job.wonByContractorId
-      )
-      if (winner) {
-        setSelectedContractor(prev => prev || winner.contractorId)
-      }
     } catch {
       // Failed to load applications - the page will show empty state
       setApplications([])
     }
-  }, [job.id, job.wonByContractorId]) // Removed circular dependencies
+  }, [job.id])
 
   useEffect(() => {
     if (job.id) {
       fetchApplications()
     }
   }, [job.id, fetchApplications])
-
-  // Update selectedContractor when contractorsWhoClaimedWon changes (only once)
-  useEffect(() => {
-    if (contractorsWhoClaimedWon.length === 1 && !selectedContractor) {
-      setSelectedContractor(contractorsWhoClaimedWon[0].contractorId || null)
-    }
-  }, [contractorsWhoClaimedWon.length]) // Only depend on length, not the array itself
 
   // Check if customer has left a review for this job
   useEffect(() => {
@@ -135,9 +119,8 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
     }).format(amount)
   }
 
-  const selectedApplication = applications.find(app => app.contractorId === selectedContractor)
-  const canComplete = job.status === 'IN_PROGRESS' && selectedContractor
-  const canConfirmCompletion = job.status === 'COMPLETED' && selectedContractor && !job.customerConfirmed
+  const canComplete = job.status === 'IN_PROGRESS' && !!job.wonByContractorId
+  const canConfirmCompletion = job.status === 'COMPLETED' && !!job.wonByContractorId && !job.customerConfirmed
   const needsFinalPriceConfirmation = job.status === 'AWAITING_FINAL_PRICE_CONFIRMATION' && job.contractorProposedAmount
   const contractorsWithAccess = job.jobAccess?.length || 0
   const hasMultipleClaims = contractorsWhoClaimedWon.length > 1
@@ -151,12 +134,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
             <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
             <div className="flex items-center gap-4">
               {getStatusBadge(job.status)}
-              {selectedApplication && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Contractor Selected
-                </Badge>
-              )}
               {canConfirmCompletion && (
                 <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
                   <Clock className="w-4 h-4 mr-1" />
@@ -180,12 +157,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 <div className="text-sm text-gray-500">Applications</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-600">
-                  {selectedContractor ? 1 : 0}
-                </div>
-                <div className="text-sm text-gray-500">Selected</div>
-              </div>
-              <div>
                 <div className="text-2xl font-bold text-orange-600">
                   {job.budget ? formatCurrency(job.budget) : 'Quote'}
                 </div>
@@ -199,7 +170,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
         <CustomerJobProgress
           job={job}
           applications={applications}
-          hasSelectedContractor={!!selectedContractor}
+          hasSelectedContractor={!!job.wonByContractorId}
           onConfirmWinner={() => {
             // This is handled by JobWorkflowButtons below
           }}
@@ -231,38 +202,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                 </div>
               </div>
               
-              {selectedApplication && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Selected Contractor</h4>
-                    {selectedApplication.contractor?.id && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                      >
-                        <Link href={`/contractors/${selectedApplication.contractor.id}`} target="_blank">
-                          View Profile & Reviews
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span>{selectedApplication.contractor?.user?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span>{selectedApplication.contractor?.user?.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-gray-500" />
-                      <span>Quoted: {formatCurrency(selectedApplication.proposedRate)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div>
@@ -292,11 +231,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
               {contractorsWhoClaimedWon.map((contractor, index) => (
                 <div
                   key={contractor.contractorId || index}
-                  className={`p-4 border rounded-lg ${
-                    selectedContractor === contractor.contractorId
-                      ? 'border-green-500 bg-green-100'
-                      : 'border-green-200 bg-white'
-                  }`}
+                  className="p-4 border rounded-lg border-green-200 bg-white"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -308,11 +243,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                           <Badge className="bg-green-600">
                             <Trophy className="w-3 h-3 mr-1" />
                             Claims They Won
-                          </Badge>
-                        )}
-                        {selectedContractor === contractor.contractorId && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                            Selected
                           </Badge>
                         )}
                       </div>
@@ -358,16 +288,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                           <Link href={`/contractors/${contractor.contractorId}`} target="_blank">
                             View Profile & Reviews
                           </Link>
-                        </Button>
-                      )}
-                      {/* Select Button - Only show if not already selected and job is POSTED */}
-                      {job.status === 'POSTED' && selectedContractor !== contractor.contractorId && (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => setSelectedContractor(contractor.contractorId || null)}
-                        >
-                          Select This Contractor
                         </Button>
                       )}
                     </div>
@@ -455,11 +375,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
               {applications.map((application) => (
                 <div
                   key={application.id}
-                  className={`p-4 border rounded-lg ${
-                    selectedContractor === application.contractorId
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200'
-                  }`}
+                  className="p-4 border rounded-lg border-gray-200"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -530,13 +446,6 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
                         </Badge>
                       )}
                       
-                      {selectedContractor === application.contractorId ? (
-                        <div className="flex gap-2">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Selected Contractor
-                          </Badge>
-                        </div>
-                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -628,7 +537,7 @@ export function NewClientJobDetails({ job, onJobUpdate }: ClientJobDetailsProps)
           contractorProposedAmount={job.contractorProposedAmount ? Number(job.contractorProposedAmount) : undefined}
           contractorName={contractorsWhoClaimedWon.length === 1 ? contractorsWhoClaimedWon[0].contractorName : undefined}
           contractorsWhoClaimedWon={contractorsWhoClaimedWon}
-          selectedContractorId={selectedContractor}
+          selectedContractorId={undefined}
           customerConfirmed={job.customerConfirmed}
           onUpdate={onJobUpdate}
         />
