@@ -494,7 +494,6 @@ export function NewContractorJobDetails({ job, onJobUpdate, silentRefreshing = f
           myApplication={myApplication}
           isJobWinner={isJobWinner}
           hasClaimedWon={hasClaimedWon}
-          onClaimWon={() => onJobUpdate(job.id)}
           onProposeFinalPrice={() => setShowFinalPriceDialog(true)}
         />
 
