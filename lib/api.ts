@@ -83,6 +83,11 @@ export interface Contractor {
   };
 }
 
+/** Payload for creating/updating a contractor profile (services are IDs, not full objects). */
+export type ContractorProfileInput = Omit<Partial<Contractor>, 'services'> & {
+  services?: string[];
+};
+
 export interface Service {
   id: string;
   name: string;
@@ -646,7 +651,7 @@ export const contractorsApi = {
     return response.data.contractor;
   },
 
-  createProfile: async (profileData: Partial<Contractor>): Promise<Contractor> => {
+  createProfile: async (profileData: ContractorProfileInput): Promise<Contractor> => {
     const response = await apiRequest<{ data: { contractor: Contractor } }>(`/contractors`, {
       method: 'POST',
       body: JSON.stringify(profileData),
@@ -654,7 +659,7 @@ export const contractorsApi = {
     return response.data.contractor;
   },
 
-  updateProfile: async (profileData: Partial<Contractor>): Promise<Contractor> => {
+  updateProfile: async (profileData: ContractorProfileInput): Promise<Contractor> => {
     const response = await apiRequest<{ data: { contractor: Contractor } }>(`/contractors/me`, {
       method: 'PATCH',
       body: JSON.stringify(profileData),
