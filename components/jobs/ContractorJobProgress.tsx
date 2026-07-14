@@ -88,14 +88,9 @@ export function ContractorJobProgress({
         '💰 Agree on the price directly with the customer',
         '✅ Once they agree to hire you, click "I Won the Job" below'
       ] : undefined,
-      // Only render the action when the parent page provides a handler.
-      // The public /jobs/[id] page passes onClaimWon (navigates to the dashboard);
-      // the dashboard page omits it because JobWorkflowButtons already has the main button.
-      action: onClaimWon && hasAccessAndPosted && !hasClaimedWon && !isJobWinner ? {
-        label: 'I Won the Job',
-        onClick: onClaimWon,
-        variant: 'default'
-      } : undefined,
+      // No action button here — the single "I Won the Job" button lives in JobWorkflowButtons,
+      // which is rendered alongside this tracker on both the public and dashboard job pages.
+      action: undefined,
     })
     
     // Step 4: Customer Confirms (Waiting step)

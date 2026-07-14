@@ -27,6 +27,7 @@ import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import JobLeadAccessDialog from '@/components/JobLeadAccessDialog'
 import ContractorJobProgress from '@/components/jobs/ContractorJobProgress'
+import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
 
 export default function JobDetailsPage() {
   const params = useParams()
@@ -416,13 +417,25 @@ export default function JobDetailsPage() {
                 hasAccess={hasAccess}
                 myApplication={myApplication}
                 isJobWinner={isJobWinner}
-                onClaimWon={() => {
-                  // Navigate to dashboard to use full workflow
-                  router.push(`/dashboard/contractor/jobs/${job.id}`)
-                }}
+                hasClaimedWon={!!job.hasClaimedWon}
                 onProposeFinalPrice={() => {
                   router.push(`/dashboard/contractor/jobs/${job.id}`)
                 }}
+              />
+            )}
+
+            {/* The single "I Won the Job" button (green) — same workflow as the dashboard */}
+            {user?.role === 'CONTRACTOR' && (
+              <JobWorkflowButtons
+                jobId={job.id}
+                jobStatus={job.status}
+                jobTitle={job.title}
+                isContractor={true}
+                isCustomer={false}
+                isWonByMe={isJobWinner}
+                hasAccess={hasAccess}
+                hasClaimedWon={!!job.hasClaimedWon}
+                onUpdate={() => refreshJobQuietly(job.id)}
               />
             )}
 

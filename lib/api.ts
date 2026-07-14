@@ -184,6 +184,7 @@ export interface Job {
   jobAccess?: JobAccess[];
   milestones?: Milestone[];
   hasAccess?: boolean; // Computed field
+  hasClaimedWon?: boolean; // Computed field - requesting contractor has claimed "I won the job"
   currentLeadPrice?: number; // Computed field
   accessCount?: number; // Computed field - number of contractors who purchased access
   applicationCount?: number; // Computed field - number of contractors who applied/purchased
