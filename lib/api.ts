@@ -509,6 +509,7 @@ export const authApi = {
     businessAddress?: string;
     servicesProvided?: string;
     yearsExperience?: string;
+    services?: string[];
   }): Promise<{ user: User; token: string }> => {
     const response = await apiRequest<{ status: string; token: string; data: { user: User } }>('/auth/register', {
       method: 'POST',

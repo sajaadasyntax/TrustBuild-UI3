@@ -17,6 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Icons } from "@/components/ui/icons"
 import { useToast } from "@/hooks/use-toast"
 import { authApi, ApiError } from "@/lib/api"
+import ServiceCategoryPicker from "@/components/services/ServiceCategoryPicker"
+import { isPersistedServiceId } from "@/lib/serviceCategories"
 import { useAuth } from "@/contexts/AuthContext"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -46,7 +48,8 @@ const contractorSchema = baseSchema.extend({
   businessAddress: z.string().min(5, "Business address is required"),
   city: z.string().min(2, "City is required"),
   postcode: z.string().min(5, "Postcode is required"),
-  servicesProvided: z.string().min(10, "Please describe your services"),
+  servicesProvided: z.string().optional(),
+  serviceIds: z.array(z.string()).min(1, "Please select at least one service category"),
   yearsExperience: z.string().min(1, "Years of experience is required"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -64,6 +67,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"CUSTOMER" | "CONTRACTOR">("CUSTOMER")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [contractorServiceIds, setContractorServiceIds] = useState<string[]>([])
   
   // Check URL parameters for role pre-selection
   useEffect(() => {
@@ -106,6 +110,7 @@ export default function RegisterPage() {
       city: "",
       postcode: "",
       servicesProvided: "",
+      serviceIds: [] as string[],
       yearsExperience: "",
     },
   })
@@ -159,6 +164,17 @@ export default function RegisterPage() {
   async function onContractorSubmit(data: ContractorFormData) {
     setIsLoading(true)
 
+    const persistedServiceIds = contractorServiceIds.filter(isPersistedServiceId)
+    if (persistedServiceIds.length === 0) {
+      toast({
+        title: "Service categories required",
+        description: "Please select at least one service category.",
+        variant: "destructive",
+      })
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await authApi.register({
         name: data.name,
@@ -171,7 +187,7 @@ export default function RegisterPage() {
         businessAddress: data.businessAddress,
         city: data.city,
         postcode: data.postcode,
-        servicesProvided: data.servicesProvided,
+        services: persistedServiceIds,
         yearsExperience: data.yearsExperience,
         description: data.description,
       })
@@ -509,15 +525,17 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contractor-services">Services Provided</Label>
-                <Textarea
-                  id="contractor-services"
-                  placeholder="Describe the services you offer (e.g., Kitchen renovations, bathroom installations, general construction...)"
+                <Label>Service Categories</Label>
+                <ServiceCategoryPicker
+                  selectedIds={contractorServiceIds}
+                  onChange={(ids) => {
+                    setContractorServiceIds(ids)
+                    contractorForm.setValue("serviceIds", ids, { shouldValidate: true })
+                  }}
                   disabled={isLoading}
-                  {...contractorForm.register("servicesProvided")}
                 />
-                {contractorForm.formState.errors.servicesProvided && (
-                  <p className="text-xs text-red-600">{contractorForm.formState.errors.servicesProvided.message}</p>
+                {contractorForm.formState.errors.serviceIds && (
+                  <p className="text-xs text-red-600">{contractorForm.formState.errors.serviceIds.message}</p>
                 )}
               </div>
 

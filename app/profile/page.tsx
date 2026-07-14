@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2, Lock, Eye, EyeOff, Image as ImageIcon, Plus, X, Edit2, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { usersApi, contractorsApi, customersApi, uploadApi, handleApiError, PortfolioItem } from "@/lib/api"
+import ServiceCategoryPicker from "@/components/services/ServiceCategoryPicker"
+import { isPersistedServiceId } from "@/lib/serviceCategories"
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -69,6 +71,7 @@ export default function ProfilePage() {
     projectDate: ""
   })
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
 
   // Helper function to fetch and set profile data
   const fetchProfileData = async () => {
@@ -99,6 +102,11 @@ export default function ProfilePage() {
             city: contractorData.city || "",
             postcode: contractorData.postcode || ""
           }
+          setSelectedServiceIds(
+            (contractorData.services || [])
+              .map((s) => s.id)
+              .filter((id) => isPersistedServiceId(id))
+          )
           // Fetch portfolio items
           if (contractorData.portfolio) {
             setPortfolioItems(contractorData.portfolio)
@@ -374,7 +382,17 @@ export default function ProfilePage() {
 
       // Update role-specific data
       if (user.role === 'CONTRACTOR') {
-        const contractorUpdateData = filterEmptyValues({
+        if (selectedServiceIds.length === 0) {
+          toast({
+            title: "Service categories required",
+            description: "Please select at least one service category so you receive matching job notifications.",
+            variant: "destructive",
+          })
+          return
+        }
+
+        const contractorUpdateData = {
+          ...filterEmptyValues({
           businessName: profileData.businessName,
           description: profileData.description,
           businessAddress: profileData.businessAddress,
@@ -382,12 +400,13 @@ export default function ProfilePage() {
           website: profileData.website,
           instagramHandle: profileData.instagramHandle,
           operatingArea: profileData.operatingArea,
-          servicesProvided: profileData.servicesProvided,
           yearsExperience: profileData.yearsExperience,
           city: profileData.city,
           postcode: profileData.postcode,
           logoUrl: profileData.logoUrl
-        })
+        }),
+          services: selectedServiceIds,
+        }
         
         console.log('Saving contractor profile with data:', contractorUpdateData)
         
@@ -663,29 +682,28 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="servicesProvided">Services Provided</Label>
-                    <Textarea
-                      id="servicesProvided"
-                      value={profileData.servicesProvided || ""}
-                      onChange={(e) => handleInputChange('servicesProvided', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="List your main services..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="operatingArea">Operating Areas</Label>
-                    <Textarea
-                      id="operatingArea"
-                      value={profileData.operatingArea || ""}
-                      onChange={(e) => handleInputChange('operatingArea', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Areas you serve..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
+                <div>
+                  <Label>Service Categories</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Choose the same categories customers pick when posting jobs. This controls your job alerts.
+                  </p>
+                  <ServiceCategoryPicker
+                    selectedIds={selectedServiceIds}
+                    onChange={setSelectedServiceIds}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="operatingArea">Operating Areas</Label>
+                  <Textarea
+                    id="operatingArea"
+                    value={profileData.operatingArea || ""}
+                    onChange={(e) => handleInputChange('operatingArea', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Areas you serve..."
+                    className="min-h-[100px]"
+                  />
                 </div>
               </CardContent>
             </Card>
