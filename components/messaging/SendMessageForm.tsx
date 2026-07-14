@@ -11,6 +11,7 @@ import { Send, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { getHumanReadableError } from '@/lib/humanErrorHandler';
 
 interface SendMessageFormProps {
   recipientId?: string;
@@ -104,7 +105,7 @@ export default function SendMessageForm({
       } else {
         toast({
           title: 'Error',
-          description: errorMessage,
+          description: getHumanReadableError(error, 'Failed to send message'),
           variant: 'destructive',
         });
       }

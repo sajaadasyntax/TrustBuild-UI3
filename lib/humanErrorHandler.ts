@@ -7,7 +7,10 @@ import { ApiError } from './api';
 export function getHumanReadableError(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   // Backend ApiError: already contains a user-facing message from the server
   if (error instanceof ApiError) {
-    return humaniseBackendMessage(error.message) || fallback;
+    const msg = humaniseBackendMessage(error.message);
+    // Never surface raw HTTP status codes ("403", "API request failed with status 500", …)
+    if (msg && !containsRawStatusCode(msg)) return msg;
+    return humaniseStatusCode(error.status) || fallback;
   }
 
   // Generic Error objects
@@ -69,6 +72,15 @@ function humaniseBackendMessage(msg: string): string | null {
 
   const lower = msg.toLowerCase();
 
+  // Raw status-code style messages ("403", "Request failed with status 500", "HTTP 404")
+  if (containsRawStatusCode(msg)) {
+    const codeMatch = msg.match(/\b([45]\d\d)\b/);
+    if (codeMatch) {
+      return humaniseStatusCode(parseInt(codeMatch[1], 10));
+    }
+    return null;
+  }
+
   // Auth / session
   if (lower.includes('invalid token') || lower.includes('jwt')) {
     return 'Your session has expired. Please log in again.';
@@ -125,6 +137,42 @@ function humaniseBackendMessage(msg: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * True when a message is just a status code or embeds one, e.g. "403",
+ * "API request failed with status 500", "Request failed: 404", "HTTP 429".
+ */
+function containsRawStatusCode(msg: string): boolean {
+  const trimmed = msg.trim();
+  if (/^[45]\d\d$/.test(trimmed)) return true;
+  return /\b(status|http|code|error)\s*:?\s*[45]\d\d\b/i.test(trimmed) ||
+    /\bfailed with status\b/i.test(trimmed) ||
+    /\b[45]\d\d\s*(error|forbidden|unauthorized|not found)\b/i.test(trimmed);
+}
+
+/** Friendly text for HTTP status codes so users never see bare numbers. */
+function humaniseStatusCode(status: number): string | null {
+  switch (status) {
+    case 400: return 'The request could not be processed. Please check your input and try again.';
+    case 401: return 'You need to be logged in to do that. Please log in and try again.';
+    case 402: return 'A payment is required to complete this action.';
+    case 403: return "You don't have permission to perform this action.";
+    case 404: return 'The requested item could not be found.';
+    case 408: return 'The request timed out. Please try again.';
+    case 409: return 'This conflicts with an existing record. Please refresh and try again.';
+    case 413: return 'The file or data you sent is too large.';
+    case 422: return 'Some of the information you entered is invalid. Please review and try again.';
+    case 429: return 'Too many requests. Please wait a moment and try again.';
+    case 500: return 'An unexpected error occurred on our end. Please try again shortly.';
+    case 502:
+    case 503:
+    case 504: return 'The server is temporarily unavailable. Please try again in a few minutes.';
+    default:
+      if (status >= 500) return 'An unexpected error occurred on our end. Please try again shortly.';
+      if (status >= 400) return 'Something went wrong with your request. Please try again.';
+      return null;
+  }
 }
 
 function humaniseStripeMessage(msg: string): string | null {

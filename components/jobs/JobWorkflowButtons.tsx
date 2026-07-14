@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Trophy, CheckCircle, AlertCircle } from 'lucide-react';
 import { jobsApi } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { getHumanReadableError } from '@/lib/humanErrorHandler';
 
 interface JobWorkflowButtonsProps {
   jobId: string;
@@ -93,7 +94,7 @@ export default function JobWorkflowButtons({
       onUpdate();
     } catch (error: any) {
       console.error('Error claiming job as won:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to claim job as won';
+      const errorMessage = getHumanReadableError(error, 'Failed to claim job as won');
       toast({
         title: 'Error',
         description: errorMessage,
@@ -129,7 +130,7 @@ export default function JobWorkflowButtons({
       debouncedUpdate();
     } catch (error: any) {
       console.error('Error submitting final price:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to submit final price';
+      const errorMessage = getHumanReadableError(error, 'Failed to submit final price');
       toast({
         title: 'Error',
         description: errorMessage,
@@ -156,7 +157,7 @@ export default function JobWorkflowButtons({
       debouncedUpdate();
     } catch (error: any) {
       console.error('Error confirming winner:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to confirm winner';
+      const errorMessage = getHumanReadableError(error, 'Failed to confirm winner');
       toast({
         title: 'Error',
         description: errorMessage,
@@ -193,7 +194,7 @@ export default function JobWorkflowButtons({
       debouncedUpdate();
     } catch (error: any) {
       console.error('Error suggesting price change:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to suggest price change';
+      const errorMessage = getHumanReadableError(error, 'Failed to suggest price change');
       toast({
         title: 'Error',
         description: errorMessage,
@@ -248,7 +249,7 @@ export default function JobWorkflowButtons({
       debouncedUpdate();
     } catch (error: any) {
       console.error('Error confirming completion:', error);
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to process confirmation';
+      const errorMessage = getHumanReadableError(error, 'Failed to process confirmation');
       toast({
         title: 'Error',
         description: errorMessage,

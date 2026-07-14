@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { jobsApi, paymentsApi, contractorsApi, handleApiError, Job, Contractor } from '@/lib/api'
+import { getHumanReadableError } from '@/lib/humanErrorHandler'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { loadStripe } from '@stripe/stripe-js'
@@ -289,7 +290,7 @@ function StripePaymentForm({ leadPrice, job, onSuccess, onCancel, contractor, is
           return
         }
 
-        setInitError(error instanceof Error ? error.message : 'Failed to initialize payment')
+        setInitError(getHumanReadableError(error, 'Failed to initialize payment'))
         handleApiError(error, 'Failed to initialize payment')
       } finally {
         setIsLoading(false)

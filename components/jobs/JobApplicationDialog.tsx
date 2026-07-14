@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { jobsApi } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { getHumanReadableError } from '@/lib/humanErrorHandler';
 import { DollarSign, FileText, Clock } from 'lucide-react';
 
 interface JobApplicationDialogProps {
@@ -79,7 +80,7 @@ export default function JobApplicationDialog({
       onSuccess();
       onClose();
     } catch (error: any) {
-      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to submit application';
+      const errorMessage = getHumanReadableError(error, 'Failed to submit application');
       toast({
         title: 'Error',
         description: errorMessage,
