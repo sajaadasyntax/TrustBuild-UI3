@@ -68,6 +68,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [contractorServiceIds, setContractorServiceIds] = useState<string[]>([])
+  const [customerRedirect, setCustomerRedirect] = useState('/dashboard/client')
   
   // Check URL parameters for role pre-selection
   useEffect(() => {
@@ -75,6 +76,9 @@ export default function RegisterPage() {
     const roleParam = urlParams.get('role')
     if (roleParam === 'contractor') {
       setRole('CONTRACTOR')
+    }
+    if (urlParams.get('redirect') === '/post-job') {
+      setCustomerRedirect('/post-job')
     }
   }, [])
   
@@ -141,7 +145,7 @@ export default function RegisterPage() {
       })
 
       // Use replace instead of push for immediate navigation without history entry
-      router.replace("/dashboard/client")
+      router.replace(customerRedirect)
     } catch (error) {
       if (error instanceof ApiError) {
         toast({

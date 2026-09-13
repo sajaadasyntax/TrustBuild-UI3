@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast"
 import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form"
 import { useAuth } from "@/contexts/AuthContext"
+import { trackJobPosted } from "@/lib/tracking"
 
 const formSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
@@ -191,6 +192,7 @@ export default function PostJobPage() {
 
       console.log('Submitting job data:', jobPayload)
       const createdJob = await jobsApi.create(jobPayload)
+      trackJobPosted(createdJob.id)
       
       toast({
         title: "Success!",

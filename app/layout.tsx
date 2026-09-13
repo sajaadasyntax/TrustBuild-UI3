@@ -13,6 +13,7 @@ import { ServiceWorkerRegistration } from '@/components/notifications/ServiceWor
 import dynamic from 'next/dynamic';
 import { RouteGuard } from "@/components/auth/route-guard"
 import { usePathname } from 'next/navigation'
+import { GoogleTracking } from '@/components/analytics/GoogleTracking'
 
 
 const poppins = Poppins({
@@ -35,6 +36,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
+        <GoogleTracking />
       </head>
       <body className={`${poppins.variable} font-sans min-h-screen flex flex-col`} suppressHydrationWarning>
         <AuthProvider>

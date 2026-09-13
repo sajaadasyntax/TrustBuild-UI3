@@ -40,7 +40,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
       '/pricing',
       '/faq',
       '/terms',
-      '/privacy'
+      '/privacy',
+      '/homeowners'
     ]
 
     // Check if current route is public
@@ -158,7 +159,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
     '/pricing',
     '/faq',
     '/terms',
-    '/privacy'
+    '/privacy',
+    '/homeowners'
   ]
 
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
