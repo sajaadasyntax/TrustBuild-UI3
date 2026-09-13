@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-import { User, Menu, X, Home, Search, Building, LogIn } from "lucide-react"
+import { User, Menu, X, Home, Search, Building, LogIn, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
@@ -35,6 +35,7 @@ export function NavigationMenu() {
   const mainNavItems = [
     { label: "Home", href: "/" },
     { label: "How It Works", href: "/how-it-works" },
+    { label: "For Homeowners", href: "/homeowners" },
     // Only show "Join as Contractor" for non-clients (guests, contractors)
     ...(user?.role !== 'CUSTOMER' ? [{ label: "Join as Contractor", href: "/contractors" }] : []),
   ]
@@ -127,6 +128,7 @@ export function NavigationMenu() {
                   {item.href === "/" && <Home className="mr-2 h-4 w-4" />}
                   {item.href === "/contractors" && <Search className="mr-2 h-4 w-4" />}
                   {item.href === "/how-it-works" && <Building className="mr-2 h-4 w-4" />}
+                  {item.href === "/homeowners" && <Briefcase className="mr-2 h-4 w-4" />}
                   {item.label}
                 </Link>
               ))}
