@@ -39,6 +39,17 @@ export default function RootLayout({
         <GoogleTracking />
       </head>
       <body className={`${poppins.variable} font-sans min-h-screen flex flex-col`} suppressHydrationWarning>
+        {process.env.NEXT_PUBLIC_GTM_ID && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        )}
         <AuthProvider>
           <NotificationProvider>
             <RouteGuard>
