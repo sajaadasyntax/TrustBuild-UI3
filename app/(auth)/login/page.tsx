@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -30,6 +30,13 @@ export default function LoginPage() {
   const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [signUpHref, setSignUpHref] = useState('/register')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('redirect') === '/post-job') {
+      setSignUpHref('/register?role=customer&redirect=%2Fpost-job')
+    }
+  }, [])
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -150,7 +157,7 @@ export default function LoginPage() {
       <p className="px-8 text-center text-sm text-muted-foreground mt-4">
         Don&apos;t have an account?{" "}
         <Link
-          href="/register"
+          href={signUpHref}
           className="hover:text-brand underline underline-offset-4"
         >
           Sign up
