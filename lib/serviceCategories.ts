@@ -20,7 +20,7 @@ export function isPersistedServiceId(id: string): boolean {
 /** Load active services from the API (same source customers use when posting jobs). */
 export async function fetchActiveServices(): Promise<Service[]> {
   try {
-    const response = await servicesApi.getAll({ isActive: true });
+    const response = await servicesApi.getAll({ isActive: true, limit: 250 });
     if (response?.status === 'success' && response?.data?.services) {
       const services = response.data.services.filter(
         (item: Service) => item.id && item.isActive !== false && isPersistedServiceId(item.id)

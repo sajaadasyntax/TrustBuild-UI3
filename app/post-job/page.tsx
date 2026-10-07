@@ -16,7 +16,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckCheck, MapPin, Calendar, PoundSterling } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { servicesApi, jobsApi, handleApiError, Service } from "@/lib/api"
+import { jobsApi, handleApiError, Service } from "@/lib/api"
+import { fetchActiveServices } from "@/lib/serviceCategories"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form"
 import { useAuth } from "@/contexts/AuthContext"
 import { trackJobPosted } from "@/lib/tracking"
@@ -78,55 +79,9 @@ export default function PostJobPage() {
   const fetchServices = async () => {
     try {
       setServicesLoading(true)
-      console.log('Attempting to fetch services from API...')
-      const response = await servicesApi.getAll({ isActive: true })
-      console.log('API Response:', response)
-      
-      // Handle the correct API response structure for services
-      let fetchedServices: Service[] = []
-      if (response?.status === 'success' && response?.data?.services) {
-        // The response.data.services is the array of services
-        // Filter to only include active services (explicitly exclude inactive ones)
-        // and ensure they have an id
-        fetchedServices = response.data.services.filter((item: any) => 
-          item.id && item.isActive !== false
-        )
-      }
-      
-      console.log('Processed services:', fetchedServices)
-      
-      if (fetchedServices.length === 0) {
-        console.log('No services from API, using fallback services')
-        // Use fallback services if no services in database
-        setServices([
-          { id: 'fallback-1', name: 'Bathroom Fitting', description: 'Complete bathroom installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-2', name: 'Bricklaying', description: 'Professional bricklaying and masonry work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-3', name: 'Carpentry', description: 'Custom carpentry and woodworking services', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-4', name: 'Central Heating', description: 'Central heating installation and maintenance', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-5', name: 'Conversions', description: 'Property conversions and structural alterations', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-6', name: 'Electrical', description: 'Electrical installation, repair and maintenance', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-7', name: 'Flooring', description: 'Floor installation, repair and refinishing', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-8', name: 'Garden Landscaping', description: 'Garden design, landscaping and maintenance', category: 'Outdoor Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-          { id: 'fallback-9', name: 'Kitchen Fitting', description: 'Complete kitchen installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        ])
-      } else {
-        console.log('Using services from API:', fetchedServices.length, 'services')
-        setServices(fetchedServices)
-      }
+      setServices(await fetchActiveServices())
     } catch (error) {
-      console.warn('Services API failed, using fallback services. Error:', error)
-      // Fallback to default services if API fails
-      setServices([
-        { id: 'fallback-1', name: 'Bathroom Fitting', description: 'Complete bathroom installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-2', name: 'Bricklaying', description: 'Professional bricklaying and masonry work', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-3', name: 'Carpentry', description: 'Custom carpentry and woodworking services', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-4', name: 'Central Heating', description: 'Central heating installation and maintenance', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-5', name: 'Conversions', description: 'Property conversions and structural alterations', category: 'Construction', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-6', name: 'Electrical', description: 'Electrical installation, repair and maintenance', category: 'Trade Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-7', name: 'Flooring', description: 'Floor installation, repair and refinishing', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-8', name: 'Garden Landscaping', description: 'Garden design, landscaping and maintenance', category: 'Outdoor Services', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-        { id: 'fallback-9', name: 'Kitchen Fitting', description: 'Complete kitchen installation and fitting services', category: 'Home Improvement', isActive: true, createdAt: '', updatedAt: '', smallJobPrice: 10, mediumJobPrice: 15, largeJobPrice: 20 },
-      ])
+      console.error('Failed to load service categories:', error)
     } finally {
       setServicesLoading(false)
     }
