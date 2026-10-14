@@ -37,7 +37,7 @@ export function NavigationMenu() {
     { label: "How It Works", href: "/how-it-works" },
     { label: "For Homeowners", href: "/homeowners" },
     // Only show "Join as Contractor" for non-clients (guests, contractors)
-    ...(user?.role !== 'CUSTOMER' ? [{ label: "Join as Contractor", href: "/contractors" }] : []),
+    ...(user?.role !== 'CUSTOMER' ? [{ label: "Join as Contractor", href: "/register?role=contractor" }] : []),
   ]
 
   return (

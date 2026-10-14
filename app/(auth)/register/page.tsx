@@ -28,6 +28,7 @@ const baseSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
   role: z.enum(["CUSTOMER", "CONTRACTOR"]),
+  referralSource: z.string().max(200, "Please keep your answer under 200 characters").optional(),
   terms: z.boolean().refine((val) => val === true, "You must accept the terms and conditions"),
 })
 
@@ -90,6 +91,7 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
       role: "CUSTOMER",
+      referralSource: "",
       terms: false,
       phone: "",
       address: "",
@@ -106,6 +108,7 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
       role: "CONTRACTOR",
+      referralSource: "",
       terms: false,
       businessName: "",
       description: "",
@@ -129,6 +132,7 @@ export default function RegisterPage() {
         password: data.password,
         confirmPassword: data.confirmPassword,
         role: "CUSTOMER",
+        referralSource: data.referralSource,
         phone: data.phone,
         address: data.address,
         city: data.city,
@@ -186,6 +190,7 @@ export default function RegisterPage() {
         password: data.password,
         confirmPassword: data.confirmPassword,
         role: "CONTRACTOR",
+        referralSource: data.referralSource,
         businessName: data.businessName,
         phone: data.phone,
         businessAddress: data.businessAddress,
@@ -360,6 +365,20 @@ export default function RegisterPage() {
               {customerForm.formState.errors.terms && (
                 <p className="text-xs text-red-600">{customerForm.formState.errors.terms.message}</p>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="customer-referral-source">How did you hear about TrustBuild? (optional)</Label>
+                <Input
+                  id="customer-referral-source"
+                  maxLength={200}
+                  placeholder="e.g., Google, social media, or a friend"
+                  disabled={isLoading}
+                  {...customerForm.register("referralSource")}
+                />
+                {customerForm.formState.errors.referralSource && (
+                  <p className="text-xs text-red-600">{customerForm.formState.errors.referralSource.message}</p>
+                )}
+              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
@@ -553,6 +572,20 @@ export default function RegisterPage() {
                 />
                 {contractorForm.formState.errors.yearsExperience && (
                   <p className="text-xs text-red-600">{contractorForm.formState.errors.yearsExperience.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contractor-referral-source">How did you hear about TrustBuild? (optional)</Label>
+                <Input
+                  id="contractor-referral-source"
+                  maxLength={200}
+                  placeholder="e.g., Google, social media, or a friend"
+                  disabled={isLoading}
+                  {...contractorForm.register("referralSource")}
+                />
+                {contractorForm.formState.errors.referralSource && (
+                  <p className="text-xs text-red-600">{contractorForm.formState.errors.referralSource.message}</p>
                 )}
               </div>
 

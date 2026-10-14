@@ -33,7 +33,7 @@ export default function ForContractorsPage() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg">
-            <Link href="/register">Sign Up Now</Link>
+            <Link href="/register?role=contractor">Sign Up Now</Link>
           </Button>
           <Button variant="outline" asChild size="lg">
             <Link href="/pricing">View Pricing</Link>
@@ -122,7 +122,7 @@ export default function ForContractorsPage() {
         </p>
         
         <Button asChild size="lg">
-          <Link href="/register">Create Your Account</Link>
+          <Link href="/register?role=contractor">Create Your Account</Link>
         </Button>
       </div>
     </div>

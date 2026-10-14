@@ -15,11 +15,13 @@ import ServiceCategoryPicker from "@/components/services/ServiceCategoryPicker"
 import { isPersistedServiceId } from "@/lib/serviceCategories"
 import { toast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
 
 interface ProfileData {
   // User fields
   name: string
   email: string
+  jobEmailsEnabled?: boolean
   
   // Customer fields
   phone?: string
@@ -47,6 +49,7 @@ export default function ProfilePage() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingJobEmailPreference, setSavingJobEmailPreference] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -131,6 +134,7 @@ export default function ProfilePage() {
       setProfileData({
         name: userData.name || "",
         email: userData.email || "",
+        jobEmailsEnabled: userData.jobEmailsEnabled ?? true,
         ...roleSpecificData
       })
 
@@ -358,6 +362,33 @@ export default function ProfilePage() {
         description: "Failed to upload logo. Please try again.",
         variant: "destructive"
       })
+    }
+  }
+
+  const handleJobEmailPreferenceChange = async (enabled: boolean) => {
+    if (!user || user.role !== 'CONTRACTOR') return
+
+    const previousValue = profileData.jobEmailsEnabled ?? true
+    setProfileData((current) => ({ ...current, jobEmailsEnabled: enabled }))
+    setSavingJobEmailPreference(true)
+
+    try {
+      const updatedUser = await usersApi.updateMe({ jobEmailsEnabled: enabled })
+      setProfileData((current) => ({
+        ...current,
+        jobEmailsEnabled: updatedUser.jobEmailsEnabled ?? enabled,
+      }))
+      toast({
+        title: "Email preference updated",
+        description: enabled
+          ? "You will receive emails about matching new jobs."
+          : "You will no longer receive matching new-job emails.",
+      })
+    } catch (error) {
+      setProfileData((current) => ({ ...current, jobEmailsEnabled: previousValue }))
+      handleApiError(error, 'Failed to update job email preference.')
+    } finally {
+      setSavingJobEmailPreference(false)
     }
   }
 
@@ -596,6 +627,38 @@ export default function ProfilePage() {
         {/* Contractor-specific fields */}
         {user.role === 'CONTRACTOR' && (
           <>
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  Job Email Notifications
+                </CardTitle>
+                <CardDescription>
+                  Choose whether to receive email alerts about new jobs matching your services. In-app notifications and essential account emails are not affected.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-4">
+                  <Label htmlFor="job-emails-enabled" className="cursor-pointer">
+                    Email me about matching new jobs
+                  </Label>
+                  <Switch
+                    id="job-emails-enabled"
+                    checked={profileData.jobEmailsEnabled ?? true}
+                    onCheckedChange={handleJobEmailPreferenceChange}
+                    disabled={savingJobEmailPreference || loading}
+                    aria-label="Email me about matching new jobs"
+                  />
+                </div>
+                {savingJobEmailPreference && (
+                  <p className="mt-2 flex items-center text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving email preference...
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

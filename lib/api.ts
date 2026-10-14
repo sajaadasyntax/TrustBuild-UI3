@@ -11,6 +11,7 @@ export interface User {
   name: string;
   email: string;
   role: 'CUSTOMER' | 'CONTRACTOR' | 'ADMIN' | 'SUPER_ADMIN';
+  jobEmailsEnabled?: boolean;
   isActive: boolean;
   createdAt: string;
   customer?: Customer;
@@ -503,6 +504,7 @@ export const authApi = {
     password: string;
     confirmPassword: string;
     role: 'CUSTOMER' | 'CONTRACTOR';
+    referralSource?: string;
     // Customer fields
     phone?: string;
     address?: string;
@@ -577,7 +579,7 @@ export const usersApi = {
     return response.data.user;
   },
 
-  updateMe: async (userData: { name?: string; email?: string }): Promise<User> => {
+  updateMe: async (userData: { name?: string; email?: string; jobEmailsEnabled?: boolean }): Promise<User> => {
     const response = await apiRequest<{ data: { user: User } }>('/users/me', {
       method: 'PATCH',
       body: JSON.stringify(userData),
