@@ -54,20 +54,6 @@ const DEFAULT_CONTENT = {
       icon: "dollar",
     },
   ],
-  testimonials: [
-    {
-      name: "Sarah Johnson",
-      comment: "TrustBuild helped me find an amazing contractor for my kitchen renovation. The process was smooth and professional.",
-      rating: 5,
-      project: "Kitchen Renovation",
-    },
-    {
-      name: "Mike Davis",
-      comment: "Excellent service! The contractor was reliable and delivered exactly what was promised.",
-      rating: 5,
-      project: "Bathroom Remodeling",
-    },
-  ],
   stats: {
     projectsCompleted: "1000+",
     verifiedContractors: "500+",
@@ -126,7 +112,6 @@ export default function Home() {
         hero: platformContent.hero || DEFAULT_CONTENT.hero,
         howItWorks: platformContent.howItWorks || DEFAULT_CONTENT.howItWorks,
         features: platformContent.features || DEFAULT_CONTENT.features,
-        testimonials: platformContent.testimonials || DEFAULT_CONTENT.testimonials,
         stats: platformContent.stats || DEFAULT_CONTENT.stats,
       })
     } catch (error) {
@@ -353,56 +338,6 @@ export default function Home() {
                 className="object-cover"
               />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-secondary/10">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="mb-3">What Our Users Say</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Real reviews from customers who found their perfect contractor
-            </p>
-          </div>
-          
-          <div className={`grid grid-cols-1 ${content.testimonials?.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-8`}>
-            {content.testimonials?.map((testimonial, index) => {
-              const initials = testimonial.name
-                .split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)
-              
-              return (
-                <div key={index} className="p-6 bg-card rounded-lg shadow review-card">
-                  <div className="flex items-center mb-4">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`h-4 w-4 ${i < testimonial.rating ? 'fill-accent stroke-accent' : 'fill-none stroke-accent'}`} 
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="italic text-muted-foreground mb-4">
-                    &quot;{testimonial.comment}&quot;
-                  </p>
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
-                      <span className="font-medium text-primary">{initials}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.project}</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </div>
       </section>
