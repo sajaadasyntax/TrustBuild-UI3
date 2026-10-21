@@ -81,7 +81,12 @@ export default function KycPage() {
     setSuccess('');
 
     if (!idDocument || !utilityBill) {
-      setError('Please upload ID document and utility bill (proof of address). Insurance is optional.');
+      setError('Please upload ID document and utility bill (proof of address).');
+      return;
+    }
+
+    if (!companyNumber.trim()) {
+      setError('Please enter your company registration number.');
       return;
     }
 
@@ -97,9 +102,7 @@ export default function KycPage() {
       if (companyDoc) {
         formData.append('companyDoc', companyDoc);
       }
-      if (companyNumber) {
-        formData.append('companyNumber', companyNumber);
-      }
+      formData.append('companyNumber', companyNumber.trim());
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/upload`, {
         method: 'POST',
@@ -376,10 +379,10 @@ export default function KycPage() {
               {/* Company Number */}
               <div>
                 <Label htmlFor="companyNumber" className="text-base font-medium">
-                  Company Registration Number
+                  Company Registration Number *
                 </Label>
                 <p className="text-sm text-gray-600 mb-2">
-                  If applicable (optional)
+                  Enter your company registration number
                 </p>
                 <Input
                   id="companyNumber"
@@ -387,6 +390,7 @@ export default function KycPage() {
                   placeholder="12345678"
                   value={companyNumber}
                   onChange={(e) => setCompanyNumber(e.target.value)}
+                  required
                 />
               </div>
 
@@ -416,4 +420,3 @@ export default function KycPage() {
     </div>
   );
 }
-
