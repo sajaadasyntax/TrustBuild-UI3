@@ -418,7 +418,7 @@ export default function ContractorDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center">
-                <div className="relative w-16 h-16 mr-4">
+                <div className="relative w-16 h-16 mr-4 shrink-0">
                   {contractor?.logoUrl ? (
                     <Image
                       src={contractor.logoUrl}

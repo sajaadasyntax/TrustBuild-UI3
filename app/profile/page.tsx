@@ -695,7 +695,7 @@ export default function ProfilePage() {
                   <Label htmlFor="logo">Business Logo</Label>
                   <div className="mt-2 flex items-center gap-4">
                     {profileData.logoUrl && (
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         <Image
                           src={profileData.logoUrl}
                           alt="Business Logo"
@@ -726,7 +726,7 @@ export default function ProfilePage() {
                           className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Upload a square logo (recommended: 200x200px or larger)
+                          Upload a square logo (recommended: 200x200px or larger). It will be resized to fit profile layouts.
                         </p>
                       </div>
                     )}

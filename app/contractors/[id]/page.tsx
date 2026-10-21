@@ -238,7 +238,7 @@ function ContractorProfileContent() {
                   </div>
                   <CardDescription>{contractor.servicesProvided}</CardDescription>
                 </div>
-                <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="h-16 w-16 shrink-0 bg-primary/20 rounded-full flex items-center justify-center overflow-hidden">
                   {contractor.logoUrl && !logoError ? (
                     <Image
                       src={contractor.logoUrl}
