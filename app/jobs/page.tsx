@@ -11,6 +11,7 @@ import { Clock, MapPin, DollarSign, Search, Briefcase, TrendingUp, Users } from 
 import { jobsApi, servicesApi, handleApiError, Job } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatDateTime } from '@/lib/formatDateTime'
 
 export default function JobsPage() {
   const { user } = useAuth()
@@ -334,7 +335,7 @@ export default function JobsPage() {
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Posted {new Date(job.createdAt).toLocaleDateString()}
+                        Posted {formatDateTime(job.createdAt)}
                       </span>
                       <Badge variant="outline">
                         {job.service?.name || 'General'}

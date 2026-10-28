@@ -25,6 +25,7 @@ import {
 import { jobsApi, handleApiError, Job, JobApplication } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatDateTime } from '@/lib/formatDateTime'
 import JobLeadAccessDialog from '@/components/JobLeadAccessDialog'
 import ContractorJobProgress from '@/components/jobs/ContractorJobProgress'
 import JobWorkflowButtons from '@/components/jobs/JobWorkflowButtons'
@@ -247,7 +248,7 @@ export default function JobDetailsPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      Posted {new Date(job.createdAt).toLocaleDateString()}
+                      Posted {formatDateTime(job.createdAt)}
                     </span>
                   </>
                 )}
