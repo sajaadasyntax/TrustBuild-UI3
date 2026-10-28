@@ -75,6 +75,10 @@ export default function PricingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCheck className="h-4 w-4 text-green-600" />
+                <span className="text-sm">5% commission when using credits (or pay the lead price for 0%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCheck className="h-4 w-4 text-green-600" />
                 <span className="text-sm">Professional profile on the platform</span>
               </div>
               <div className="flex items-center gap-2">
@@ -112,6 +116,10 @@ export default function PricingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCheck className="h-4 w-4 text-green-600" />
+                <span className="text-sm">5% commission when using credits (or pay the lead price for 0%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCheck className="h-4 w-4 text-green-600" />
                 <span className="text-sm">Professional profile on the platform</span>
               </div>
               <div className="flex items-center gap-2">
@@ -146,6 +154,10 @@ export default function PricingPage() {
               <div className="flex items-center gap-2">
                 <CheckCheck className="h-4 w-4 text-green-600" />
                 <span className="text-sm">3 free job credits every week</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCheck className="h-4 w-4 text-green-600" />
+                <span className="text-sm">5% commission when using credits (or pay the lead price for 0%)</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCheck className="h-4 w-4 text-green-600" />

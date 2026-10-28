@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { MapPin, Briefcase, User, ArrowLeft, Mail, Phone, Building, Save, Loader2, Lock, Eye, EyeOff, Image as ImageIcon, Plus, X, Edit2, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { usersApi, contractorsApi, customersApi, uploadApi, handleApiError, PortfolioItem } from "@/lib/api"
+import { getUploadErrorMessage, prepareImageForUpload } from "@/lib/imageCompression"
 import ServiceCategoryPicker from "@/components/services/ServiceCategoryPicker"
 import { isPersistedServiceId } from "@/lib/serviceCategories"
 import { toast } from "@/hooks/use-toast"
@@ -178,29 +179,10 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (PNG, JPG, etc.)",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB",
-        variant: "destructive"
-      })
-      return
-    }
-
     try {
       setUploadingImage(true)
-      const uploadResult = await uploadApi.uploadFile(file)
+      const prepared = await prepareImageForUpload(file)
+      const uploadResult = await uploadApi.uploadFile(prepared)
       setNewPortfolioItem(prev => ({ ...prev, imageUrl: uploadResult.url }))
       
       toast({
@@ -211,11 +193,15 @@ export default function ProfilePage() {
       console.error('Error uploading image:', error)
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: getUploadErrorMessage(
+          error,
+          "Failed to upload image. Use JPG, PNG, or WEBP up to 15MB (large photos are resized automatically)."
+        ),
         variant: "destructive"
       })
     } finally {
       setUploadingImage(false)
+      event.target.value = ''
     }
   }
   
@@ -326,42 +312,27 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (PNG, JPG, etc.)",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB",
-        variant: "destructive"
-      })
-      return
-    }
-
     try {
-      const uploadResult = await uploadApi.uploadFile(file)
-      console.log('Upload result:', uploadResult)
+      const prepared = await prepareImageForUpload(file)
+      const uploadResult = await uploadApi.uploadFile(prepared)
       handleInputChange('logoUrl', uploadResult.url)
       
       toast({
         title: "Logo uploaded successfully",
-        description: `Logo URL: ${uploadResult.url}`
+        description: "Your profile logo has been updated"
       })
     } catch (error) {
       console.error('Error uploading logo:', error)
       toast({
         title: "Upload failed",
-        description: "Failed to upload logo. Please try again.",
+        description: getUploadErrorMessage(
+          error,
+          "Failed to upload logo. Use JPG, PNG, or WEBP up to 15MB (large photos are resized automatically)."
+        ),
         variant: "destructive"
       })
+    } finally {
+      event.target.value = ''
     }
   }
 
@@ -1158,6 +1129,9 @@ export default function ProfilePage() {
                       disabled={uploadingImage}
                       className="cursor-pointer"
                     />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      JPG, PNG, or WEBP up to 15MB. Large photos are resized automatically.
+                    </p>
                     {uploadingImage && (
                       <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -1258,16 +1232,21 @@ export default function ProfilePage() {
                           
                           try {
                             setUploadingImage(true)
-                            const uploadResult = await uploadApi.uploadFile(file)
+                            const prepared = await prepareImageForUpload(file)
+                            const uploadResult = await uploadApi.uploadFile(prepared)
                             setEditingPortfolioItem(prev => prev ? { ...prev, imageUrl: uploadResult.url } : null)
                             toast({
                               title: "Image uploaded successfully",
                               description: "Image updated"
                             })
                           } catch (error) {
-                            handleApiError(error, 'Failed to upload image')
+                            handleApiError(error, getUploadErrorMessage(
+                              error,
+                              'Failed to upload image. Use JPG, PNG, or WEBP up to 15MB.'
+                            ))
                           } finally {
                             setUploadingImage(false)
+                            e.target.value = ''
                           }
                         }}
                         disabled={uploadingImage}

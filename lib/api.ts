@@ -3,7 +3,14 @@
 import { toast } from '@/hooks/use-toast';
 import { getHumanReadableError } from './humanErrorHandler';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk';
+/** Normalized API root (always ends with /api). */
+export const getApiBaseUrl = (): string => {
+  const raw = process.env.NEXT_PUBLIC_API_URL || 'https://api.trustbuild.uk';
+  const trimmed = raw.replace(/\/$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Types
 export interface User {
@@ -1571,7 +1578,7 @@ export const adminApi = {
   },
 
   approveContractor: async (id: string, approved: boolean, reason?: string, notes?: string): Promise<Contractor> => {
-    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/admin/contractors/${id}/approval`, {
+    const response = await apiRequest<{ data: { contractor: Contractor } }>(`/admin/contractors/${id}/approve`, {
       method: 'PATCH',
       body: JSON.stringify({ approved, reason, notes }),
     });
@@ -2666,8 +2673,16 @@ export const uploadApi = {
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new ApiError(response.status, data.message || 'Upload failed');
+      let message = 'Upload failed. Please use a JPG, PNG, or WEBP image up to 15MB.';
+      try {
+        const data = await response.json();
+        message = data.message || message;
+      } catch {
+        if (response.status === 413) {
+          message = 'The file is too large for the server. Please upload a smaller image (max 15MB).';
+        }
+      }
+      throw new ApiError(response.status, message);
     }
 
     const data = await response.json();

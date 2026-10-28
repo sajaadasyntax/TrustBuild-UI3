@@ -9,6 +9,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, AlertCircle, Clock, FileText, Upload, Loader2 } from 'lucide-react';
+import { getApiBaseUrl, getStoredToken } from '@/lib/api';
+import { getUploadErrorMessage, prepareImageForUpload } from '@/lib/imageCompression';
+
+const KYC_MAX_BYTES = 15 * 1024 * 1024;
+
+async function prepareKycDocument(file: File): Promise<File> {
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    if (file.size > KYC_MAX_BYTES) {
+      throw new Error('PDF files must be 15MB or smaller.');
+    }
+    return file;
+  }
+  return prepareImageForUpload(file);
+}
 
 interface KycData {
   id: string;
@@ -50,9 +64,15 @@ export default function KycPage() {
 
   const fetchKycStatus = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/my-status`, {
+      const token = getStoredToken();
+      if (!token) {
+        setError('Please log in again to continue.');
+        return;
+      }
+
+      const response = await fetch(`${getApiBaseUrl()}/admin/kyc/my-status`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -93,31 +113,54 @@ export default function KycPage() {
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('idDocument', idDocument);
-      formData.append('utilityBill', utilityBill);
-      if (insuranceDoc) {
-        formData.append('insuranceDoc', insuranceDoc);
+      const token = getStoredToken();
+      if (!token) {
+        setError('Please log in again to upload documents.');
+        return;
       }
-      if (companyDoc) {
-        formData.append('companyDoc', companyDoc);
+
+      const [preparedId, preparedUtility, preparedInsurance, preparedCompany] = await Promise.all([
+        prepareKycDocument(idDocument),
+        prepareKycDocument(utilityBill),
+        insuranceDoc ? prepareKycDocument(insuranceDoc) : Promise.resolve(null),
+        companyDoc ? prepareKycDocument(companyDoc) : Promise.resolve(null),
+      ]);
+
+      const formData = new FormData();
+      formData.append('idDocument', preparedId);
+      formData.append('utilityBill', preparedUtility);
+      if (preparedInsurance) {
+        formData.append('insuranceDoc', preparedInsurance);
+      }
+      if (preparedCompany) {
+        formData.append('companyDoc', preparedCompany);
       }
       formData.append('companyNumber', companyNumber.trim());
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/kyc/upload`, {
+      const response = await fetch(`${getApiBaseUrl()}/admin/kyc/upload`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: { message?: string } = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        if (response.status === 413) {
+          setError('One or more files are too large. Please use JPG, PNG, WEBP, or PDF up to 15MB each.');
+        } else {
+          setError(`Upload failed (server responded with ${response.status}). Please try again or use PDF format.`);
+        }
+        return;
+      }
 
       if (response.ok) {
         setSuccess('Documents uploaded successfully! Our team will review your documents and notify you once approved. Your account will be activated after KYC approval.');
         fetchKycStatus();
-        // Clear form
         setIdDocument(null);
         setUtilityBill(null);
         setInsuranceDoc(null);
@@ -127,7 +170,7 @@ export default function KycPage() {
         setError(data.message || 'Failed to upload documents');
       }
     } catch (err) {
-      setError('Network error while uploading documents');
+      setError(getUploadErrorMessage(err, 'Failed to upload documents. Use JPG, PNG, WEBP, or PDF up to 15MB each.'));
     } finally {
       setUploading(false);
     }
@@ -305,7 +348,7 @@ export default function KycPage() {
               {kyc.status === 'REJECTED' ? 'Re-submit Documents' : 'Submit Verification Documents'}
             </h2>
             <p className="text-sm text-gray-600">
-              Please upload the following documents to verify your identity
+              Upload JPG, PNG, WEBP, or PDF files (max 15MB each). Photos from your phone are resized automatically before upload.
             </p>
           </CardHeader>
           <CardContent>
@@ -321,7 +364,7 @@ export default function KycPage() {
                 <Input
                   id="idDocument"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
                   onChange={(e) => setIdDocument(e.target.files?.[0] || null)}
                   required
                 />
@@ -338,7 +381,7 @@ export default function KycPage() {
                 <Input
                   id="utilityBill"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
                   onChange={(e) => setUtilityBill(e.target.files?.[0] || null)}
                   required
                 />
@@ -355,7 +398,7 @@ export default function KycPage() {
                 <Input
                   id="insuranceDoc"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
                   onChange={(e) => setInsuranceDoc(e.target.files?.[0] || null)}
                 />
               </div>
@@ -371,7 +414,7 @@ export default function KycPage() {
                 <Input
                   id="companyDoc"
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
                   onChange={(e) => setCompanyDoc(e.target.files?.[0] || null)}
                 />
               </div>

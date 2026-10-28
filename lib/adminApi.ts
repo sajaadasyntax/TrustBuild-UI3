@@ -245,6 +245,11 @@ export const adminApi = {
     return response;
   },
 
+  getContractor: async (contractorId: string) => {
+    const response = await adminApiRequest<any>(`/admin/contractors/${contractorId}`);
+    return response;
+  },
+
   // Get pending contractors
   getPendingContractors: async (params?: { limit?: number }) => {
     const queryParams = new URLSearchParams();

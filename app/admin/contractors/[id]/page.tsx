@@ -124,14 +124,15 @@ export default function AdminContractorProfile() {
   const fetchContractor = async () => {
     try {
       setLoading(true)
-      const response = await adminApi.getAllContractors()
-      
-      // Check if response has contractors array
-      const contractorsList = response?.contractors || response?.data?.contractors || []
-      const foundContractor = contractorsList.find((c: Contractor) => c.id === contractorId)
-      
+      const response = await adminApi.getContractor(contractorId)
+      const foundContractor = response?.data?.contractor || response?.contractor
+
       if (foundContractor) {
-        setContractor(foundContractor)
+        setContractor({
+          ...foundContractor,
+          contactName: foundContractor.contactName || foundContractor.user?.name || '',
+          email: foundContractor.email || foundContractor.user?.email || '',
+        })
       } else {
         throw new Error('Contractor not found')
       }
@@ -343,8 +344,13 @@ export default function AdminContractorProfile() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Contractor Profile</h1>
-            <p className="text-muted-foreground">View contractor details and manage their account</p>
+            <h1 className="text-3xl font-bold">{contractor.businessName || 'Contractor Profile'}</h1>
+            <p className="text-muted-foreground">
+              Contact: {contractor.contactName || contractor.user?.name || 'Not provided'}
+              {(contractor.email || contractor.user?.email) && (
+                <span className="ml-2">· {contractor.email || contractor.user?.email}</span>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -373,7 +379,7 @@ export default function AdminContractorProfile() {
                 <div className="flex items-center gap-2 text-sm">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Contact:</span>
-                  <span className="text-muted-foreground">{contractor.contactName}</span>
+                  <span className="text-muted-foreground">{contractor.contactName || contractor.user?.name || 'Not provided'}</span>
                 </div>
                 
                 <div className="flex items-center gap-2 text-sm">

@@ -851,6 +851,8 @@ export default function AdminContractors() {
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                            <span>Contact: {contractor.contactName || contractor.user?.name || 'Not provided'}</span>
+                            <span>•</span>
                             <span>{contractor.user?.email}</span>
                             <span>•</span>
                             <span>{contractor.city || 'Location not set'}</span>
@@ -1097,6 +1099,8 @@ export default function AdminContractors() {
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                            <span>Contact: {contractor.contactName || contractor.user?.name || 'Not provided'}</span>
+                            <span>•</span>
                             <span>{contractor.user?.email}</span>
                             <span>•</span>
                             <span>{contractor.city || 'Location not set'}</span>
